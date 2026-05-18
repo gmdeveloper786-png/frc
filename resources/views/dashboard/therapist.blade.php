@@ -1,0 +1,181 @@
+@extends('layouts.app')
+@section('title', 'Therapist Dashboard')
+@section('page-title', 'Therapist Dashboard')
+
+@section('content')
+@php
+    $stats = $portal['stats'];
+    $todayAssessmentsPreview = $portal['today_assessments_preview'];
+    $todayAssessmentsTotal = $portal['today_assessments_total'];
+    $todaySessionsPreview = $portal['today_sessions_preview'];
+    $todaySessionsTotal = $portal['today_sessions_total'];
+    $dashboardPreviewLimit = \App\Services\TherapistPortalService::DASHBOARD_PREVIEW_LIMIT;
+    $todayDate = now()->toDateString();
+    $todayAssessmentsUrl = route('therapist.assessments.index', [
+        'start_date' => $todayDate,
+        'end_date' => $todayDate,
+    ]);
+    $todaySessionsUrl = route('therapist.sessions.index', [
+        'start_date' => $todayDate,
+        'end_date' => $todayDate,
+    ]);
+    $upcomingWeekStart = now()->copy()->addDay()->toDateString();
+    $upcomingWeekEnd = now()->copy()->addDays(7)->toDateString();
+    $upcomingAssessmentsUrl = route('therapist.assessments.index', [
+        'start_date' => $upcomingWeekStart,
+        'end_date' => $upcomingWeekEnd,
+        'status' => 'publish',
+    ]);
+    $upcomingSessionsUrl = route('therapist.sessions.index', [
+        'start_date' => $upcomingWeekStart,
+        'end_date' => $upcomingWeekEnd,
+    ]);
+@endphp
+
+<div class="therapist-dashboard-page">
+    <div class="row g-3 mb-4 therapist-dashboard-stats">
+        @foreach([
+            ['label' => "Today's Assessments", 'value' => $stats['today_assessments'], 'icon' => 'fa-calendar-day', 'tone' => 'navy', 'href' => $todayAssessmentsUrl],
+            ['label' => 'Upcoming Assessments', 'value' => $stats['upcoming_assessments'], 'icon' => 'fa-calendar-plus', 'tone' => 'teal', 'hint' => 'Next 7 days', 'href' => $upcomingAssessmentsUrl],
+            ['label' => 'Completed Assessments', 'value' => $stats['completed_assessments'], 'icon' => 'fa-circle-check', 'tone' => 'navy', 'href' => route('therapist.assessments.index', ['status' => 'completed'])],
+            ['label' => 'Cancelled Assessments', 'value' => $stats['cancelled_assessments'], 'icon' => 'fa-calendar-xmark', 'tone' => 'teal', 'href' => route('therapist.assessments.index', ['status' => 'cancelled'])],
+            ['label' => "Today's Sessions", 'value' => $stats['today_sessions'], 'icon' => 'fa-clock', 'tone' => 'teal', 'href' => $todaySessionsUrl],
+            ['label' => 'Upcoming Sessions', 'value' => $stats['upcoming_sessions'], 'icon' => 'fa-calendar-week', 'tone' => 'navy', 'hint' => 'Next 7 days', 'href' => $upcomingSessionsUrl],
+            ['label' => 'Completed Sessions', 'value' => $stats['completed_sessions'], 'icon' => 'fa-flag-checkered', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'completed'])],
+            ['label' => 'Cancelled Sessions', 'value' => $stats['cancelled_sessions'], 'icon' => 'fa-ban', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'cancelled'])],
+            ['label' => 'Assigned Children', 'value' => $stats['assigned_children'], 'icon' => 'fa-children', 'tone' => 'teal', 'href' => route('therapist.children.index')],
+            ['label' => 'Progress Notes Pending', 'value' => $stats['notes_pending'], 'icon' => 'fa-file-circle-exclamation', 'tone' => 'navy', 'hint' => 'Completed sessions missing progress notes', 'href' => route('therapist.progress-notes.pending')],
+        ] as $card)
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                @if(! empty($card['href'] ?? null))
+                    <a href="{{ $card['href'] }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
+                @endif
+                <div class="stat-card h-100 {{ ! empty($card['href'] ?? null) ? 'stat-card--clickable' : '' }}">
+                    <div class="stat-icon {{ $card['tone'] }}"><i class="fa-solid {{ $card['icon'] }}"></i></div>
+                    <div class="stat-body">
+                        <div class="stat-value">{{ $card['value'] }}</div>
+                        <div class="stat-label">{{ $card['label'] }}</div>
+                        @if(! empty($card['hint'] ?? null))
+                            <div class="stat-hint">{{ $card['hint'] }}</div>
+                        @endif
+                    </div>
+                </div>
+                @if(! empty($card['href'] ?? null))
+                    </a>
+                @endif
+            </div>
+        @endforeach
+    </div>
+
+    <div class="row g-3 mb-4 therapist-dashboard-panels">
+        <div class="col-12 col-lg-6">
+            <div class="card-frc h-100 therapist-dashboard-panel">
+                <div class="card-header-frc therapist-dashboard-panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="card-title-frc mb-0"><i class="fa-solid fa-sun me-2" style="color:var(--teal);"></i>Today's Assessments</h6>
+                    <a href="{{ $todayAssessmentsUrl }}" class="btn-outline-teal therapist-dashboard-panel-btn">View all today</a>
+                </div>
+                <div class="therapist-dashboard-panel-body">
+                    @if($todayAssessmentsPreview->isEmpty())
+                        <div class="empty-state py-4"><p class="text-muted mb-0 small">No assessments assigned for today.</p></div>
+                    @else
+                        <div class="therapist-dashboard-assessment-list d-md-none">
+                            @foreach($todayAssessmentsPreview as $a)
+                                <div class="therapist-dashboard-assessment-item">
+                                    <div class="therapist-dashboard-assessment-main">
+                                        <div class="therapist-dashboard-assessment-time">{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</div>
+                                        <div class="therapist-dashboard-assessment-child">{{ $a->children->pluck('full_name')->join(', ') }}</div>
+                                        <div class="therapist-dashboard-assessment-meta">{{ $a->branch?->name }}</div>
+                                    </div>
+                                    <div class="therapist-dashboard-assessment-foot">
+                                        <span class="badge-status badge-{{ $a->status }}">{{ ucfirst($a->status) }}</span>
+                                        <div class="therapist-dashboard-assessment-actions">
+                                            <a href="{{ route('therapist.assessments.show', $a) }}" class="btn-outline-teal btn-sm-frc">View</a>
+                                            @foreach($a->children->take(1) as $c)
+                                                <a href="{{ route('therapist.children.show', $c) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="table-responsive therapist-dashboard-table-wrap d-none d-md-block">
+                            <table class="table-frc mb-0">
+                                <thead><tr><th>Time</th><th>Children</th><th>Branch</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                    @foreach($todayAssessmentsPreview as $a)
+                                        <tr>
+                                            <td>{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</td>
+                                            <td>{{ $a->children->pluck('full_name')->join(', ') }}</td>
+                                            <td>{{ $a->branch?->name }}</td>
+                                            <td><span class="badge-status badge-{{ $a->status }}">{{ ucfirst($a->status) }}</span></td>
+                                            <td>
+                                                <div class="d-inline-flex gap-1 align-items-center flex-wrap">
+                                                    <a href="{{ route('therapist.assessments.show', $a) }}" class="btn-outline-teal btn-sm-frc">View</a>
+                                                    @foreach($a->children->take(2) as $c)
+                                                        <a href="{{ route('therapist.children.show', $c) }}" class="btn-outline-teal btn-sm-frc" title="{{ $c->full_name }}">Child</a>
+                                                    @endforeach
+                                                    @if($a->children->count() > 2)
+                                                        <span class="small text-muted">+{{ $a->children->count() - 2 }}</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($todayAssessmentsTotal > $dashboardPreviewLimit)
+                            <p class="therapist-dashboard-more-note">
+                                Showing {{ $dashboardPreviewLimit }} of {{ $todayAssessmentsTotal }}.
+                                <a href="{{ $todayAssessmentsUrl }}" class="therapist-dashboard-more-link">View all</a>
+                            </p>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card-frc h-100 therapist-dashboard-panel">
+                <div class="card-header-frc therapist-dashboard-panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="card-title-frc mb-0"><i class="fa-solid fa-calendar-day me-2" style="color:var(--teal);"></i>Today's Sessions</h6>
+                    <a href="{{ $todaySessionsUrl }}" class="btn-outline-teal therapist-dashboard-panel-btn">View all today</a>
+                </div>
+                <div class="therapist-dashboard-panel-body">
+                    @if($todaySessionsPreview->isEmpty())
+                        <div class="empty-state py-4"><p class="text-muted mb-0 small">No sessions on your roster today.</p></div>
+                    @else
+                        @foreach($todaySessionsPreview as $schedule)
+                            @php
+                                $sb = match ($schedule->status) {
+                                    'scheduled' => 'badge-session-scheduled',
+                                    'in_progress' => 'badge-session-in-progress',
+                                    'completed' => 'badge-session-completed',
+                                    'cancelled' => 'badge-session-cancelled',
+                                    'no_show' => 'badge-session-no-show',
+                                    default => 'badge-draft',
+                                };
+                            @endphp
+                            <div class="therapist-dashboard-session-item">
+                                <div class="therapist-dashboard-session-main">
+                                    <div class="therapist-dashboard-session-name">{{ $schedule->enrollment?->child?->full_name }}</div>
+                                    <div class="therapist-dashboard-session-meta">{{ $schedule->time_slot }} · {{ $schedule->enrollment?->service?->name }}</div>
+                                </div>
+                                <div class="therapist-dashboard-session-actions">
+                                    <span class="badge-status {{ $sb }}">{{ ucfirst(str_replace('_', ' ', $schedule->status)) }}</span>
+                                    <a href="{{ route('therapist.children.show', $schedule->enrollment?->child_id) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                </div>
+                            </div>
+                        @endforeach
+                        @if($todaySessionsTotal > $dashboardPreviewLimit)
+                            <p class="therapist-dashboard-more-note">
+                                Showing {{ $dashboardPreviewLimit }} of {{ $todaySessionsTotal }}.
+                                <a href="{{ $todaySessionsUrl }}" class="therapist-dashboard-more-link">View all</a>
+                            </p>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

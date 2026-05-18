@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\Enrollment;
+use Closure;
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreManualPaymentRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->hasPermission('manage_payments') ?? false;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'payment_method' => 'cash',
+        ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'enrollment_id'  => ['required', 'exists:enrollments,id'],
+            'amount'         => ['required', 'numeric', 'min:0.01', $this->amountWithinRemaining()],
+            'payment_method' => ['required', 'in:cash'],
+            'payment_date'   => ['required', 'date'],
+            'notes'          => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+
+    private function amountWithinRemaining(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $enrollmentId = $this->input('enrollment_id');
+            if (! $enrollmentId) {
+                return;
+            }
+
+            $enrollment = Enrollment::query()->find($enrollmentId);
+            if (! $enrollment) {
+                return;
+            }
+
+            $remaining = $enrollment->outstandingAmount();
+            if ($remaining <= 0) {
+                $fail('This enrollment is already fully paid.');
+
+                return;
+            }
+
+            if (round((float) $value, 2) > $remaining) {
+                $fail('The amount cannot exceed the remaining balance (PKR '.number_format($remaining, 2).').');
+            }
+        };
+    }
+}

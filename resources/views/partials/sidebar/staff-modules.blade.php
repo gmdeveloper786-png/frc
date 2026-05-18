@@ -1,0 +1,123 @@
+@php
+    $user = auth()->user();
+    if (! $user) {
+        return;
+    }
+
+    $canApproveChildren = $user->hasPermission('approve_children');
+    $canManageChildren = $user->hasPermission('manage_children');
+    $canTherapists = $user->hasPermission('manage_therapists');
+    $canDisabilities = $user->hasPermission('manage_disabilities');
+    $canServices = $user->hasPermission('manage_services');
+    $canBranches = $user->hasPermission('manage_branches');
+    $canAssessments = $user->hasPermission('manage_assessments');
+    $canEnrollments = $user->hasPermission('manage_enrollments');
+    $canHighDiscount = $user->hasPermission('approve_high_discount');
+    $canManagePayments = $user->hasPermission('manage_payments');
+    $canVerifyPayments = $user->hasPermission('verify_payments');
+    $canFinanceReports = $user->hasPermission('view_finance_reports');
+    $canSettings = $user->hasPermission('manage_settings');
+
+    $showChildren = $canApproveChildren || $canManageChildren;
+    $showConfiguration = $canTherapists || $canDisabilities || $canServices || $canBranches;
+    $showClinical = $canAssessments || $canEnrollments || $canHighDiscount;
+    $showFinance = $canManagePayments || $canVerifyPayments || $canFinanceReports;
+@endphp
+
+@if($showChildren)
+    <div class="nav-section-title">Children</div>
+    @if($canApproveChildren)
+        <a href="{{ route('children.pending') }}" class="nav-link {{ request()->routeIs('children.pending') ? 'active' : '' }}">
+            <i class="fa-solid fa-user-clock"></i><span>Pending Approvals</span>
+            @php $pendingCount = \App\Models\User::children()->pending()->count(); @endphp
+            @if($pendingCount > 0)
+                <span class="nav-link-badge badge-status badge-pending" data-short="{{ $pendingCount > 99 ? '99+' : $pendingCount }}">{{ $pendingCount }}</span>
+            @endif
+        </a>
+    @endif
+    @if($canManageChildren)
+        <a href="{{ route('children.index') }}" class="nav-link {{ request()->routeIs('children.*') && ! request()->routeIs('children.pending') ? 'active' : '' }}">
+            <i class="fa-solid fa-children"></i><span>All Children</span>
+        </a>
+    @endif
+@endif
+
+@if($showConfiguration)
+    <div class="nav-section-title">Configuration</div>
+    @if($canTherapists)
+        <a href="{{ route('therapists.index') }}" class="nav-link {{ request()->routeIs('therapists.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-user-doctor"></i><span>Therapists</span>
+        </a>
+    @endif
+    @if($canDisabilities)
+        <a href="{{ route('disabilities.index') }}" class="nav-link {{ request()->routeIs('disabilities.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-heart-pulse"></i><span>Disabilities</span>
+        </a>
+    @endif
+    @if($canServices)
+        <a href="{{ route('services.index') }}" class="nav-link {{ request()->routeIs('services.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-briefcase-medical"></i><span>Services</span>
+        </a>
+    @endif
+    @if($canBranches)
+        <a href="{{ route('branches.index') }}" class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-building"></i><span>Branches</span>
+        </a>
+    @endif
+@endif
+
+@if($showClinical)
+    <div class="nav-section-title">Clinical</div>
+    @if($canAssessments)
+        <a href="{{ route('assessments.index') }}" class="nav-link {{ request()->routeIs('assessments.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-clipboard-list"></i><span>Assessments</span>
+        </a>
+    @endif
+    @if($canEnrollments)
+        <a href="{{ route('enrollments.index') }}" class="nav-link {{ request()->routeIs('enrollments.index', 'enrollments.create', 'enrollments.show', 'enrollments.edit') ? 'active' : '' }}">
+            <i class="fa-solid fa-file-contract"></i><span>Enrollments</span>
+        </a>
+    @endif
+    @if($canHighDiscount)
+        <a href="{{ route('enrollments.high-discount') }}" class="nav-link {{ request()->routeIs('enrollments.high-discount') ? 'active' : '' }}">
+            <i class="fa-solid fa-percent"></i><span>High Discount</span>
+            @php $hdCount = \App\Models\Enrollment::where('status', 'pending_super_admin_approval')->count(); @endphp
+            @if($hdCount > 0)
+                <span class="nav-link-badge badge-status badge-pending" data-short="{{ $hdCount > 99 ? '99+' : $hdCount }}">{{ $hdCount }}</span>
+            @endif
+        </a>
+    @endif
+@endif
+
+@if($canSettings)
+    <div class="nav-section-title">System</div>
+    <a href="{{ route('settings.edit') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <i class="fa-solid fa-gear"></i><span>Settings</span>
+    </a>
+@endif
+
+@if($showFinance)
+    <div class="nav-section-title">Finance</div>
+    @if($canManagePayments)
+        <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.index') ? 'active' : '' }}">
+            <i class="fa-solid fa-money-bills"></i><span>Payments</span>
+        </a>
+        <a href="{{ route('payments.manual.create') }}" class="nav-link {{ request()->routeIs('payments.manual.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-hand-holding-dollar"></i><span>Manual Payment</span>
+        </a>
+    @endif
+    @if($canVerifyPayments)
+        <a href="{{ route('payments.pending') }}" class="nav-link {{ request()->routeIs('payments.pending') ? 'active' : '' }}">
+            <i class="fa-solid fa-clock-rotate-left"></i><span>Verify Payments</span>
+            @php $pvCount = \App\Models\Payment::where('status', 'pending_verification')->count(); @endphp
+            @if($pvCount > 0)
+                <span class="nav-link-badge badge-status badge-pending" data-short="{{ $pvCount > 99 ? '99+' : $pvCount }}">{{ $pvCount }}</span>
+            @endif
+        </a>
+    @endif
+    @if($canFinanceReports)
+        <a href="{{ route('reports.finance') }}" class="nav-link {{ request()->routeIs('reports.finance*') ? 'active' : '' }}">
+            <i class="fa-solid fa-chart-line"></i><span>Finance Reports</span>
+        </a>
+    @endif
+@endif
