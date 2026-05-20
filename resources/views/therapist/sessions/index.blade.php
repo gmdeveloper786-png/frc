@@ -13,12 +13,6 @@
     ];
 @endphp
 
-@if($errors->has('session_date'))
-    <div class="alert alert-danger border-0 mb-4" style="border-radius:12px;">
-        <i class="fa-solid fa-circle-exclamation me-2"></i>{{ $errors->first('session_date') }}
-    </div>
-@endif
-
 <div class="card-frc mb-4">
     <div class="card-header-frc">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-filter me-2" style="color:var(--teal);"></i>Filters</h6>

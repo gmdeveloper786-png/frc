@@ -174,13 +174,6 @@ class TherapistSessionService
             'Only in-progress sessions can be completed.',
         );
 
-        $startsAt = SessionTimeSlotParser::occurrenceStart($sessionDay, (string) $schedule->time_slot);
-        if (now()->lt($startsAt)) {
-            throw ValidationException::withMessages([
-                'session_date' => ['You can complete this session only at or after its scheduled date and start time.'],
-            ]);
-        }
-
         if ($this->occurrenceState->isRecurringTemplate($schedule)) {
             DB::transaction(function () use ($schedule, $therapist, $sessionDay, $completionNote): void {
                 $this->occurrenceState->completeOccurrence($therapist, $schedule, $sessionDay, $completionNote);

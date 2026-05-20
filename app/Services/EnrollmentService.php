@@ -192,8 +192,9 @@ class EnrollmentService
 
         $schedules   = $data['schedules'] ?? [];
         $therapistId = (int) $data['therapist_id'];
-
-        $childId = (int) $data['child_id'];
+        $childId = isset($data['child_id'])
+            ? (int) $data['child_id']
+            : (isset($data['child_ids'][0]) ? (int) $data['child_ids'][0] : (int) $enrollment->child_id);
 
         foreach ($schedules as $s) {
             if ($this->repository->therapistSlotOccupied($therapistId, (string) $s['day'], (string) $s['time_slot'], $enrollment->id)) {
@@ -248,7 +249,8 @@ class EnrollmentService
         $status = $isHighDiscount ? 'pending_super_admin_approval' : ($data['status'] ?? $enrollment->status);
 
         $enrollmentData = [
-            'child_id'             => $data['child_id'],
+            // Edit form now posts child_ids[]; keep existing child when not explicitly changed.
+            'child_id'             => $childId,
             'branch_id'            => $data['branch_id'],
             'service_id'           => $data['service_id'],
             'therapist_id'         => $data['therapist_id'],
