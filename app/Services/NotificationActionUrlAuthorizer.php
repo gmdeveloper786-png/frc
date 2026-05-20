@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Str;
 
 /**
  * Ensures notification action URLs stay on this app and match the user's role.
@@ -19,7 +18,7 @@ final class NotificationActionUrlAuthorizer
             return null;
         }
 
-        if (Str::startsWith($url, '/')) {
+        if (str_starts_with($url, '/')) {
             $path = $url;
             $absolute = rtrim((string) config('app.url'), '/') . $path;
         } else {
@@ -27,16 +26,10 @@ final class NotificationActionUrlAuthorizer
             if ($parts === false || empty($parts['scheme']) || empty($parts['host'])) {
                 return null;
             }
-            $appParts = parse_url((string) config('app.url'));
-            if ($appParts === false || empty($appParts['host'])) {
-                return null;
-            }
-            if (! $this->hostsAreSameApp((string) $parts['host'], (string) $appParts['host'])) {
-                return null;
-            }
-            $path = $parts['path'] ?? '/';
-            if (isset($parts['query'])) {
-                $path .= '?' . $parts['query'];
+            $path = (string) (parse_url($url, PHP_URL_PATH) ?? '/');
+            $query = parse_url($url, PHP_URL_QUERY);
+            if (is_string($query) && $query !== '') {
+                $path .= '?' . $query;
             }
             $absolute = rtrim((string) config('app.url'), '/') . $path;
         }
@@ -96,25 +89,4 @@ final class NotificationActionUrlAuthorizer
         return $user->isSuperAdmin() || $user->isAdmin() || $user->isFinance() || $user->isTherapist();
     }
 
-    /**
-     * Same hostname, or both are local dev loopback names (localhost vs 127.0.0.1 mismatch).
-     */
-    private function hostsAreSameApp(string $urlHost, string $appHost): bool
-    {
-        if (strcasecmp($urlHost, $appHost) === 0) {
-            return true;
-        }
-
-        return $this->isLoopbackHost($urlHost) && $this->isLoopbackHost($appHost);
-    }
-
-    private function isLoopbackHost(string $host): bool
-    {
-        $h = strtolower(trim($host));
-
-        return $h === 'localhost'
-            || $h === '127.0.0.1'
-            || $h === '[::1]'
-            || $h === '::1';
-    }
 }
