@@ -1805,6 +1805,18 @@ body.sidebar-mobile-open {
     flex-shrink: 0;
     gap: 10px;
   }
+  /* Notification inbox: anchor to viewport (Popper can misalign on narrow topbar) */
+  .frc-topbar .frc-notif-dropdown .frc-notif-menu.dropdown-menu {
+    position: fixed !important;
+    top: 70px !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
   .frc-main {
     margin-left: 0;
     margin-top: 72px;

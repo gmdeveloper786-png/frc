@@ -91,14 +91,14 @@
             $bellUnread = $inboxSvc->getUnreadCount((int) auth()->id());
             $bellLatest = $inboxSvc->getLatestNotifications((int) auth()->id(), 5);
         @endphp
-        <div class="dropdown">
+        <div class="dropdown frc-notif-dropdown">
             <button type="button" class="notif-bell dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open notifications">
                 <i class="fa-regular fa-bell" aria-hidden="true"></i>
                 @if($bellUnread > 0)
                     <span class="badge-dot" aria-hidden="true">{{ $bellUnread > 9 ? '9+' : $bellUnread }}</span>
                 @endif
             </button>
-            <div class="dropdown-menu dropdown-menu-end frc-notif-menu" role="presentation">
+            <div class="dropdown-menu dropdown-menu-end frc-notif-menu" data-bs-popper="static" role="presentation">
                 <div class="frc-notif-menu-header">
                     <div class="frc-notif-menu-title" role="heading" aria-level="2">Notifications</div>
                     @if($bellUnread > 0)
