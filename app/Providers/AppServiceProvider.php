@@ -17,7 +17,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Ensure global helpers (frc_pkr, etc.) load even if Composer's "files" autoload
+        // was not regenerated on the server after deploy (common on shared hosting).
+        $helpers = app_path('helpers.php');
+        if (is_file($helpers)) {
+            require_once $helpers;
+        }
     }
 
     /**
