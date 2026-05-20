@@ -72,7 +72,17 @@
         <button type="button" class="btn-outline-teal d-md-none" id="sidebarToggle" style="padding:6px 10px;font-size:18px;" aria-label="Open menu" aria-expanded="false">
             <i class="fa-solid fa-bars" id="sidebarToggleIcon"></i>
         </button>
-        <span class="page-title">@yield('page-title', 'Dashboard')</span>
+        @php
+            $headerUser = auth()->user();
+            $onDashboard = request()->routeIs('dashboard.*');
+        @endphp
+        <span class="page-title">
+            @if($onDashboard && $headerUser)
+                {{ $headerUser->full_name }}
+            @else
+                @yield('page-title', 'Dashboard')
+            @endif
+        </span>
     </div>
     <div class="topbar-right">
         {{-- Notifications (inbox: user_notifications) --}}
