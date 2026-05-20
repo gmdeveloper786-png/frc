@@ -81,7 +81,7 @@
                     <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Discount reason</td><td style="padding:6px 0;">{{ filled($enrollment->discount_reason) ? $enrollment->discount_reason : '—' }}</td></tr>
                     <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Supporting file</td><td style="padding:6px 0;">
                         @if($enrollment->discount_file)
-                            <a href="{{ asset('storage/' . $enrollment->discount_file) }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-file"></i> View file</a>
+                            <a href="{{ frc_storage_url($enrollment->discount_file) }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-file"></i> View file</a>
                         @else
                             <span class="text-muted">—</span>
                         @endif
@@ -101,7 +101,7 @@
         @elseif($enrollment->discount_file)
             <div class="card-frc mb-3">
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:8px;">Discount support document</h6>
-                <a href="{{ asset('storage/' . $enrollment->discount_file) }}" target="_blank" class="btn-outline-teal">
+                <a href="{{ frc_storage_url($enrollment->discount_file) }}" target="_blank" class="btn-outline-teal">
                     <i class="fa-solid fa-file"></i> View document
                 </a>
                 @if($enrollment->discount_reason)

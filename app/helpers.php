@@ -30,6 +30,23 @@ if (! function_exists('frc_money_input')) {
     }
 }
 
+if (! function_exists('frc_storage_url')) {
+    /**
+     * Public URL for files on the "public" disk (storage/app/public).
+     * Served by PublicStorageController when symlink is unavailable on the server.
+     */
+    function frc_storage_url(?string $relativePath): ?string
+    {
+        if ($relativePath === null || trim($relativePath) === '') {
+            return null;
+        }
+
+        $path = ltrim(str_replace('\\', '/', $relativePath), '/');
+
+        return url('/storage/' . $path);
+    }
+}
+
 if (! function_exists('frc_datetime')) {
     /** Display date/time in app timezone with 12-hour clock and AM/PM. */
     function frc_datetime(\DateTimeInterface|string|null $value = null): string

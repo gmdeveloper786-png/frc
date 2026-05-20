@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Uploaded files: route through Laravel when symlink() is disabled (shared hosting)
+    RewriteRule ^storage/(.*)$ index.php [L,QSA]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

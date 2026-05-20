@@ -28,8 +28,14 @@ use App\Http\Controllers\Web\TherapistChildController;
 use App\Http\Controllers\Web\TherapistController;
 use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\TherapistProfileWebController;
+use App\Http\Controllers\Web\PublicStorageController;
 use App\Http\Controllers\Web\TherapistSessionController;
 use Illuminate\Support\Facades\Route;
+
+// Public uploads (no storage:link / symlink — works on shared hosting)
+Route::get('/storage/{path}', [PublicStorageController::class, 'show'])
+    ->where('path', '.+')
+    ->name('storage.public');
 
 // ── Guest routes ──────────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -239,7 +245,7 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::get('/children', [TherapistChildController::class, 'index'])->name('children.index');
         Route::get('/children/{child}', [TherapistChildController::class, 'show'])->name('children.show')->whereNumber('child');
 
-        Route::get('/notifications', fn () => redirect()->route('notifications.index'))->name('notifications.index');
+        Route::get('/notifications', fn() => redirect()->route('notifications.index'))->name('notifications.index');
 
         Route::get('/profile', [TherapistProfileWebController::class, 'show'])->name('profile');
         Route::put('/profile/password', [TherapistProfileWebController::class, 'updatePassword'])->name('profile.password');
@@ -257,7 +263,7 @@ Route::middleware(['auth', 'active_user'])->group(function () {
     // ── Authenticated child portal (`/my-*`, role child + approved_child) ───────
     // Keep separate from admin `ChildController` under `/children/*` — see controller docblocks.
     Route::middleware(['role:child', 'approved_child'])->group(function () {
-        Route::get('/my-assessments',      fn () => view('child.assessments', [
+        Route::get('/my-assessments',      fn() => view('child.assessments', [
             'assessments' => app(\App\Services\AssessmentService::class)->getForChild(auth()->id()),
         ]))->name('child.assessments');
 

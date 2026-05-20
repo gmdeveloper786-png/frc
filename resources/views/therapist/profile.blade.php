@@ -140,7 +140,7 @@
                     <ul class="mb-0 ps-3 small">
                         @foreach($tp->documents as $doc)
                             @if(is_string($doc))
-                                <li class="mb-1"><a href="{{ asset('storage/'.$doc) }}" target="_blank" rel="noopener">{{ basename($doc) }}</a></li>
+                                <li class="mb-1"><a href="{{ frc_storage_url($doc) }}" target="_blank" rel="noopener">{{ basename($doc) }}</a></li>
                             @endif
                         @endforeach
                     </ul>

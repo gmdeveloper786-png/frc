@@ -73,7 +73,7 @@ class Payment extends Model
 
     public function getPaymentSlipUrlAttribute(): ?string
     {
-        return $this->payment_slip ? asset('storage/' . $this->payment_slip) : null;
+        return frc_storage_url($this->payment_slip);
     }
 
     /** Human-readable payment channel (matches receipt / finance report wording). */

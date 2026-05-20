@@ -153,7 +153,7 @@
                             </td>
                             <td>
                                 @if($e->discount_file)
-                                    <a href="{{ asset('storage/' . $e->discount_file) }}" target="_blank" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;">
+                                    <a href="{{ frc_storage_url($e->discount_file) }}" target="_blank" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;">
                                         <i class="fa-solid fa-file"></i> View
                                     </a>
                                 @else

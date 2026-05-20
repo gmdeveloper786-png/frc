@@ -39,7 +39,8 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // Served via routes/web.php → PublicStorageController (no symlink required).
+            'url' => rtrim((string) env('APP_URL', ''), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -60,12 +61,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Symbolic Links
+    | Symbolic Links (optional — not required for this app)
     |--------------------------------------------------------------------------
     |
-    | Here you may configure the symbolic links that will be created when the
-    | `storage:link` Artisan command is executed. The array keys should be
-    | the locations of the links and the values should be their targets.
+    | Uploads are served by PublicStorageController at /storage/{path}.
+    | You do not need to run `php artisan storage:link` on production.
     |
     */
 

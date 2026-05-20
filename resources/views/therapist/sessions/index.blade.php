@@ -129,7 +129,12 @@
                             <td style="white-space:nowrap;">{{ $row['time_slot'] }}</td>
                             <td style="white-space:normal;max-width:360px;line-height:1.45;">
                                 @if($isGroupRow)
-                                    @foreach($groupMembers as $idx => $member)
+                                    @php
+                                        $gmList = is_array($groupMembers) ? $groupMembers : collect($groupMembers)->all();
+                                        $gmShown = array_slice($gmList, 0, 1);
+                                        $gmExtra = count($gmList) - count($gmShown);
+                                    @endphp
+                                    @foreach($gmShown as $idx => $member)
                                         @if($idx > 0)<span class="text-muted">, </span>@endif
                                         @if((int) ($member['child_id'] ?? 0) > 0)
                                             <a href="{{ route('therapist.children.show', $member['child_id']) }}" style="color:var(--navy);text-decoration:underline;">{{ $member['child_name'] }}</a>
@@ -137,6 +142,9 @@
                                             {{ $member['child_name'] }}
                                         @endif
                                     @endforeach
+                                    @if($gmExtra > 0)
+                                        <span class="text-muted">, +{{ $gmExtra }} more</span>
+                                    @endif
                                     <span class="badge-status badge-draft" style="font-size:10px;margin-left:6px;vertical-align:middle;">Group</span>
                                 @elseif($cid)
                                     <a href="{{ route('therapist.children.show', $cid) }}" style="color:var(--navy);text-decoration:underline;">{{ $row['child_name'] }}</a>
