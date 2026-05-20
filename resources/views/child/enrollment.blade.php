@@ -38,12 +38,12 @@
                     <div class="text-md-end flex-shrink-0 pt-1" style="min-width:132px;">
                         @if($out > 0)
                             <div class="text-muted small mb-0" style="font-size:11px;">Remaining</div>
-                            <div style="font-weight:700;font-size:18px;color:var(--danger);">PKR {{ number_format($out, 2) }}</div>
+                            <div style="font-weight:700;font-size:18px;color:var(--danger);">PKR {{ frc_money($out) }}</div>
                             <span class="badge-status badge-{{ $payEff }} text-danger">{{
                                 \App\Models\Payment::labelForEnrollmentPaymentStatus($payEff) }}</span>
                         @else
                             <div class="text-muted small mb-0" style="font-size:11px;">Programme fee</div>
-                            <div style="font-weight:700;font-size:18px;color:var(--success);">PKR {{ number_format($final, 2) }}</div>
+                            <div style="font-weight:700;font-size:18px;color:var(--success);">PKR {{ frc_money($final) }}</div>
                             <span class="badge-status badge-{{ $payEff }} text-success">{{
                                 \App\Models\Payment::labelForEnrollmentPaymentStatus($payEff) }}</span>
                         @endif

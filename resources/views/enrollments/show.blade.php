@@ -20,21 +20,36 @@
 
 <div class="row g-3 enrollment-show-page">
     <div class="col-12 col-md-5">
+        @if($enrollment->isGroupEnrollment())
+            @php $groupMembers = $enrollment->groupMembers(); @endphp
+            <div class="card-frc mb-3">
+                <h6 class="enrollment-show-card-title"><i class="fa-solid fa-people-group me-2" style="color:var(--teal);"></i> Group members ({{ $enrollment->groupSize() }})</h6>
+                <ul class="mb-0 ps-3" style="font-size:14px;">
+                    <li style="margin-bottom:6px;"><strong>{{ $enrollment->child?->full_name }}</strong> <span class="text-muted">(this enrollment)</span></li>
+                    @foreach($groupMembers as $member)
+                        <li style="margin-bottom:6px;">
+                            <a href="{{ route('enrollments.show', $member->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $member->child?->full_name }}</a>
+                            <span class="text-muted small"> · #{{ $member->id }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <div class="card-frc mb-3">
             <h6 class="enrollment-show-card-title">Enrollment Summary</h6>
             <table class="enrollment-detail-kv enrollment-detail-kv--summary">
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Child</td><td style="font-weight:500;"><a href="{{ route('children.show', $enrollment->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $enrollment->child?->full_name }}</a></td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Child</td><td style="font-weight:500;"><a href="{{ route('children.show', $enrollment->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $enrollment->child?->full_name }}</a>@if($enrollment->child?->gr_number)<span style="display:block;font-size:12px;color:var(--text-muted);font-family:monospace;">{{ $enrollment->child->gr_number }}</span>@endif</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Branch</td><td>{{ $enrollment->branch?->name }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Service</td><td>{{ $enrollment->service?->name ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Therapist</td><td>{{ $enrollment->therapist?->full_name }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">First session</td><td style="font-weight:500;">{{ $enrollment->schedule_start_date?->format('d M Y') ?? $enrollment->created_at?->format('d M Y') }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Price/Session</td><td>PKR {{ number_format($enrollment->price_per_session) }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Price/Session</td><td>{{ frc_pkr($enrollment->price_per_session) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Sessions</td><td>{{ $enrollment->total_sessions }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Fee Before Discount / Subtotal</td><td>PKR {{ number_format($enrollment->subtotal) }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Discount Amount</td><td>{{ $enrollment->discount_percentage }}% (PKR {{ number_format($enrollment->discount_amount) }})</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Final Payable Amount</td><td style="font-weight:700;color:var(--navy);">PKR {{ number_format($enrollment->final_total) }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Paid</td><td style="color:var(--success);font-weight:600;">PKR {{ number_format($enrollment->paid_amount) }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Remaining</td><td style="color:var(--danger);font-weight:600;">PKR {{ number_format($enrollment->remaining_amount) }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Fee Before Discount / Subtotal</td><td>{{ frc_pkr($enrollment->subtotal) }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Discount Amount</td><td>{{ frc_percent($enrollment->discount_percentage) }}% ({{ frc_pkr($enrollment->discount_amount) }})</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Final Payable Amount</td><td style="font-weight:700;color:var(--navy);">{{ frc_pkr($enrollment->final_total) }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Paid</td><td style="color:var(--success);font-weight:600;">{{ frc_pkr($enrollment->paid_amount) }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Remaining</td><td style="color:var(--danger);font-weight:600;">{{ frc_pkr($enrollment->remaining_amount) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Status</td><td><span class="badge-status badge-{{ $enrollment->status }}">{{ ucfirst(str_replace('_',' ',$enrollment->status)) }}</span></td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Payment</td><td><span class="badge-status badge-{{ $enrollment->payment_status }}">{{ ucfirst(str_replace('_',' ',$enrollment->payment_status)) }}</span></td></tr>
             </table>
@@ -46,8 +61,6 @@
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Enrollment ID</td><td style="font-weight:600;">#{{ $enrollment->id }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Created by</td><td>{{ $enrollment->createdBy?->full_name ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Created at</td><td>{{ $enrollment->created_at?->format('d M Y H:i') ?? '—' }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Approved by</td><td>{{ $enrollment->approvedBy?->full_name ?? '—' }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:6px 0;">Approved at</td><td>{{ $enrollment->approved_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Last updated by</td><td>{{ $enrollment->updatedBy?->full_name ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Last updated at</td><td>{{ $enrollment->updated_at?->format('d M Y H:i') ?? '—' }}</td></tr>
             </table>
@@ -140,7 +153,7 @@
             @else
                 <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
                     <table class="table-frc mb-0">
-                        <thead><tr><th>Day</th><th>Time slot</th><th>Therapist</th><th>Service</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Day</th><th>Time slot</th><th>Therapist</th><th>Service</th></tr></thead>
                         <tbody>
                             @foreach($enrollment->schedules as $s)
                                 @php
@@ -157,7 +170,6 @@
                                         @endif
                                     </td>
                                     <td class="text-nowrap">{{ $enrollment->service?->name ?? '—' }}</td>
-                                    <td class="text-nowrap"><span class="badge-status badge-{{ $s->status == 'scheduled' ? 'active' : $s->status }}">{{ ucfirst(str_replace('_',' ', $s->status)) }}</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -194,7 +206,7 @@
                             @foreach($enrollment->payments as $p)
                                 <tr>
                                     <td class="child-payments-receipt">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
-                                    <td class="text-amount child-payments-amount">PKR {{ number_format($p->amount, 2) }}</td>
+                                    <td class="text-amount child-payments-amount">PKR {{ frc_money($p->amount) }}</td>
                                     <td class="child-payments-method">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method) }}</td>
                                     <td class="child-payments-date">{{ $p->payment_date?->format('d M Y') }}</td>
                                     <td class="child-payments-status"><span class="badge-status badge-{{ $p->status }}">{{ ucfirst(str_replace('_',' ',$p->status)) }}</span></td>

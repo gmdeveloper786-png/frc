@@ -63,7 +63,7 @@
     <form method="GET" class="list-filters row g-2 align-items-end form-frc">
         <div class="col-12 col-md-4">
             <label>Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Name, email, phone...">
+            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="GR number, name, email, phone...">
         </div>
         <div class="col-12 col-sm-6 col-md-3">
             <label>Status</label>
@@ -104,13 +104,13 @@
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
-                        <th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th><th>Registered</th><th>Actions</th>
+                        <th>GR No.</th><th>Name</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th><th>Registered</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($children as $child)
                         <tr>
-                            <td style="color:var(--text-muted);">{{ $children->firstItem() + $loop->index }}</td>
+                            <td style="font-size:13px;font-family:monospace;white-space:nowrap;">{{ $child->gr_number ?? '—' }}</td>
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">
                                 {{ $child->full_name ?? '—' }}
                             </td>

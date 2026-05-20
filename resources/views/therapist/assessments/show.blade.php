@@ -13,7 +13,18 @@
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Time</td><td>{{ \Carbon\Carbon::parse($assessment->time)->format('h:i A') }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Branch</td><td>{{ $assessment->branch?->name ?? '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span></td></tr>
+                @if($assessment->status === 'completed')
+                    <tr><td style="color:var(--text-muted);padding:7px 0;">Completed</td><td>{{ $assessment->completed_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                    @if($assessment->completedBy)
+                        <tr><td style="color:var(--text-muted);padding:7px 0;">Completed by</td><td>{{ $assessment->completedBy->full_name }}</td></tr>
+                    @endif
+                @endif
             </table>
+            @if($assessment->status === 'completed' && $assessment->assessment_notes)
+                <hr style="border-color:var(--border-soft);">
+                <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:8px;">Completion notes</h6>
+                <p style="font-size:14px;color:var(--text-muted);white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%;">{{ $assessment->assessment_notes }}</p>
+            @endif
             @if($assessment->status === 'cancelled')
                 <hr style="border-color:var(--border-soft);">
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:8px;">Cancellation</h6>

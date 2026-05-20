@@ -104,8 +104,6 @@ Route::middleware(['auth:sanctum', 'active_user', 'approved_child', 'throttle:60
         Route::post('sessions/{schedule}/complete', [TherapistPortalApiController::class, 'sessionComplete']);
         Route::post('sessions/{schedule}/cancel', [TherapistPortalApiController::class, 'sessionCancel']);
         Route::post('sessions/{schedule}/no-show', [TherapistPortalApiController::class, 'sessionNoShow']);
-        Route::post('progress-notes', [TherapistPortalApiController::class, 'storeProgressNote']);
-        Route::get('progress-notes', [TherapistPortalApiController::class, 'indexProgressNotes']);
         Route::get('profile', [TherapistPortalApiController::class, 'profile']);
     });
 

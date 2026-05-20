@@ -121,7 +121,7 @@ class ChildScheduleService
      */
     public function getExpandedOccurrences(int $childId): Collection
     {
-        $enrollments = Enrollment::with(['schedules.therapist', 'schedules.branch', 'branch', 'service', 'therapist'])
+        $enrollments = Enrollment::query()
             ->where('child_id', $childId)
             ->visibleToChild()
             ->latest()
@@ -130,7 +130,7 @@ class ChildScheduleService
         $out = collect();
 
         foreach ($enrollments as $enrollment) {
-            $out = $out->concat($this->expandEnrollmentSchedules($enrollment));
+            $out = $out->concat($this->getExpandedOccurrencesForEnrollmentId((int) $enrollment->id));
         }
 
         return $out;
@@ -217,7 +217,7 @@ class ChildScheduleService
                 $occurrence = $occurrencesBySchedule
                     ->get($schedule->id, collect())
                     ->first(fn (\App\Models\EnrollmentScheduleOccurrence $o): bool => $o->occurrence_date->isSameDay($sessionDate));
-                $status = $occurrence?->status ?? 'scheduled';
+                $status = $this->occurrenceState->resolveRecurringOccurrenceStatus($schedule, $sessionDate, $occurrence);
             } else {
                 $status = $this->occurrenceState->effectiveStatus($schedule, $sessionDate);
             }

@@ -28,7 +28,6 @@ use App\Http\Controllers\Web\TherapistChildController;
 use App\Http\Controllers\Web\TherapistController;
 use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\TherapistProfileWebController;
-use App\Http\Controllers\Web\TherapistProgressNoteController;
 use App\Http\Controllers\Web\TherapistSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -224,6 +223,10 @@ Route::middleware(['auth', 'active_user'])->group(function () {
             return redirect()->route('therapist.sessions.index', $request->query());
         })->name('schedule');
         Route::get('/sessions', [TherapistSessionController::class, 'index'])->name('sessions.index');
+        Route::get('/sessions/{schedule}/group', [TherapistSessionController::class, 'showGroupOccurrence'])->name('sessions.group-show');
+        Route::post('/sessions/{schedule}/group/start', [TherapistSessionController::class, 'startGroup'])->name('sessions.group-start');
+        Route::post('/sessions/{schedule}/group/complete', [TherapistSessionController::class, 'completeGroup'])->name('sessions.group-complete');
+        Route::post('/sessions/{schedule}/group/cancel', [TherapistSessionController::class, 'cancelGroup'])->name('sessions.group-cancel');
         Route::get('/sessions/{schedule}/show', [TherapistSessionController::class, 'showOccurrence'])->name('sessions.show');
         Route::get('/sessions/{schedule}/occurrence-detail', [TherapistSessionController::class, 'occurrenceDetail'])->name('sessions.occurrence-detail');
 
@@ -235,15 +238,6 @@ Route::middleware(['auth', 'active_user'])->group(function () {
 
         Route::get('/children', [TherapistChildController::class, 'index'])->name('children.index');
         Route::get('/children/{child}', [TherapistChildController::class, 'show'])->name('children.show')->whereNumber('child');
-
-        Route::get('/progress-notes', [TherapistProgressNoteController::class, 'index'])->name('progress-notes.index');
-        Route::get('/progress-notes/create', [TherapistProgressNoteController::class, 'create'])->name('progress-notes.create');
-        Route::get('/progress-notes/pending', [TherapistProgressNoteController::class, 'pending'])->name('progress-notes.pending');
-        Route::post('/progress-notes', [TherapistProgressNoteController::class, 'store'])->name('progress-notes.store');
-        Route::get('/progress-notes/{progressNote}', [TherapistProgressNoteController::class, 'show'])->name('progress-notes.show');
-        Route::get('/progress-notes/{progressNote}/edit', [TherapistProgressNoteController::class, 'edit'])->name('progress-notes.edit');
-        Route::put('/progress-notes/{progressNote}', [TherapistProgressNoteController::class, 'update'])->name('progress-notes.update');
-        Route::delete('/progress-notes/{progressNote}', [TherapistProgressNoteController::class, 'destroy'])->name('progress-notes.destroy');
 
         Route::get('/notifications', fn () => redirect()->route('notifications.index'))->name('notifications.index');
 

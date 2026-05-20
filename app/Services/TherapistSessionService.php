@@ -45,17 +45,14 @@ class TherapistSessionService
             'Only scheduled sessions can be started.',
         );
 
-        $timeSlot = (string) $schedule->time_slot;
-        if (! SessionTimeSlotParser::isWithinStartWindow($sessionDay, $timeSlot)) {
-            $startsAt = SessionTimeSlotParser::occurrenceStart($sessionDay, $timeSlot);
-            $endsAt = SessionTimeSlotParser::occurrenceEnd($sessionDay, $timeSlot);
-            if (now()->lt($startsAt)) {
+        if (! SessionTimeSlotParser::isSessionDayToday($sessionDay)) {
+            if (SessionTimeSlotParser::isSessionDayPast($sessionDay)) {
                 throw ValidationException::withMessages([
-                    'session_date' => ['You can start this session only at or after its scheduled date and start time.'],
+                    'session_date' => ['This session date has passed. You can no longer start it.'],
                 ]);
             }
             throw ValidationException::withMessages([
-                'session_date' => ['The scheduled time for this session has passed. You can no longer start it.'],
+                'session_date' => ['You can start this session only on its scheduled date.'],
             ]);
         }
 
@@ -79,6 +76,84 @@ class TherapistSessionService
         }
 
         return $schedule->fresh(['startedBy', 'completedBy', 'cancelledBy']);
+    }
+
+    /**
+     * Start every child’s schedule in the same group slot for this calendar occurrence.
+     *
+     * @throws ValidationException if any member is not in scheduled state for this date
+     */
+    public function startGroupSessions(User $therapist, EnrollmentSchedule $anchor, string $sessionDateIso): int
+    {
+        $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
+        $schedules  = $this->portal->groupSchedulesMatchingAnchorSlot($anchor);
+
+        foreach ($schedules as $schedule) {
+            if ($this->occurrenceState->effectiveStatus($schedule, $sessionDay) !== 'scheduled') {
+                throw ValidationException::withMessages([
+                    'session_date' => ['Every child in this group must be in “scheduled” status to start together.'],
+                ]);
+            }
+        }
+
+        $count = 0;
+        foreach ($schedules as $schedule) {
+            $this->startSession($therapist, $schedule, $sessionDateIso);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Complete all in-progress group members for this occurrence (shared completion note).
+     */
+    public function completeGroupSessions(User $therapist, EnrollmentSchedule $anchor, string $sessionDateIso, ?string $completionNote = null): int
+    {
+        $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
+        $schedules  = $this->portal->groupSchedulesMatchingAnchorSlot($anchor);
+
+        foreach ($schedules as $schedule) {
+            if ($this->occurrenceState->effectiveStatus($schedule, $sessionDay) !== 'in_progress') {
+                throw ValidationException::withMessages([
+                    'session_date' => ['Every child in this group must be “in progress” to complete together.'],
+                ]);
+            }
+        }
+
+        $count = 0;
+        foreach ($schedules as $schedule) {
+            $this->completeSession($therapist, $schedule, $sessionDateIso, $completionNote);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Cancel every scheduled or in-progress group member for this occurrence (shared reason).
+     */
+    public function cancelGroupSessions(User $therapist, EnrollmentSchedule $anchor, string $sessionDateIso, string $cancellationReason): int
+    {
+        $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
+        $schedules  = $this->portal->groupSchedulesMatchingAnchorSlot($anchor);
+
+        foreach ($schedules as $schedule) {
+            $st = $this->occurrenceState->effectiveStatus($schedule, $sessionDay);
+            if (! in_array($st, ['scheduled', 'in_progress'], true)) {
+                throw ValidationException::withMessages([
+                    'session_date' => ['One or more children in this group are not in a state that can be cancelled together.'],
+                ]);
+            }
+        }
+
+        $count = 0;
+        foreach ($schedules as $schedule) {
+            $this->cancelSession($therapist, $schedule, $sessionDateIso, $cancellationReason);
+            $count++;
+        }
+
+        return $count;
     }
 
     public function completeSession(User $therapist, EnrollmentSchedule $schedule, string $sessionDateIso, ?string $completionNote = null): EnrollmentSchedule
@@ -126,24 +201,55 @@ class TherapistSessionService
             $this->notificationService->notifySessionCompleted($schedule, $schedule->enrollment->child);
         }
 
-        $this->portal->forgetPendingDocumentationCache((int) $therapist->id);
-
         return $schedule->fresh(['startedBy', 'completedBy', 'cancelledBy']);
     }
 
-    public function cancelSession(User $therapist, EnrollmentSchedule $schedule, string $cancellationReason): EnrollmentSchedule
-    {
+    public function cancelSession(
+        User $therapist,
+        EnrollmentSchedule $schedule,
+        string $sessionDateIso,
+        string $cancellationReason,
+    ): EnrollmentSchedule {
         $this->authorize($therapist, $schedule);
-        abort_unless(! in_array($schedule->status, ['completed', 'cancelled', 'no_show'], true), 403);
 
-        DB::transaction(function () use ($schedule, $therapist, $cancellationReason): void {
-            $schedule->update([
-                'status'               => 'cancelled',
-                'cancelled_at'         => now(),
-                'cancelled_by'         => $therapist->id,
-                'cancellation_reason'  => $cancellationReason,
+        $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
+
+        if (! $this->portal->therapistOwnsScheduleOccurrence((int) $therapist->id, $schedule, $sessionDay->toDateString())) {
+            throw ValidationException::withMessages([
+                'session_date' => ['This session date does not match this appointment.'],
             ]);
-        });
+        }
+
+        $currentStatus = $this->occurrenceState->effectiveStatus($schedule, $sessionDay);
+        abort_unless(
+            in_array($currentStatus, ['scheduled', 'in_progress'], true),
+            403,
+            'Only scheduled or in-progress sessions can be cancelled.',
+        );
+
+        if ($this->occurrenceState->isRecurringTemplate($schedule)) {
+            DB::transaction(function () use ($schedule, $therapist, $sessionDay, $cancellationReason): void {
+                $this->occurrenceState->cancelOccurrence($therapist, $schedule, $sessionDay, $cancellationReason);
+                $this->resetRecurringTemplateLifecycleFields($schedule);
+            });
+        } else {
+            if ($schedule->session_date !== null) {
+                abort_unless(
+                    Carbon::parse($schedule->session_date)->startOfDay()->isSameDay($sessionDay),
+                    403,
+                    'This session date does not match this appointment.',
+                );
+            }
+
+            DB::transaction(function () use ($schedule, $therapist, $cancellationReason): void {
+                $schedule->update([
+                    'status'              => 'cancelled',
+                    'cancelled_at'        => now(),
+                    'cancelled_by'        => $therapist->id,
+                    'cancellation_reason' => $cancellationReason,
+                ]);
+            });
+        }
 
         $schedule->loadMissing('enrollment.child');
         if ($schedule->enrollment?->child) {
@@ -153,17 +259,70 @@ class TherapistSessionService
         return $schedule->fresh(['startedBy', 'completedBy', 'cancelledBy']);
     }
 
-    public function markNoShow(User $therapist, EnrollmentSchedule $schedule, ?string $notes = null): EnrollmentSchedule
+    /** Recurring weekly rows must stay "scheduled"; lifecycle lives on occurrence rows. */
+    private function resetRecurringTemplateLifecycleFields(EnrollmentSchedule $schedule): void
     {
-        $this->authorize($therapist, $schedule);
-        abort_unless(! in_array($schedule->status, ['completed', 'cancelled', 'no_show'], true), 403);
+        if (! $this->occurrenceState->isRecurringTemplate($schedule)) {
+            return;
+        }
 
-        DB::transaction(function () use ($schedule, $notes): void {
-            $schedule->update([
-                'status'        => 'no_show',
-                'session_notes' => $notes ?? $schedule->session_notes,
+        $schedule->update([
+            'status'              => 'scheduled',
+            'started_at'          => null,
+            'started_by'          => null,
+            'completed_at'        => null,
+            'completed_by'        => null,
+            'completion_note'     => null,
+            'cancelled_at'        => null,
+            'cancelled_by'        => null,
+            'cancellation_reason' => null,
+            'session_notes'       => null,
+        ]);
+    }
+
+    public function markNoShow(
+        User $therapist,
+        EnrollmentSchedule $schedule,
+        string $sessionDateIso,
+        ?string $notes = null,
+    ): EnrollmentSchedule {
+        $this->authorize($therapist, $schedule);
+
+        $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
+
+        if (! $this->portal->therapistOwnsScheduleOccurrence((int) $therapist->id, $schedule, $sessionDay->toDateString())) {
+            throw ValidationException::withMessages([
+                'session_date' => ['This session date does not match this appointment.'],
             ]);
-        });
+        }
+
+        $currentStatus = $this->occurrenceState->effectiveStatus($schedule, $sessionDay);
+        abort_unless(
+            in_array($currentStatus, ['scheduled', 'in_progress'], true),
+            403,
+            'Only scheduled or in-progress sessions can be marked no-show.',
+        );
+
+        if ($this->occurrenceState->isRecurringTemplate($schedule)) {
+            DB::transaction(function () use ($schedule, $sessionDay, $notes): void {
+                $this->occurrenceState->markNoShowOccurrence($schedule, $sessionDay, $notes);
+                $this->resetRecurringTemplateLifecycleFields($schedule);
+            });
+        } else {
+            if ($schedule->session_date !== null) {
+                abort_unless(
+                    Carbon::parse($schedule->session_date)->startOfDay()->isSameDay($sessionDay),
+                    403,
+                );
+            }
+
+            DB::transaction(function () use ($schedule, $notes): void {
+                $schedule->update([
+                    'status'        => 'no_show',
+                    'session_notes' => $notes ?? $schedule->session_notes,
+                ]);
+            });
+        }
 
         return $schedule->fresh();
     }

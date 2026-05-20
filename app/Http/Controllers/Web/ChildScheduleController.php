@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\EnrollmentSchedule;
 use App\Services\ChildScheduleService;
+use App\Services\SessionOccurrenceStateService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,7 +17,10 @@ use Illuminate\View\View;
  */
 class ChildScheduleController extends Controller
 {
-    public function __construct(private readonly ChildScheduleService $scheduleService) {}
+    public function __construct(
+        private readonly ChildScheduleService $scheduleService,
+        private readonly SessionOccurrenceStateService $occurrenceState,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -39,6 +44,12 @@ class ChildScheduleController extends Controller
 
         $sessionDate = (string) $request->query('session_date', '');
         abort_if($sessionDate === '', 404);
+
+        $this->occurrenceState->repairLegacyTemplateOccurrence(
+            $schedule,
+            Carbon::parse($sessionDate)->startOfDay(),
+        );
+        $schedule->refresh();
 
         $detail = $this->scheduleService->getOccurrenceDetail($childId, $schedule->id, $sessionDate);
         abort_if($detail === null, 404);

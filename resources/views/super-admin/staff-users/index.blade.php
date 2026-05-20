@@ -58,9 +58,6 @@
 @endpush
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success border-0 mb-3" style="border-radius:10px;background:#e8f8ee;color:#1a7a3a;">{{ session('success') }}</div>
-@endif
 <div class="card-frc card-frc--list-page mb-3">
     <div class="card-header-frc">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-user-tie me-2" style="color:var(--teal);"></i>Admin &amp; Finance users</h6>

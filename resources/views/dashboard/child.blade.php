@@ -13,7 +13,7 @@
     $pendingOverdue = (float) ($summary['pending_overdue'] ?? 0);
     $canUploadSlip = (bool) ($stats['can_upload_fee_slip'] ?? false);
 
-    $formatPkr = fn (float $amount): string => 'PKR ' . number_format($amount, 2);
+    $formatPkr = fn (float $amount): string => 'PKR ' . frc_money($amount);
 
     $statCards = [
         [
@@ -134,7 +134,7 @@
                             <tbody>
                                 @foreach($stats['payments']->take(5) as $p)
                                     <tr>
-                                        <td style="font-weight:600;color:var(--teal);">PKR {{ number_format($p->amount ?? 0) }}</td>
+                                        <td style="font-weight:600;color:var(--teal);">{{ frc_pkr($p->amount ?? 0) }}</td>
                                         <td class="text-muted">{{ $p->payment_date?->format('d M Y') }}</td>
                                         <td>{{ $p->payment_method }}</td>
                                         <td><span class="badge-status badge-{{ $p->status }}">{{ \App\Models\Payment::labelForVerificationStatus($p->status ?? '') }}</span></td>

@@ -67,6 +67,7 @@ class TherapistAssessmentController extends Controller
             'branch',
             'services',
             'children.disabilities',
+            'completedBy',
             'cancelledBy',
             'assessmentNotes.therapist',
             'assessmentNotes.child',

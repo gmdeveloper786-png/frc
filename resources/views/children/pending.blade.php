@@ -78,12 +78,12 @@
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th>GR No.</th>
                         <th>Child Name</th>
                         <th>Father's Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Disabilities</th>
+                        <th>Age</th>
                         <th>Registered</th>
                         <th>Actions</th>
                     </tr>
@@ -91,17 +91,14 @@
                 <tbody>
                     @foreach($children as $child)
                         <tr>
-                            <td style="color:var(--text-muted);">{{ $children->firstItem() + $loop->index }}</td>
+                            <td style="font-size:13px;font-family:monospace;white-space:nowrap;">{{ $child->gr_number ?? '—' }}</td>
                             <td>
                                 <a href="{{ route('children.show', $child->id) }}" style="font-weight:600;color:var(--navy);">{{ $child->full_name }}</a>
-                                @if($child->age) <span style="font-size:12px;color:var(--text-muted);">({{ $child->age }}y)</span> @endif
                             </td>
                             <td>{{ $child->father_name ?? '—' }}</td>
                             <td style="font-size:13px;">{{ $child->email }}</td>
                             <td style="font-size:13px;">{{ $child->phone_number ?? '—' }}</td>
-                            <td style="font-size:12px;color:var(--text-muted);">
-                                {{ $child->disabilities->pluck('name')->join(', ') ?: '—' }}
-                            </td>
+                            <td style="font-size:13px;">{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td style="font-size:13px;color:var(--text-muted);">{{ $child->created_at->diffForHumans() }}</td>
                             <td>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">

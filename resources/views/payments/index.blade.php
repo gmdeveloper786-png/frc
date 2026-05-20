@@ -136,11 +136,11 @@
                                 <div style="font-weight:500;"><a href="{{ route('children.show', $p->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $p->child?->full_name }}</a></div>
                                 <div style="font-size:11px;color:var(--text-muted);">Enroll #{{ $p->enrollment_id }}</div>
                             </td>
-                            <td style="white-space:nowrap;">PKR {{ number_format($p->enrollment?->final_total) }}</td>
-                            <td style="color:var(--success); white-space:nowrap;">PKR {{ number_format($p->enrollment?->paid_amount) }}</td>
-                            <td style="color:var(--danger); white-space:nowrap;"> PKR {{ number_format($p->enrollment?->remaining_amount) }}</td>
+                            <td style="white-space:nowrap;">{{ frc_pkr($p->enrollment?->final_total) }}</td>
+                            <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($p->enrollment?->paid_amount) }}</td>
+                            <td style="color:var(--danger); white-space:nowrap;">{{ frc_pkr($p->enrollment?->remaining_amount) }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $p->enrollment?->payment_status }}">{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($p->enrollment?->payment_status) }}</span></td>
-                            <td class="text-amount" style="font-weight:600;color:var(--teal); white-space:nowrap;">PKR {{ number_format($p->amount) }}</td>
+                            <td class="text-amount" style="font-weight:600;color:var(--teal); white-space:nowrap;">{{ frc_pkr($p->amount) }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $p->status }}">{{ \App\Models\Payment::labelForVerificationStatus($p->status) }}</span></td>
                             <td style="font-size:13px; white-space:nowrap;">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method) }}</td>
                             <td style="font-size:13px;color:var(--text-muted); white-space:nowrap;">{{ $p->payment_date?->format('d M Y') }}</td>

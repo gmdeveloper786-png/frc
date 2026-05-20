@@ -131,8 +131,11 @@ async function loadScheduleOptions(opts = {}) {
             occParams.set('exclude_enrollment', String(excludeEnrollmentId));
         }
         const childEl = document.getElementById('childSelect') || document.querySelector('input[name="child_id"]');
-        if (childEl && childEl.value) {
-            occParams.set('child_id', String(childEl.value));
+        const firstChildHidden = document.querySelector('#enrollmentChildPickerHidden input[name="child_ids[]"]')
+            || document.querySelector('.approved-child-picker-hidden input[name="child_ids[]"]');
+        const childIdVal = (childEl && childEl.value) ? childEl.value : (firstChildHidden ? firstChildHidden.value : '');
+        if (childIdVal) {
+            occParams.set('child_id', String(childIdVal));
         }
         const occQuery = occParams.toString();
         const occUrl = `/ajax/therapists/${therapistId}/occupied-slots` + (occQuery ? `?${occQuery}` : '');
@@ -321,14 +324,20 @@ function recalculate() {
 
     const sessions = calculateTotalSessions(baseRows, repeat, dv, unit);
 
-    const subtotal = Math.round(price * sessions * 100) / 100;
-    const discAmt  = Math.round(subtotal * (discPct / 100) * 100) / 100;
-    const total    = Math.round((subtotal - discAmt) * 100) / 100;
+    const subtotal = Math.round(price * sessions);
+    const discAmt  = Math.round(subtotal * (discPct / 100));
+    const total    = Math.max(0, subtotal - discAmt);
 
     document.getElementById('calcSessions').textContent = sessions;
-    document.getElementById('calcSubtotal').textContent = subtotal.toLocaleString('en', { minimumFractionDigits: 2 });
-    document.getElementById('calcDiscount').textContent = discAmt.toLocaleString('en', { minimumFractionDigits: 2 });
-    document.getElementById('calcTotal').textContent    = total.toLocaleString('en', { minimumFractionDigits: 2 });
+    document.getElementById('calcSubtotal').textContent = formatMoneyAmount(subtotal);
+    document.getElementById('calcDiscount').textContent = formatMoneyAmount(discAmt);
+    document.getElementById('calcTotal').textContent    = formatMoneyAmount(total);
+}
+
+function formatMoneyAmount(amount) {
+    const value = Math.round(Number(amount) || 0);
+
+    return value.toLocaleString('en', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
 }
 
 function checkHighDiscount() {

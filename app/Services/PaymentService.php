@@ -74,7 +74,7 @@ class PaymentService
             throw ValidationException::withMessages(['payment_method' => ['Cash payment cannot be submitted by child.']]);
         }
 
-        $amount = Money::round($data['amount']);
+        $amount = (float) (int) Money::round($data['amount']);
         if ($amount <= 0) {
             throw ValidationException::withMessages(['amount' => ['Amount must be greater than 0.']]);
         }
@@ -130,7 +130,7 @@ class PaymentService
 
         $remaining = $enrollment->outstandingAmount();
         if ($amount > $remaining) {
-            throw ValidationException::withMessages(['amount' => ['Amount cannot exceed remaining fee of PKR ' . number_format($remaining, 2) . '.']]);
+            throw ValidationException::withMessages(['amount' => ['Amount cannot exceed remaining fee of ' . frc_pkr($remaining) . '.']]);
         }
 
         $receiptNumber = $this->paymentRepository->generateReceiptNumber();

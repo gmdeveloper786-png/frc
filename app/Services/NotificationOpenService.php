@@ -8,7 +8,6 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
 use App\Models\Payment;
-use App\Models\ProgressNote;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserNotification;
@@ -49,11 +48,9 @@ final class NotificationOpenService
         $recordId = $notification->record_id;
 
         if ($notification->type === UserNotification::TYPE_STAFF_ACCOUNT_CREATED) {
-            $routeName = $user->loadMissing('role')->dashboardRouteName();
+            $routeName = $user->loadMissing('role')->staffProfileRouteName();
             if ($routeName !== null) {
-                $relative = route($routeName, [], false);
-
-                return $this->redirectToAuthorizedRelative($request, $user, $relative);
+                return $this->redirectToAuthorizedRelative($request, $user, route($routeName, [], false));
             }
         }
 
@@ -85,7 +82,10 @@ final class NotificationOpenService
         if ($module === 'enrollments' && $recordId !== null && $recordId > 0 && $access === 'ok'
             && ($user->isSuperAdmin() || $user->isAdmin() || $user->isFinance())
             && ! $user->isChild()
-            && ($targetsChildEnrollmentPortal || (string) $notification->type === UserNotification::TYPE_FEE_FULLY_PAID)) {
+            && ($targetsChildEnrollmentPortal || in_array((string) $notification->type, [
+                UserNotification::TYPE_FEE_FULLY_PAID,
+                UserNotification::TYPE_ENROLLMENT_FEE_UPDATED,
+            ], true))) {
             $relative = $user->isFinance()
                 ? route('finance.payments', [], false)
                 : route('enrollments.show', $recordId, false);
@@ -206,7 +206,7 @@ final class NotificationOpenService
             'enrollments'     => $this->accessEnrollment($user, $recordId, $notification->type),
             'payments'        => $this->accessPayment($user, $recordId),
             'sessions'        => $this->accessSession($user, $recordId),
-            'progress_notes'  => $this->accessProgressNote($user, $recordId),
+            'progress_notes'  => 'missing',
             'children'        => $this->accessChildRecord($user, $recordId, $notification->type),
             default           => 'skip',
         };
@@ -265,6 +265,7 @@ final class NotificationOpenService
         if ($user->isFinance()) {
             $financeTypes = [
                 UserNotification::TYPE_FEE_FULLY_PAID,
+                UserNotification::TYPE_ENROLLMENT_FEE_UPDATED,
             ];
             if (in_array($type, $financeTypes, true)) {
                 return 'ok';
@@ -342,29 +343,6 @@ final class NotificationOpenService
             }
 
             return (int) $enrollment->child_id === (int) $user->id ? 'ok' : 'unauthorized';
-        }
-
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return 'ok';
-        }
-
-        return 'unauthorized';
-    }
-
-    /** @return 'ok'|'missing'|'unauthorized' */
-    private function accessProgressNote(User $user, int $noteId): string
-    {
-        $note = ProgressNote::query()->find($noteId);
-        if ($note === null) {
-            return 'missing';
-        }
-
-        if ($user->isFinance() || $user->isChild()) {
-            return 'unauthorized';
-        }
-
-        if ($user->isTherapist()) {
-            return (int) $note->therapist_id === (int) $user->id ? 'ok' : 'unauthorized';
         }
 
         if ($user->isSuperAdmin() || $user->isAdmin()) {

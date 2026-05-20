@@ -10,7 +10,8 @@ class EnrollmentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                 => $this->id,
+            'id'                   => $this->id,
+            'enrollment_group_id'  => $this->enrollment_group_id,
             'child'              => $this->whenLoaded('child', fn () => [
                 'id'        => $this->child->id,
                 'full_name' => $this->child->full_name,

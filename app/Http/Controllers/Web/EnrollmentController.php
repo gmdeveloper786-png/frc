@@ -55,24 +55,30 @@ class EnrollmentController extends Controller
     {
         $branches = Branch::published()->orderBy('name')->get();
         $services = Service::published()->orderBy('name')->get();
-        $initialChildren = $this->userRepository->getApprovedChildrenByIds(array_filter([
-            (int) old('child_id', 0),
-            (int) request()->query('child_id', 0),
-        ]));
+        $childIds = array_map('intval', (array) old('child_ids', []));
+        if ($childIds === [] && request()->filled('child_id')) {
+            $childIds = [(int) request()->query('child_id')];
+        }
+        $initialChildren = $this->userRepository->getApprovedChildrenByIds(array_filter($childIds));
 
         return view('enrollments.create', compact('branches', 'services', 'initialChildren'));
     }
 
     public function store(StoreEnrollmentRequest $request): RedirectResponse
     {
-        $enrollment = $this->service->create(
+        $enrollments = $this->service->createEnrollments(
             $request->validated(),
             $request->user()->id,
             $request->file('discount_file'),
         );
 
-        return redirect()->route('enrollments.show', $enrollment)
-            ->with('success', 'Enrollment created successfully.');
+        if (count($enrollments) === 1) {
+            return redirect()->route('enrollments.show', $enrollments[0])
+                ->with('success', 'Enrollment created successfully.');
+        }
+
+        return redirect()->route('enrollments.index')
+            ->with('success', 'Group enrollment created for ' . count($enrollments) . ' children.');
     }
 
     public function edit(int $id): View

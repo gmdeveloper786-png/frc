@@ -19,6 +19,7 @@
             </div>
             <hr class="child-show-divider">
             <table class="enrollment-detail-kv child-show-detail-kv">
+                <tr><td>GR Number</td><td class="fw-medium" style="font-family:monospace;letter-spacing:0.02em;">{{ $child->gr_number ?? '—' }}</td></tr>
                 <tr><td>Father</td><td class="fw-medium">{{ $child->father_name ?? '—' }}</td></tr>
                 <tr><td>Email</td><td class="child-show-break-all">{{ $child->email ?? '—' }}</td></tr>
                 <tr><td>Phone</td><td>{{ $child->phone_number ?? '—' }}</td></tr>
@@ -80,9 +81,9 @@
                                 <tr>
                                     <td style="white-space:nowrap;">{{ $en->branch?->name ?? '—' }}</td>
                                     <td style="white-space:nowrap;"><a href="{{ route('therapists.show', $en->therapist->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $en->therapist?->full_name ?? '—' }}</a></td>
-                                    <td style="white-space:nowrap;">PKR {{ number_format($en->final_total ?? 0) }}</td>
-                                    <td style="color:var(--success); white-space:nowrap;">PKR {{ number_format($en->paid_amount ?? 0) }}</td>
-                                    <td style="color:var(--danger); white-space:nowrap;">PKR {{ number_format($en->remaining_amount ?? 0) }}</td>
+                                    <td style="white-space:nowrap;">{{ frc_pkr($en->final_total ?? 0) }}</td>
+                                    <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($en->paid_amount ?? 0) }}</td>
+                                    <td style="color:var(--danger); white-space:nowrap;">{{ frc_pkr($en->remaining_amount ?? 0) }}</td>
                                     <td style="white-space:nowrap;"><span class="badge-status badge-{{ $en->payment_status ?? 'pending' }}">{{ ucfirst(str_replace('_',' ',$en->payment_status ?? 'pending')) }}</span></td>
                                     <td style="white-space:nowrap;"><span class="badge-status badge-{{ $en->status ?? 'pending' }}">{{ ucfirst(str_replace('_',' ',$en->status ?? 'pending')) }}</span></td>
                                     <td style="white-space:nowrap;"><a href="{{ route('enrollments.show', $en->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;">View</a></td>

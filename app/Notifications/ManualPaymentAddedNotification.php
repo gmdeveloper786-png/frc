@@ -22,7 +22,7 @@ class ManualPaymentAddedNotification extends Notification
         return [
             'type'       => 'manual_payment_added',
             'title'      => 'Payment Received',
-            'message'    => 'A payment of PKR ' . number_format($this->payment->amount, 2) . ' has been recorded.'
+            'message'    => 'A payment of ' . frc_pkr($this->payment->amount) . ' has been recorded.'
                 . (filled($this->payment->receipt_number) ? ' Receipt: ' . $this->payment->receipt_number : ''),
             'payment_id' => $this->payment->id,
         ];

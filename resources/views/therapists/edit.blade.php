@@ -103,16 +103,19 @@
             </div>
         </div>
         @php
+            $slotBounds = $therapist->therapistProfile?->inferredSlotBounds() ?? ['start' => '09:00', 'end' => '17:00'];
             $breakTime = $therapist->therapistProfile?->break_time;
-            $breakParts = $breakTime ? explode(' - ', $breakTime) : ['13:00','14:00'];
+            $breakParts = $breakTime ? explode(' - ', $breakTime) : ['13:00', '14:00'];
         @endphp
         <div class="col-md-3">
             <label>Session Start</label>
-            <input type="time" name="slot_start" value="{{ old('slot_start', '09:00') }}" class="form-control">
+            <input type="time" name="slot_start" value="{{ old('slot_start', $slotBounds['start']) }}" class="form-control @error('slot_start') is-invalid @enderror">
+            @error('slot_start') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-3">
             <label>Session End</label>
-            <input type="time" name="slot_end" value="{{ old('slot_end', '17:00') }}" class="form-control">
+            <input type="time" name="slot_end" value="{{ old('slot_end', $slotBounds['end']) }}" class="form-control @error('slot_end') is-invalid @enderror">
+            @error('slot_end') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-3">
             <label>Break Start</label>

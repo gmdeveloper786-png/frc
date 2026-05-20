@@ -4,6 +4,35 @@ namespace App\Support;
 
 final class Money
 {
+    /** UI / receipts: whole PKR amounts with thousands separators (no .00). */
+    public static function display(float|string|null $value): string
+    {
+        return number_format((int) round((float) $value), 0, '.', ',');
+    }
+
+    /** HTML number inputs — no decimal suffix. */
+    public static function inputValue(float|string|null $value): string
+    {
+        return (string) (int) round((float) $value);
+    }
+
+    /** Discount % shown without trailing zeros when whole. */
+    public static function percentDisplay(float|string|null $value): string
+    {
+        $n = (float) $value;
+        if ($n == floor($n)) {
+            return (string) (int) $n;
+        }
+
+        return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
+    }
+
+    /** CSV / exports: plain integer string. */
+    public static function exportAmount(float|string|null $value): string
+    {
+        return (string) (int) round((float) $value);
+    }
+
     public static function format(float|string|null $value): string
     {
         return number_format((float) $value, 2, '.', '');

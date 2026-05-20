@@ -2,7 +2,9 @@
     $pickerId = $pickerId ?? 'approvedChildPicker';
     $selectedIds = array_map('intval', (array) ($selectedIds ?? old('child_ids', [])));
 @endphp
-<label class="d-block mb-2">{{ $label ?? 'Assign Children (Optional)' }}</label>
+@if(($showLabel ?? true) && ($label ?? null) !== false)
+    <label class="d-block mb-2">{{ $label ?? 'Assign Children (Optional)' }}</label>
+@endif
 <div id="{{ $pickerId }}" class="approved-child-picker" data-input-name="child_ids[]">
     <div class="approved-child-picker-selected mb-2" id="{{ $pickerId }}Selected" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0;"></div>
     <input type="search" class="form-control mb-2 approved-child-picker-search" id="{{ $pickerId }}Search" placeholder="Search by child name (min 2 letters)…" autocomplete="off">

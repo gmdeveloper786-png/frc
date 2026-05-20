@@ -3,10 +3,6 @@
 @section('page-title', 'System Settings')
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success border-0 mb-3" style="border-radius:10px;background:#e8f8ee;color:#1a7a3a;">{{ session('success') }}</div>
-@endif
-
 @php
     $settingsService = app(\App\Services\SettingService::class);
     $values = $settingsService->all();

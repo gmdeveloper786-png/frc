@@ -22,7 +22,7 @@
         <div class="stat-card">
             <div class="stat-icon navy"><i class="fa-solid fa-money-bill-trend-up"></i></div>
             <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;">PKR {{ number_format($stats['total_expected']) }}</div>
+                <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['total_expected']) }}</div>
                 <div class="stat-label">Total Expected Fees</div>
             </div>
         </div>
@@ -31,17 +31,17 @@
         <div class="stat-card">
             <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
             <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;">PKR {{ number_format($stats['total_paid']) }}</div>
+                <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['total_paid']) }}</div>
                 <div class="stat-label">Total Collected</div>
             </div>
         </div>
     </div>
     <div class="col-md-4 col-sm-6">
         <div class="stat-card">
-            <div class="stat-icon red"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="stat-icon red"><i class="fa-solid fa-hourglass-half"></i></div>
             <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;">PKR {{ number_format($stats['total_pending']) }}</div>
-                <div class="stat-label">Total Pending</div>
+                <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['total_pending']) }}</div>
+                <div class="stat-label">Pending / Overdue</div>
             </div>
         </div>
     </div>
@@ -52,7 +52,7 @@
         <div class="stat-card">
             <div class="stat-icon teal"><i class="fa-solid fa-money-bills"></i></div>
             <div class="stat-body">
-                <div class="stat-value" style="font-size:18px;">PKR {{ number_format($stats['cash_received']) }}</div>
+                <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['cash_received']) }}</div>
                 <div class="stat-label">Cash Received</div>
             </div>
         </div>
@@ -61,29 +61,30 @@
         <div class="stat-card">
             <div class="stat-icon navy"><i class="fa-solid fa-mobile-screen"></i></div>
             <div class="stat-body">
-                <div class="stat-value" style="font-size:18px;">PKR {{ number_format($stats['online_received']) }}</div>
+                <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['online_received']) }}</div>
                 <div class="stat-label">Online Received</div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="stat-body">
+                    <div class="stat-value" style="font-size:16px;">{{ frc_pkr($stats['pending_verification_amount']) }}</div>
+                    <div class="stat-label">Pending Verification Amount</div>
+                </div>
+            </div>
+        </div>
+    <div class="col-md-3 col-sm-6">
         <div class="stat-card">
             <div class="stat-icon orange"><i class="fa-solid fa-clock-rotate-left"></i></div>
             <div class="stat-body">
-                <div class="stat-value">{{ $stats['pending_verifications'] }}</div>
-                <div class="stat-label">Pending Verification</div>
+                <div class="stat-value" style="font-size:16px;">{{ $stats['pending_verifications'] }}</div>
+                <div class="stat-label">Pending Payment Verifications</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:18px;">PKR {{ number_format($stats['pending_verification_amount']) }}</div>
-                <div class="stat-label">Verification Amount</div>
-            </div>
-        </div>
-    </div>
+
 </div>
 @endif
 
@@ -161,7 +162,7 @@
                         @foreach($stats['recent_payments'] as $payment)
                         <tr>
                             <td style="font-weight:500; white-space:nowrap;">{{ $payment->child->full_name ?? 'N/A' }}</td>
-                            <td style="color:var(--teal);font-weight:600;">PKR {{ number_format($payment->amount) }}
+                            <td style="color:var(--teal);font-weight:600;">{{ frc_pkr($payment->amount) }}
                             </td>
                             <td style="white-space:nowrap;"><span style="font-size:13px;">{{ ucfirst(str_replace('_',' ',$payment->payment_method))
                                     }}</span></td>

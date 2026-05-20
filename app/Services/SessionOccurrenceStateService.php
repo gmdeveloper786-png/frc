@@ -28,7 +28,7 @@ class SessionOccurrenceStateService
         if ($this->isRecurringTemplate($schedule)) {
             $occurrence = $this->findOccurrence($schedule, $occurrenceDate);
 
-            return $occurrence?->status ?? 'scheduled';
+            return $this->resolveRecurringOccurrenceStatus($schedule, $occurrenceDate, $occurrence);
         }
 
         if ($schedule->session_date !== null) {
@@ -83,7 +83,7 @@ class SessionOccurrenceStateService
                     ->get($schedule->id, collect())
                     ->first(fn (EnrollmentScheduleOccurrence $o): bool => $o->occurrence_date->isSameDay($effectiveDate));
 
-                $row['status'] = $occurrence?->status ?? 'scheduled';
+                $row['status'] = $this->resolveRecurringOccurrenceStatus($schedule, $effectiveDate, $occurrence);
                 $row['occurrence'] = $occurrence;
             } else {
                 $row['status'] = $this->effectiveStatus($schedule, $effectiveDate);
@@ -131,6 +131,54 @@ class SessionOccurrenceStateService
         return $occurrence->fresh();
     }
 
+    /**
+     * Move a mistaken template-level cancel onto the correct occurrence row (one-time repair).
+     */
+    public function repairLegacyTemplateOccurrence(EnrollmentSchedule $schedule, Carbon $occurrenceDate): void
+    {
+        if (! $this->isRecurringTemplate($schedule)) {
+            return;
+        }
+
+        if ($this->findOccurrence($schedule, $occurrenceDate) !== null) {
+            return;
+        }
+
+        if ($schedule->status !== 'cancelled' || $schedule->cancelled_at === null) {
+            return;
+        }
+
+        if (! Carbon::parse($schedule->cancelled_at)->startOfDay()->isSameDay($occurrenceDate)) {
+            return;
+        }
+
+        EnrollmentScheduleOccurrence::query()->updateOrCreate(
+            [
+                'enrollment_schedule_id' => $schedule->id,
+                'occurrence_date'        => $occurrenceDate->toDateString(),
+            ],
+            [
+                'status'              => 'cancelled',
+                'cancelled_at'        => $schedule->cancelled_at,
+                'cancelled_by'        => $schedule->cancelled_by,
+                'cancellation_reason' => $schedule->cancellation_reason,
+            ],
+        );
+
+        $schedule->update([
+            'status'              => 'scheduled',
+            'started_at'          => null,
+            'started_by'          => null,
+            'completed_at'        => null,
+            'completed_by'        => null,
+            'completion_note'     => null,
+            'cancelled_at'        => null,
+            'cancelled_by'        => null,
+            'cancellation_reason' => null,
+            'session_notes'       => null,
+        ]);
+    }
+
     public function cancelOccurrence(
         User $therapist,
         EnrollmentSchedule $schedule,
@@ -166,6 +214,42 @@ class SessionOccurrenceStateService
                 'session_notes' => $notes,
             ],
         );
+    }
+
+    /**
+     * Status for one calendar date on a recurring template (occurrence row or legacy template fallback).
+     */
+    public function resolveRecurringOccurrenceStatus(
+        EnrollmentSchedule $schedule,
+        Carbon $occurrenceDate,
+        ?EnrollmentScheduleOccurrence $occurrence = null,
+    ): string {
+        if ($occurrence !== null) {
+            return (string) $occurrence->status;
+        }
+
+        if ($schedule->cancelled_at !== null
+            && Carbon::parse($schedule->cancelled_at)->startOfDay()->isSameDay($occurrenceDate)) {
+            return 'cancelled';
+        }
+
+        if ($schedule->status === 'in_progress'
+            && $schedule->started_at !== null
+            && Carbon::parse($schedule->started_at)->startOfDay()->isSameDay($occurrenceDate)) {
+            return 'in_progress';
+        }
+
+        if ($schedule->status === 'completed'
+            && $schedule->completed_at !== null
+            && Carbon::parse($schedule->completed_at)->startOfDay()->isSameDay($occurrenceDate)) {
+            return 'completed';
+        }
+
+        if ($schedule->status === 'no_show') {
+            return 'no_show';
+        }
+
+        return 'scheduled';
     }
 
     /** Reset recurring templates that incorrectly stored series-wide status on the template row. */

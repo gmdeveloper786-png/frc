@@ -46,7 +46,8 @@ class UserRepository implements UserRepositoryInterface
             ->when(isset($filters['search']), fn($q) => $q->where(function ($q) use ($filters) {
                 $q->where('full_name', 'like', '%' . $filters['search'] . '%')
                     ->orWhere('email', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('phone_number', 'like', '%' . $filters['search'] . '%');
+                    ->orWhere('phone_number', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('gr_number', 'like', '%' . $filters['search'] . '%');
             }))
             ->latest()
             ->paginate($perPage);
@@ -85,13 +86,17 @@ class UserRepository implements UserRepositoryInterface
             $id = (int) $search;
             $query->where(function ($q) use ($search, $id): void {
                 $q->where('id', $id)
-                    ->orWhere('full_name', 'like', '%' . $search . '%');
+                    ->orWhere('full_name', 'like', '%' . $search . '%')
+                    ->orWhere('gr_number', 'like', '%' . $search . '%');
             });
         } else {
-            $query->where('full_name', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search): void {
+                $q->where('full_name', 'like', '%' . $search . '%')
+                    ->orWhere('gr_number', 'like', '%' . $search . '%');
+            });
         }
 
-        return $query->limit($limit)->get(['id', 'full_name', 'phone_number', 'gender', 'date_of_birth']);
+        return $query->limit($limit)->get(['id', 'full_name', 'gr_number', 'phone_number', 'gender', 'date_of_birth']);
     }
 
     public function getPendingChildren(int $perPage = 15): LengthAwarePaginator

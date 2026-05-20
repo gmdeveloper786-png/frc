@@ -18,6 +18,13 @@
 
 <div class="form-section">
     <div class="form-section-title"><i class="fa-solid fa-child" style="color:var(--teal);"></i> Child Information</div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label>GR Number</label>
+            <input type="text" value="{{ $child->gr_number ?? '—' }}" class="form-control" readonly tabindex="-1" style="font-family:monospace;background:var(--bg-soft,#f4f7fa);">
+            <p class="form-text text-muted mb-0">Assigned automatically at registration; cannot be changed.</p>
+        </div>
+    </div>
     <div class="row g-3">
         <div class="col-md-6">
             <label>Full Name <span style="color:var(--danger)">*</span></label>

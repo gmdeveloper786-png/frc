@@ -6,13 +6,11 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
 use App\Models\EnrollmentScheduleOccurrence;
-use App\Models\ProgressNote;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection as SupportCollection;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Therapist-facing dashboard & roster queries (assigned assessments, children, sessions).
@@ -22,11 +20,6 @@ use Illuminate\Support\Facades\Cache;
 class TherapistPortalService
 {
     public const DASHBOARD_PREVIEW_LIMIT = 5;
-
-    /** How far back to scan for completed sessions missing finalized progress notes. */
-    public const PENDING_DOCUMENTATION_LOOKBACK_DAYS = 90;
-
-    public const PENDING_DOCUMENTATION_CACHE_MINUTES = 2;
 
     /** Default session list window when no start/end dates are submitted. */
     public const SESSIONS_DEFAULT_PAST_WEEKS = 4;
@@ -95,22 +88,18 @@ class TherapistPortalService
         return str_starts_with($c, $s) || str_starts_with($s, substr($c, 0, 3));
     }
 
-    public function schedulesForCalendarDay(int $therapistId, Carbon $day): Collection
+    /**
+     * Actual session occurrences on a calendar day (respects enrollment start, duration, and caps).
+     * Same expansion as the therapist sessions list — not raw weekly template rows.
+     *
+     * @return SupportCollection<int, array<string, mixed>>
+     */
+    public function schedulesForCalendarDay(int $therapistId, Carbon $day): SupportCollection
     {
-        $dayStr = $day->toDateString();
-        $dow = $day->format('l');
+        $from = $day->copy()->startOfDay();
+        $to = $day->copy()->endOfDay();
 
-        return $this->sessionsBaseQuery($therapistId)
-            ->with(['enrollment.child', 'enrollment.service', 'branch'])
-            ->where(function ($q) use ($dayStr, $dow) {
-                $q->whereDate('session_date', $dayStr)
-                    ->orWhere(function ($q2) use ($dow) {
-                        $q2->whereNull('session_date')
-                            ->whereRaw('LOWER(TRIM(day)) LIKE ?', [strtolower(substr($dow, 0, 3)) . '%']);
-                    });
-            })
-            ->orderBy('time_slot')
-            ->get();
+        return $this->collectExpandedSessionsInRange($therapistId, $from, $to);
     }
 
     /**
@@ -129,10 +118,8 @@ class TherapistPortalService
         $weekEnd = now()->copy()->addDays(7)->endOfDay();
 
         $upcomingSessions = $this->collectExpandedSessionsInRange($therapistId, $weekStart, $weekEnd)
-            ->filter(fn (array $r): bool => in_array($r['status'], ['scheduled', 'in_progress'], true))
+            ->filter(fn(array $r): bool => in_array($r['status'], ['scheduled', 'in_progress'], true))
             ->count();
-
-        $notesPending = $this->countPendingDocumentationOccurrences($therapistId);
 
         return [
             'assigned_children'     => $this->getAssignedChildIds($therapistId)->count(),
@@ -144,20 +131,9 @@ class TherapistPortalService
                 ?? $this->schedulesForCalendarDay($therapistId, now())->count(),
             'upcoming_sessions'     => $upcomingSessions,
             'completed_sessions'    => $this->countCompletedSessionOccurrences($therapistId),
-            'notes_pending'         => $notesPending,
             'cancelled_sessions'    => $this->countCancelledSessionOccurrences($therapistId),
             'cancelled_assessments' => $assessmentCounts['cancelled'],
         ];
-    }
-
-    public function countPendingDocumentationOccurrences(int $therapistId): int
-    {
-        return $this->pendingDocumentationOccurrences($therapistId)->count();
-    }
-
-    public function forgetPendingDocumentationCache(int $therapistId): void
-    {
-        Cache::forget("therapist_pending_docs_rows:{$therapistId}");
     }
 
     public function countCompletedSessionOccurrences(int $therapistId): int
@@ -169,7 +145,7 @@ class TherapistPortalService
 
         $recurring = EnrollmentScheduleOccurrence::query()
             ->where('status', 'completed')
-            ->whereHas('schedule', fn ($q) => $q->where('therapist_id', $therapistId))
+            ->whereHas('schedule', fn($q) => $q->where('therapist_id', $therapistId))
             ->count();
 
         return $fixed + $recurring;
@@ -184,130 +160,10 @@ class TherapistPortalService
 
         $recurring = EnrollmentScheduleOccurrence::query()
             ->where('status', 'cancelled')
-            ->whereHas('schedule', fn ($q) => $q->where('therapist_id', $therapistId))
+            ->whereHas('schedule', fn($q) => $q->where('therapist_id', $therapistId))
             ->count();
 
         return $fixed + $recurring;
-    }
-
-    /**
-     * Completed session occurrences missing a finalized progress note (none or draft only).
-     * Cached briefly; use {@see forgetPendingDocumentationCache} after note/session changes.
-     *
-     * @return SupportCollection<int, array<string,mixed>>
-     */
-    public function pendingDocumentationOccurrences(int $therapistId): SupportCollection
-    {
-        return Cache::remember(
-            "therapist_pending_docs_rows:{$therapistId}",
-            now()->addMinutes(self::PENDING_DOCUMENTATION_CACHE_MINUTES),
-            fn (): SupportCollection => $this->buildPendingDocumentationOccurrences($therapistId),
-        );
-    }
-
-    /**
-     * @return SupportCollection<int, array{value: string, label: string, child_id: ?int, service_id: ?int}>
-     */
-    public function mapPendingRowsToOccurrencePickOptions(SupportCollection $rows): SupportCollection
-    {
-        return $rows->map(function (array $row): array {
-            /** @var EnrollmentSchedule $sch */
-            $sch = $row['schedule'];
-            $serviceId = $sch->enrollment?->service_id;
-
-            return [
-                'value'      => $sch->id . '|' . $row['effective_date']->toDateString() . '|' . ($serviceId ?? ''),
-                'label'      => $row['effective_date']->format('d M Y') . ' · ' . $row['child_name'] . ' · ' . $row['time_slot'] . ' · ' . $row['service_name'],
-                'child_id'   => $sch->enrollment?->child_id,
-                'service_id' => $serviceId,
-            ];
-        })->values();
-    }
-
-    public function paginatePendingDocumentationOccurrences(
-        int $therapistId,
-        int $perPage = 15,
-        ?int $page = null,
-    ): LengthAwarePaginator {
-        $page = max(1, $page ?? 1);
-        $all = $this->pendingDocumentationOccurrences($therapistId);
-
-        return new LengthAwarePaginator(
-            $all->forPage($page, $perPage)->values(),
-            $all->count(),
-            $perPage,
-            $page,
-            ['path' => route('therapist.progress-notes.pending')],
-        );
-    }
-
-    /**
-     * @return SupportCollection<int, array<string,mixed>>
-     */
-    private function buildPendingDocumentationOccurrences(int $therapistId): SupportCollection
-    {
-        [$from, $to] = $this->pendingDocumentationDateRange();
-        $notesByKey = $this->loadProgressNotesIndexForPending($therapistId, $from, $to);
-
-        return $this->collectExpandedSessionsInRange($therapistId, $from, $to)
-            ->filter(function (array $r) use ($notesByKey): bool {
-                if (($r['status'] ?? '') !== 'completed') {
-                    return false;
-                }
-
-                /** @var Carbon $effective */
-                $effective = $r['effective_date'];
-                if ($effective->isFuture()) {
-                    return false;
-                }
-
-                /** @var EnrollmentSchedule $sch */
-                $sch = $r['schedule'];
-                $key = $sch->id . '|' . $effective->toDateString();
-                $notes = $notesByKey->get($key, collect());
-
-                return ! $notes->contains(fn (ProgressNote $n): bool => $n->status === 'completed');
-            })
-            ->map(function (array $r) use ($notesByKey): array {
-                /** @var EnrollmentSchedule $sch */
-                $sch = $r['schedule'];
-                /** @var Carbon $effective */
-                $effective = $r['effective_date'];
-                $key = $sch->id . '|' . $effective->toDateString();
-                $notes = $notesByKey->get($key, collect());
-                $draftPn = $notes->firstWhere('status', 'draft');
-                $r['progress_note_row_status'] = $draftPn ? 'draft' : 'missing';
-                $r['draft_progress_note_id'] = $draftPn?->id;
-
-                return $r;
-            })
-            ->sortByDesc(fn (array $r) => $r['effective_date']->timestamp . '_' . $r['time_slot'])
-            ->values();
-    }
-
-    /**
-     * @return array{0: Carbon, 1: Carbon}
-     */
-    private function pendingDocumentationDateRange(): array
-    {
-        return [
-            now()->copy()->subDays(self::PENDING_DOCUMENTATION_LOOKBACK_DAYS)->startOfDay(),
-            now()->copy()->endOfDay(),
-        ];
-    }
-
-    /**
-     * @return SupportCollection<string, SupportCollection<int, ProgressNote>>
-     */
-    private function loadProgressNotesIndexForPending(int $therapistId, Carbon $from, Carbon $to): SupportCollection
-    {
-        return ProgressNote::query()
-            ->where('therapist_id', $therapistId)
-            ->whereDate('session_date', '>=', $from)
-            ->whereDate('session_date', '<=', $to)
-            ->orderByDesc('updated_at')
-            ->get(['id', 'enrollment_schedule_id', 'session_date', 'status'])
-            ->groupBy(fn (ProgressNote $n): string => $n->enrollment_schedule_id . '|' . $n->session_date->toDateString());
     }
 
     /**
@@ -417,9 +273,99 @@ class TherapistPortalService
             }
         }
 
-        return $this->occurrenceState->attachEffectiveStatuses(
-            $out->sortBy(fn(array $r) => $r['effective_date']->timestamp . '_' . $r['time_slot'])->values(),
+        $sorted = $out->sortBy(fn(array $r) => $r['effective_date']->timestamp . '_' . $r['time_slot'])->values();
+
+        return $this->mergeGroupSessionRows(
+            $this->occurrenceState->attachEffectiveStatuses($sorted),
         );
+    }
+
+    /**
+     * Merge same-day group therapy occurrences into one list row.
+     *
+     * @param  SupportCollection<int, array<string, mixed>>  $rows
+     * @return SupportCollection<int, array<string, mixed>>
+     */
+    private function mergeGroupSessionRows(SupportCollection $rows): SupportCollection
+    {
+        if ($rows->isEmpty()) {
+            return $rows;
+        }
+
+        $singles  = collect();
+        $buckets  = [];
+
+        foreach ($rows as $row) {
+            $groupId = $row['schedule']->enrollment?->enrollment_group_id;
+            if (! filled($groupId)) {
+                $singles->push($row);
+
+                continue;
+            }
+
+            $dateKey = $row['effective_date']->toDateString();
+            $key     = $groupId . '|' . $dateKey . '|' . (string) ($row['time_slot'] ?? '');
+            $buckets[$key] ??= [];
+            $buckets[$key][] = $row;
+        }
+
+        $merged = $singles;
+        foreach ($buckets as $bucket) {
+            $merged->push($this->buildMergedGroupSessionRow($bucket));
+        }
+
+        return $merged->sortBy(fn(array $r) => $r['effective_date']->timestamp . '_' . $r['time_slot'])->values();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<string, mixed>
+     */
+    private function buildMergedGroupSessionRow(array $rows): array
+    {
+        usort($rows, fn(array $a, array $b): int => strcmp(
+            (string) ($a['schedule']->enrollment?->child?->full_name ?? ''),
+            (string) ($b['schedule']->enrollment?->child?->full_name ?? ''),
+        ));
+
+        $priority = [
+            'in_progress' => 5,
+            'scheduled'   => 4,
+            'completed'   => 3,
+            'no_show'     => 2,
+            'cancelled'   => 1,
+        ];
+
+        $mergedStatus = (string) ($rows[0]['status'] ?? $rows[0]['schedule']->status);
+        $names        = [];
+        $members      = [];
+
+        foreach ($rows as $row) {
+            $sch    = $row['schedule'];
+            $status = (string) ($row['status'] ?? $sch->status);
+            if (($priority[$status] ?? 0) > ($priority[$mergedStatus] ?? 0)) {
+                $mergedStatus = $status;
+            }
+
+            $name = $sch->enrollment?->child?->full_name ?? '—';
+            $names[] = $name;
+            $members[] = [
+                'child_id'      => (int) ($sch->enrollment?->child_id ?? 0),
+                'child_name'    => $name,
+                'schedule'      => $sch,
+                'enrollment_id' => (int) ($sch->enrollment_id ?? 0),
+                'status'        => $status,
+            ];
+        }
+
+        $primary = $rows[0];
+
+        return array_merge($primary, [
+            'child_name'    => implode(', ', $names),
+            'is_group'      => true,
+            'group_members' => $members,
+            'status'        => $mergedStatus,
+        ]);
     }
 
     private function expandSessionRow(EnrollmentSchedule $slot, Carbon $effectiveDate): array
@@ -433,6 +379,37 @@ class TherapistPortalService
             'service_name'   => $slot->enrollment?->service?->name ?? '—',
             'branch_name'    => $slot->branch?->name ?? $slot->enrollment?->branch?->name ?? '—',
         ];
+    }
+
+    /**
+     * All schedule rows for the same group therapy slot (same therapist, weekday, time slot).
+     *
+     * @return SupportCollection<int, EnrollmentSchedule>
+     */
+    public function groupSchedulesMatchingAnchorSlot(EnrollmentSchedule $anchor): SupportCollection
+    {
+        $anchor->loadMissing('enrollment');
+
+        $enrollment = $anchor->enrollment;
+        if (! $enrollment || ! filled($enrollment->enrollment_group_id)) {
+            return collect([$anchor]);
+        }
+
+        $groupId = (string) $enrollment->enrollment_group_id;
+        $dayNorm = strtolower(trim((string) $anchor->day));
+        $slot    = trim((string) $anchor->time_slot);
+        $tid     = (int) $anchor->therapist_id;
+
+        return EnrollmentSchedule::query()
+            ->where('therapist_id', $tid)
+            ->whereRaw('LOWER(TRIM(day)) = ?', [$dayNorm])
+            ->where('time_slot', $slot)
+            ->whereHas('enrollment', static function ($q) use ($groupId): void {
+                $q->where('enrollment_group_id', $groupId);
+            })
+            ->with(['enrollment.child'])
+            ->orderBy('id')
+            ->get();
     }
 
     public function upcomingAssessmentBucketsFiltered(int $therapistId, string $filter): Collection
@@ -523,14 +500,22 @@ class TherapistPortalService
             if (! $this->therapistHasAccessToChild($therapistId, $childId)) {
                 return collect();
             }
-            $rows = $rows->filter(fn(array $r): bool => (int) ($r['schedule']->enrollment?->child_id) === $childId);
+            $rows = $rows->filter(function (array $r) use ($childId): bool {
+                if (! empty($r['group_members'])) {
+                    return collect($r['group_members'])->contains(
+                        fn(array $m): bool => (int) ($m['child_id'] ?? 0) === $childId,
+                    );
+                }
+
+                return (int) ($r['schedule']->enrollment?->child_id) === $childId;
+            });
         }
 
         return $rows;
     }
 
     /**
-     * Paginated therapist session list: filter + slice first, then batch progress notes for one page only.
+     * Paginated therapist session list: filter + slice first, then attach occurrence timing for one page.
      */
     public function paginateTherapistSessionsFiltered(
         int $therapistId,
@@ -545,8 +530,32 @@ class TherapistPortalService
         $rows = $this->upcomingSessionsFiltered($therapistId, $startDate, $endDate, $statusFilter, $childId);
         $page = max(1, $page);
         $pageRows = $rows->forPage($page, $perPage)->values();
-        $metaIndex = $this->occurrenceDetailService->progressMetaIndexForSessionRows($pageRows);
-        $enriched = $this->occurrenceDetailService->enrichTherapistSessionListRows($pageRows, $metaIndex);
+
+        $enriched = $this->occurrenceDetailService->enrichTherapistSessionListRows($pageRows);
+
+        $enriched = $enriched->map(function (array $row): array {
+            if (empty($row['group_members'])) {
+                return $row;
+            }
+
+            $row['group_members'] = collect($row['group_members'])->map(function (array $member) use ($row): array {
+                $sch        = $member['schedule'];
+                $sessionDay = $row['effective_date']->copy()->startOfDay();
+                $occStatus  = (string) ($member['status'] ?? $sch->status);
+                $member['can_start_session_now'] = $occStatus === 'scheduled'
+                    && SessionTimeSlotParser::isSessionDayToday($sessionDay);
+                $member['session_start_window_passed'] = $occStatus === 'scheduled'
+                    && SessionTimeSlotParser::isSessionDayPast($sessionDay);
+
+                return $member;
+            })->all();
+
+            $row['can_start_session_now'] = collect($row['group_members'])->contains(
+                fn(array $m): bool => (bool) ($m['can_start_session_now'] ?? false),
+            );
+
+            return $row;
+        });
 
         return new LengthAwarePaginator(
             $enriched->all(),
@@ -813,16 +822,6 @@ class TherapistPortalService
         );
     }
 
-    public function recentProgressNotes(int $therapistId, int $limit = 15): Collection
-    {
-        return ProgressNote::query()
-            ->where('therapist_id', $therapistId)
-            ->with(['child', 'service'])
-            ->latest()
-            ->limit($limit)
-            ->get();
-    }
-
     /**
      * @return array{data: list<array<string, mixed>>, meta: array<string, int|bool>}
      */
@@ -932,7 +931,6 @@ class TherapistPortalService
             'child_name'                  => $row['child_name'] ?? ($sch->enrollment?->child?->full_name ?? '—'),
             'service_name'                => $row['service_name'] ?? ($sch->enrollment?->service?->name ?? '—'),
             'branch_name'                 => $row['branch_name'] ?? ($sch->branch?->name ?? $sch->enrollment?->branch?->name ?? '—'),
-            'progress_meta'               => $row['progress_meta'] ?? null,
             'can_start_session_now'       => (bool) ($row['can_start_session_now'] ?? false),
             'session_start_window_passed' => (bool) ($row['session_start_window_passed'] ?? false),
             'occurrence_starts_at'        => isset($row['occurrence_starts_at'])

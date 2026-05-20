@@ -40,8 +40,22 @@ class UserNotification extends Model
 
     public const TYPE_ENROLLMENT_CREATED = 'enrollment_created';
 
+    public const TYPE_ENROLLMENT_ACTIVE = 'enrollment_active';
+
+    public const TYPE_ENROLLMENT_UPDATED = 'enrollment_updated';
+
+    public const TYPE_ENROLLMENT_CANCELLED = 'enrollment_cancelled';
+
+    public const TYPE_ENROLLMENT_ASSIGNED = 'enrollment_assigned';
+
+    public const TYPE_ENROLLMENT_SCHEDULE_UPDATED = 'enrollment_schedule_updated';
+
+    public const TYPE_ENROLLMENT_FEE_UPDATED = 'enrollment_fee_updated';
+
+    /** @deprecated Use {@see TYPE_ENROLLMENT_ACTIVE} for new notifications. */
     public const TYPE_ENROLLMENT_APPROVED = 'enrollment_approved';
 
+    /** @deprecated Use {@see TYPE_ENROLLMENT_CANCELLED} for new notifications. */
     public const TYPE_ENROLLMENT_REJECTED = 'enrollment_rejected';
 
     public const TYPE_HIGH_DISCOUNT_REQUESTED = 'high_discount_requested';
@@ -87,6 +101,12 @@ class UserNotification extends Model
             self::TYPE_ASSESSMENT_CANCELLED        => 'Assessment cancelled',
             self::TYPE_STAFF_ACCOUNT_CREATED       => 'Staff account created',
             self::TYPE_ENROLLMENT_CREATED          => 'Enrollment created',
+            self::TYPE_ENROLLMENT_ACTIVE           => 'Enrollment active',
+            self::TYPE_ENROLLMENT_UPDATED          => 'Enrollment updated',
+            self::TYPE_ENROLLMENT_CANCELLED        => 'Enrollment cancelled',
+            self::TYPE_ENROLLMENT_ASSIGNED         => 'Enrollment assigned',
+            self::TYPE_ENROLLMENT_SCHEDULE_UPDATED => 'Schedule updated',
+            self::TYPE_ENROLLMENT_FEE_UPDATED      => 'Enrollment fee updated',
             self::TYPE_ENROLLMENT_APPROVED         => 'Enrollment approved',
             self::TYPE_ENROLLMENT_REJECTED         => 'Enrollment rejected',
             self::TYPE_HIGH_DISCOUNT_REQUESTED     => 'High discount requested',

@@ -2,24 +2,25 @@
 
 namespace App\Models;
 
+use App\Support\ChildGrNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'full_name',
         'father_name',
         'email',
+        'gr_number',
         'password',
         'role_id',
         'age',
@@ -48,6 +49,20 @@ class User extends Authenticatable
         'date_of_birth'     => 'date',
         'password'          => 'hashed',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            if (filled($user->gr_number)) {
+                return;
+            }
+
+            $childRoleId = Role::query()->where('name', Role::CHILD)->value('id');
+            if ($childRoleId !== null && (int) $user->role_id === (int) $childRoleId) {
+                $user->gr_number = ChildGrNumber::next();
+            }
+        });
+    }
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
@@ -206,6 +221,16 @@ class User extends Authenticatable
             Role::FINANCE     => 'dashboard.finance',
             Role::CHILD       => 'dashboard.child',
             default           => null,
+        };
+    }
+
+    /** Self-service profile page for admin/finance staff accounts. */
+    public function staffProfileRouteName(): ?string
+    {
+        return match ($this->role?->name) {
+            Role::ADMIN   => 'admin.profile',
+            Role::FINANCE => 'finance.profile',
+            default       => null,
         };
     }
 

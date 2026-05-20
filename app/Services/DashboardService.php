@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Enrollment;
+use App\Models\EnrollmentSchedule;
+use App\Models\EnrollmentScheduleOccurrence;
 use App\Models\Payment;
 use App\Models\Role;
 use App\Models\User;
@@ -11,8 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
-    /** Cache TTL for aggregate dashboard stats and chart payloads (seconds). */
-    private const CACHE_TTL_SECONDS = 60;
+    /** Cache TTL for chart/analytics payloads only (headline stat cards are always live). */
+    private const CHART_CACHE_TTL_SECONDS = 60;
 
     public function __construct(
         private readonly AssessmentService $assessmentService,
@@ -24,8 +26,9 @@ class DashboardService
         [$chartYear, $chartYears] = $this->resolveChartYear($chartYear);
 
         return array_merge(
-            $this->cachedSuperAdminHeadlines(),
-            $this->cachedFeeTotals(),
+            $this->superAdminHeadlines(),
+            $this->completedSessionsTotal(),
+            $this->feeTotals(),
             $this->cachedChartPayload($chartYear),
             [
                 'chart_year'         => $chartYear,
@@ -42,7 +45,9 @@ class DashboardService
         [$chartYear, $chartYears] = $this->resolveChartYear($chartYear);
 
         return array_merge(
-            $this->cachedAdminHeadlines(),
+            $this->adminHeadlines(),
+            $this->completedSessionsTotal(),
+            $this->feeTotals(),
             $this->cachedChartPayload($chartYear),
             [
                 'chart_year'      => $chartYear,
@@ -78,8 +83,8 @@ class DashboardService
     public function getFinanceStats(?int $chartYear = null): array
     {
         [$chartYear, $chartYears] = $this->resolveChartYear($chartYear);
-        $feeTotals = $this->cachedFeeTotals();
-        $financeHeadlines = $this->cachedFinanceHeadlines();
+        $feeTotals = $this->feeTotals();
+        $financeHeadlines = $this->financeHeadlines();
 
         return array_merge($feeTotals, $financeHeadlines, $this->cachedChartPayload($chartYear), [
             'total_expected'              => $feeTotals['fee_total_expected'],
@@ -101,75 +106,87 @@ class DashboardService
     /**
      * @return array<string, mixed>
      */
-    private function cachedSuperAdminHeadlines(): array
+    private function superAdminHeadlines(): array
     {
-        return $this->rememberDashboard('headlines.super_admin', function (): array {
-            return [
-                'total_children'                => User::children()->count(),
-                'approved_children'           => User::children()->approved()->count(),
-                'pending_approvals'           => User::children()->pending()->count(),
-                'total_therapists'            => User::byRole(Role::THERAPIST)->count(),
-                'total_admins'                => User::byRole(Role::ADMIN)->count(),
-                'total_finance_users'         => User::byRole(Role::FINANCE)->count(),
-                'total_branches'              => \App\Models\Branch::count(),
-                'total_services'              => \App\Models\Service::count(),
-                'total_assessments'           => \App\Models\Assessment::count(),
-                'total_enrollments'           => Enrollment::count(),
-                'pending_high_discount'       => Enrollment::where('status', 'pending_super_admin_approval')->count(),
-                'pending_payment_verifications' => Payment::where('status', 'pending_verification')->count(),
-            ];
-        });
+        return [
+            'total_children'                => User::children()->count(),
+            'approved_children'           => User::children()->approved()->count(),
+            'pending_approvals'           => User::children()->pending()->count(),
+            'total_therapists'            => User::byRole(Role::THERAPIST)->count(),
+            'total_admins'                => User::byRole(Role::ADMIN)->count(),
+            'total_finance_users'         => User::byRole(Role::FINANCE)->count(),
+            'total_branches'              => \App\Models\Branch::count(),
+            'total_services'              => \App\Models\Service::count(),
+            'total_assessments'           => \App\Models\Assessment::where('status', 'completed')->count(),
+            'total_enrollments'           => Enrollment::whereIn('status', ['active', 'completed'])->count(),
+            'pending_high_discount'       => Enrollment::where('status', 'pending_super_admin_approval')->count(),
+            'pending_payment_verifications' => Payment::where('status', 'pending_verification')->count(),
+        ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function cachedAdminHeadlines(): array
+    private function adminHeadlines(): array
     {
-        return $this->rememberDashboard('headlines.admin', function (): array {
-            return [
-                'total_children'                => User::children()->count(),
-                'pending_approvals'             => User::children()->pending()->count(),
-                'approved_children'             => User::children()->approved()->count(),
-                'total_assessments'             => \App\Models\Assessment::count(),
-                'assessments_today'             => \App\Models\Assessment::whereDate('date', today())->where('status', 'publish')->count(),
-                'upcoming_assessments'          => \App\Models\Assessment::upcoming()->count(),
-                'cancelled_assessments'         => \App\Models\Assessment::where('status', 'cancelled')->count(),
-                'total_therapists'              => User::byRole(Role::THERAPIST)->count(),
-                'total_enrollments'             => Enrollment::count(),
-                'high_discount_requests'        => Enrollment::where('status', 'pending_super_admin_approval')->count(),
-                'pending_payment_verifications' => Payment::where('status', 'pending_verification')->count(),
-            ];
-        });
+        return [
+            'total_children'                => User::children()->count(),
+            'pending_approvals'             => User::children()->pending()->count(),
+            'approved_children'             => User::children()->approved()->count(),
+            'total_assessments'             => \App\Models\Assessment::where('status', 'completed')->count(),
+            'assessments_today'             => \App\Models\Assessment::whereDate('date', today())->where('status', 'publish')->count(),
+            'upcoming_assessments'          => \App\Models\Assessment::upcoming()->count(),
+            'cancelled_assessments'         => \App\Models\Assessment::where('status', 'cancelled')->count(),
+            'total_therapists'              => User::byRole(Role::THERAPIST)->count(),
+            'total_enrollments'             => Enrollment::whereIn('status', ['active', 'completed'])->count(),
+            'high_discount_requests'        => Enrollment::where('status', 'pending_super_admin_approval')->count(),
+            'pending_payment_verifications' => Payment::where('status', 'pending_verification')->count(),
+        ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function cachedFinanceHeadlines(): array
+    private function financeHeadlines(): array
     {
-        return $this->rememberDashboard('headlines.finance', function (): array {
-            return [
-                'pending_verifications'       => Payment::where('status', 'pending_verification')->count(),
-                'pending_verification_amount' => (float) Payment::where('status', 'pending_verification')->sum('amount'),
-            ];
-        });
+        return [
+            'pending_verifications'       => Payment::where('status', 'pending_verification')->count(),
+            'pending_verification_amount' => (float) Payment::where('status', 'pending_verification')->sum('amount'),
+        ];
+    }
+
+    /**
+     * All-time completed session occurrences (one-off rows + recurring occurrence records).
+     *
+     * @return array{total_completed_sessions: int}
+     */
+    private function completedSessionsTotal(): array
+    {
+        $fixed = EnrollmentSchedule::query()
+            ->whereNotNull('session_date')
+            ->where('status', 'completed')
+            ->count();
+
+        $recurring = EnrollmentScheduleOccurrence::query()
+            ->where('status', 'completed')
+            ->count();
+
+        return ['total_completed_sessions' => $fixed + $recurring];
     }
 
     /**
      * @return array<string, float>
      */
-    private function cachedFeeTotals(): array
+    private function feeTotals(): array
     {
-        return $this->rememberDashboard('fee_totals', function (): array {
-            return [
-                'fee_total_expected'  => (float) Enrollment::whereIn('status', ['approved', 'active', 'completed'])->sum('final_total'),
-                'fee_total_paid'      => (float) Payment::where('status', 'paid')->sum('amount'),
-                'fee_pending_overdue' => (float) Enrollment::whereIn('status', ['approved', 'active'])->sum('remaining_amount'),
-                'fee_cash_received'   => (float) Payment::where('status', 'paid')->where('payment_method', 'cash')->sum('amount'),
-                'fee_online_bank'     => (float) Payment::where('status', 'paid')->where('payment_method', '!=', 'cash')->sum('amount'),
-            ];
-        });
+        return [
+            'fee_total_expected'  => (float) Enrollment::whereIn('status', ['approved', 'active', 'completed'])->sum('final_total'),
+            'fee_total_paid'      => (float) Payment::where('status', 'paid')->sum('amount'),
+            'fee_pending_overdue' => (float) Enrollment::whereIn('status', ['approved', 'active'])->sum('remaining_amount'),
+            'fee_cash_received'   => (float) Payment::where('status', 'paid')->where('payment_method', 'cash')->sum('amount'),
+            'fee_online_bank'     => (float) Payment::where('status', 'paid')->where('payment_method', '!=', 'cash')->sum('amount'),
+            'pending_verification_amount' => (float) Payment::where('status', 'pending_verification')->sum('amount'),
+        ];
     }
 
     /**
@@ -177,7 +194,7 @@ class DashboardService
      */
     private function cachedChartPayload(int $chartYear): array
     {
-        return $this->rememberDashboard("charts.{$chartYear}", function () use ($chartYear): array {
+        return $this->rememberDashboardCharts("charts.{$chartYear}", function () use ($chartYear): array {
             return [
                 'monthly_revenue'     => $this->getMonthlyRevenue($chartYear),
                 'monthly_expected'    => $this->getMonthlyExpected($chartYear),
@@ -187,9 +204,9 @@ class DashboardService
         });
     }
 
-    private function rememberDashboard(string $key, callable $callback): mixed
+    private function rememberDashboardCharts(string $key, callable $callback): mixed
     {
-        return Cache::remember('frc.dashboard.' . $key, self::CACHE_TTL_SECONDS, $callback);
+        return Cache::remember('frc.dashboard.' . $key, self::CHART_CACHE_TTL_SECONDS, $callback);
     }
 
     private function getMonthlyRevenue(int $year): array

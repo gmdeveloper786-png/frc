@@ -18,10 +18,20 @@
     <div class="col-md-8">
         {{-- Child + Branch + Therapist --}}
         <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-user" style="color:var(--teal);"></i> Child & Therapist</div>
+            <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Children & Therapist</div>
             <div class="row g-3">
-                <div class="col-md-6">
-                    @include('partials.approved-child-select-field', ['initialChildren' => $initialChildren])
+                <div class="col-12">
+                    <label class="d-block mb-2">Children <span style="color:var(--danger)">*</span></label>
+                    @error('child_ids') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
+                    @error('child_ids.*') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
+                    @include('partials.approved-child-checkboxes-field', [
+                        'pickerId' => 'enrollmentChildPicker',
+                        'label' => false,
+                        'showLabel' => false,
+                        'initialChildren' => $initialChildren,
+                        'selectedIds' => old('child_ids', request()->query('child_id') ? [(int) request()->query('child_id')] : []),
+                    ])
+                    <small class="text-muted d-block mt-1">Select one child for individual therapy, or two or more for group therapy in the same slot.</small>
                 </div>
                 <div class="col-md-6">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
@@ -137,12 +147,12 @@
             <div class="mb-3">
                 <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>
                 <input type="number" name="price_per_session" id="pricePerSession" value="{{ old('price_per_session', 0) }}"
-                    class="form-control" min="0" step="0.01" oninput="recalculate()">
+                    class="form-control" min="0" step="1" oninput="recalculate()">
             </div>
             <div class="mb-3">
                 <label>Discount % (0–100)</label>
                 <input type="number" name="discount_percentage" id="discountPct" value="{{ old('discount_percentage', 0) }}"
-                    class="form-control" min="0" max="100" step="0.01" oninput="recalculate(); checkHighDiscount()">
+                    class="form-control" min="0" max="100" step="1" oninput="recalculate(); checkHighDiscount()">
             </div>
             <div style="background:var(--bg-light);border-radius:12px;padding:16px;margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
@@ -200,7 +210,8 @@
     'initialServiceId' => null,
 ])
 @include('partials.approved-child-picker-scripts', [
-    'pickerMode' => 'select',
+    'pickerMode' => 'checkboxes',
+    'pickerId' => 'enrollmentChildPicker',
     'initialChildren' => $initialChildren,
 ])
 @endpush

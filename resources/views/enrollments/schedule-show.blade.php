@@ -84,27 +84,6 @@
                 </dd>
                 <dt class="col-sm-4 text-muted mb-2">Cancellation reason</dt>
                 <dd class="col-sm-8 mb-2" style="white-space:pre-wrap;">{{ ! empty($occurrenceDetail['cancellation_reason']) ? $occurrenceDetail['cancellation_reason'] : '—' }}</dd>
-                <dt class="col-sm-4 text-muted mb-2">Progress note status</dt>
-                <dd class="col-sm-8 mb-2">
-                    @php $ps = $occurrenceDetail['progress_note_status'] ?? 'none'; @endphp
-                    @if($ps === 'none')
-                        No progress note
-                    @elseif($ps === 'draft')
-                        Draft progress note
-                    @else
-                        Completed progress note
-                    @endif
-                </dd>
-                @if(! empty($occurrenceDetail['progress_note_preview']))
-                    <dt class="col-sm-4 text-muted mb-2">Progress documentation preview</dt>
-                    <dd class="col-sm-8 mb-2">
-                        <div class="small border rounded p-2" style="border-color:var(--border-soft)!important;background:var(--bg-light);">
-                            <div class="mb-1"><span class="text-muted">Progress level</span><br><strong>{{ $occurrenceDetail['progress_note_preview']['progress_level'] ?? '—' }}</strong></div>
-                            <div class="mb-1"><span class="text-muted">Therapy goal</span><br>{{ $occurrenceDetail['progress_note_preview']['therapy_goal'] ?? '—' }}</div>
-                            <div class="mb-0"><span class="text-muted">Notes preview</span><br>{{ $occurrenceDetail['progress_note_preview']['notes_excerpt'] ?? '—' }}</div>
-                        </div>
-                    </dd>
-                @endif
             </dl>
         @endif
 

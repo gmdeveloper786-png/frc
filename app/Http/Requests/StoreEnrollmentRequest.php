@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Services\SettingService;
 use App\Services\TherapistService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -16,13 +18,39 @@ class StoreEnrollmentRequest extends FormRequest
         return $this->user()?->hasPermission('manage_enrollments') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $raw = $this->input('child_ids');
+        if ($raw !== null && ! is_array($raw)) {
+            $this->merge(['child_ids' => [$raw]]);
+        }
+
+        if ($this->has('child_id') && ! $this->has('child_ids')) {
+            $legacy = $this->input('child_id');
+            if ($legacy !== null && $legacy !== '') {
+                $this->merge(['child_ids' => [(int) $legacy]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         $discountPct = (float) $this->input('discount_percentage', 0);
         $highDiscount = app(SettingService::class)->isHighDiscount($discountPct);
 
         return [
-            'child_id'           => ['required', 'exists:users,id'],
+            'child_ids'          => ['required', 'array', 'min:1'],
+            'child_ids.*'        => [
+                'integer',
+                'distinct',
+                Rule::exists('users', 'id')->where(function ($q): void {
+                    $q->whereIn('status', ['approved', 'active'])
+                        ->whereIn(
+                            'role_id',
+                            DB::table('roles')->where('name', Role::CHILD)->select('id'),
+                        );
+                }),
+            ],
             'branch_id'          => ['required', 'exists:branches,id'],
             'service_id'         => ['required', 'integer', Rule::exists('services', 'id')->where('status', 'publish')],
             'therapist_id'       => ['required', 'exists:users,id'],
@@ -118,6 +146,9 @@ class StoreEnrollmentRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'child_ids.required' => 'Select at least one child.',
+            'child_ids.min' => 'Select at least one child.',
+            'child_ids.*.distinct' => 'Each child can only be selected once.',
             'discount_reason.required' => 'Discount reason is required when discount exceeds the configured high-discount threshold.',
             'schedule_start_date.required' => 'Please choose when the first session should start.',
             'schedule_start_date.after_or_equal' => 'First session date cannot be in the past.',

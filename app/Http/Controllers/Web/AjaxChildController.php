@@ -34,6 +34,7 @@ class AjaxChildController extends Controller
                 return [
                     'id'           => $child->id,
                     'full_name'    => $child->full_name,
+                    'gr_number'    => $child->gr_number,
                     'age'          => $child->age,
                     'gender'       => $child->gender,
                     'phone_number' => $child->phone_number,

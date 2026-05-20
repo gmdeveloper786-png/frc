@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,7 @@ class Enrollment extends Model
 
     protected $fillable = [
         'child_id',
+        'enrollment_group_id',
         'branch_id',
         'service_id',
         'therapist_id',
@@ -60,6 +62,44 @@ class Enrollment extends Model
     public function child(): BelongsTo
     {
         return $this->belongsTo(User::class, 'child_id');
+    }
+
+    public function isGroupEnrollment(): bool
+    {
+        return filled($this->enrollment_group_id);
+    }
+
+    /**
+     * Other enrollments in the same group therapy batch (excludes this row).
+     *
+     * @return Collection<int, Enrollment>
+     */
+    public function groupMembers(): Collection
+    {
+        if (! $this->isGroupEnrollment()) {
+            return new Collection;
+        }
+
+        return static::query()
+            ->where('enrollment_group_id', $this->enrollment_group_id)
+            ->where('id', '!=', $this->id)
+            ->with('child:id,full_name,gr_number')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Total enrollments in this group (including self), or 1 when not grouped.
+     */
+    public function groupSize(): int
+    {
+        if (! $this->isGroupEnrollment()) {
+            return 1;
+        }
+
+        return (int) static::query()
+            ->where('enrollment_group_id', $this->enrollment_group_id)
+            ->count();
     }
 
     public function branch(): BelongsTo

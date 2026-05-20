@@ -52,7 +52,7 @@ class StoreManualPaymentRequest extends FormRequest
             }
 
             if (round((float) $value, 2) > $remaining) {
-                $fail('The amount cannot exceed the remaining balance (PKR '.number_format($remaining, 2).').');
+                $fail('The amount cannot exceed the remaining balance ('.frc_pkr($remaining).').');
             }
         };
     }

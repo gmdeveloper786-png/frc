@@ -915,7 +915,7 @@ a.frc-notif-item:focus-visible {
 .stat-card .stat-value {
   font-family: 'Poppins',sans-serif;
   font-weight: 700;
-  font-size: 26px;
+  font-size: 22px;
   color: var(--navy);
   line-height: 1;
 }
@@ -1831,8 +1831,8 @@ body.sidebar-mobile-open {
   .dashboard-recent-row .card-frc--panel .text-muted.small {
     padding: 0 !important;
   }
-  .stat-card .stat-value {
-    font-size: 22px !important;
+  .stat-card{
+    font-size: 22px;
   }
   .card-frc--list-page {
     padding: 16px;

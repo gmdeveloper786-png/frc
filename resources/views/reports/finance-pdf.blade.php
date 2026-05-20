@@ -7,30 +7,39 @@
     body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1e293b; }
     h1 { font-size: 14px; margin: 0 0 8px 0; color: #0f766e; }
     .sum { width: 100%; margin-bottom: 10px; border-collapse: collapse; }
-    .sum td { padding: 3px 6px; border: 1px solid #cbd5e1; }
+    .sum td { padding: 2px 5px; border: 1px solid #cbd5e1; line-height: 1.2; }
     .sum td:first-child { font-weight: bold; background: #f1f5f9; width: 28%; }
     table.data { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    table.data th, table.data td { border: 1px solid #cbd5e1; padding: 3px 4px; text-align: left; vertical-align: top; word-wrap: break-word; }
-    table.data th { background: #f1f5f9; font-size: 8px; }
+    table.data th, table.data td {
+        border: 1px solid #cbd5e1;
+        padding: 1px 3px;
+        text-align: left;
+        vertical-align: middle;
+        word-wrap: break-word;
+        line-height: 1.15;
+    }
+    table.data th { background: #f1f5f9; font-size: 8px; padding: 2px 3px; }
+    table.data tbody td { font-size: 8px; }
     .num { text-align: right; white-space: nowrap; }
     .seq { text-align: center; white-space: nowrap;}
 </style>
 </head>
 <body>
-<h1>Finance Report — {{ now()->format('d M Y H:i') }} ({{ count($rows) }} records)</h1>
+<h1>Finance Report — {{ frc_datetime() }} ({{ count($rows) }} records)</h1>
 <table class="sum">
-    <tr><td>Total Expected</td><td class="num">PKR {{ number_format((float) ($summary['total_expected'] ?? 0), 2) }}</td></tr>
-    <tr><td>Total Paid</td><td class="num">PKR {{ number_format((float) ($summary['total_paid'] ?? 0), 2) }}</td></tr>
-    <tr><td>Pending / Overdue</td><td class="num">PKR {{ number_format((float) ($summary['total_pending'] ?? 0), 2) }}</td></tr>
-    <tr><td>Cash Received</td><td class="num">PKR {{ number_format((float) ($summary['cash_received'] ?? 0), 2) }}</td></tr>
-    <tr><td>Online/Bank</td><td class="num">PKR {{ number_format((float) ($summary['online_received'] ?? 0), 2) }}</td></tr>
-    <tr><td>Pending Verification</td><td class="num">PKR {{ number_format((float) ($summary['pending_verification'] ?? 0), 2) }}</td></tr>
+    <tr><td>Total Expected</td><td class="num">PKR {{ frc_money(($summary['total_expected'] ?? 0)) }}</td></tr>
+    <tr><td>Total Paid</td><td class="num">PKR {{ frc_money(($summary['total_paid'] ?? 0)) }}</td></tr>
+    <tr><td>Pending / Overdue</td><td class="num">PKR {{ frc_money(($summary['total_pending'] ?? 0)) }}</td></tr>
+    <tr><td>Cash Received</td><td class="num">PKR {{ frc_money(($summary['cash_received'] ?? 0)) }}</td></tr>
+    <tr><td>Online/Bank</td><td class="num">PKR {{ frc_money(($summary['online_received'] ?? 0)) }}</td></tr>
+    <tr><td>Pending Verification</td><td class="num">PKR {{ frc_money(($summary['pending_verification'] ?? 0)) }}</td></tr>
 </table>
 <table class="data">
     <thead>
         <tr>
             <th class="seq">#</th>
             <th>Receipt#</th>
+            <th>GR No</th>
             <th>Child</th>
             <th>Status</th>
             <th>Branch</th>
@@ -49,6 +58,7 @@
             <tr>
                 <td class="seq">{{ $loop->iteration }}</td>
                 <td>{{ $r['receipt'] }}</td>
+                <td>{{ $r['child_gr_number'] }}</td>
                 <td>{{ $r['child_name'] }}</td>
                 <td>{{ $r['child_status'] }}</td>
                 <td>{{ $r['branch'] }}</td>

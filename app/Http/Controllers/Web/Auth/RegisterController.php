@@ -34,12 +34,16 @@ class RegisterController extends Controller
             abort(403, 'New child registration is currently disabled.');
         }
 
-        $this->authService->registerChild($request->validated());
+        $user = $this->authService->registerChild($request->validated());
 
         $message = (string) $this->settings->get(
             \App\Support\SettingKeys::REGISTRATION_SUCCESS_MESSAGE,
             'Your registration has been submitted. Please wait for admin approval.'
         );
+
+        // if (filled($user->gr_number)) {
+        //     $message .= ' Your GR Number is ' . $user->gr_number . '.';
+        // }
 
         return redirect()->route('login')->with('success', $message);
     }

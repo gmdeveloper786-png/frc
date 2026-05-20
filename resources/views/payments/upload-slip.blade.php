@@ -37,7 +37,7 @@
                         <select name="enrollment_id" class="form-control" onchange="document.getElementById('enrollmentPickForm').submit()">
                             @foreach($eligibleList as $opt)
                                 <option value="{{ $opt->id }}" @selected($enrollment && (int) $enrollment->id === (int) $opt->id)>
-                                    #{{ $opt->id }} — {{ $opt->service?->name ?? 'Programme' }} — remaining PKR {{ number_format((float) $opt->getRawOriginal('remaining_amount'), 2) }}
+                                    #{{ $opt->id }} — {{ $opt->service?->name ?? 'Programme' }} — remaining {{ frc_pkr($opt->outstandingAmount()) }}
                                 </option>
                             @endforeach
                         </select>
@@ -51,9 +51,9 @@
                     </div>
                     <div style="background:var(--bg-light);border-radius:14px;padding:16px;margin-bottom:20px;">
                         <div class="row g-3" style="font-size:13px;">
-                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Total fee</span><strong class="text-navy">PKR {{ number_format($enrollment->final_total, 2) }}</strong></div>
-                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Paid</span><strong style="color:var(--success);">PKR {{ number_format($enrollment->paid_amount, 2) }}</strong></div>
-                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Remaining (max you can pay)</span><strong style="color:var(--danger);">PKR {{ number_format($enrollment->outstandingAmount(), 2) }}</strong></div>
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Total fee</span><strong class="text-navy">PKR {{ frc_money($enrollment->final_total) }}</strong></div>
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Paid</span><strong style="color:var(--success);">PKR {{ frc_money($enrollment->paid_amount) }}</strong></div>
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Remaining (max you can pay)</span><strong style="color:var(--danger);">{{ frc_pkr($enrollment->outstandingAmount()) }}</strong></div>
                             <div class="col-sm-6"><span class="text-muted d-block mb-1">Branch</span><strong>{{ $enrollment->branch?->name }}</strong></div>
                         </div>
                     </div>
@@ -74,17 +74,18 @@
                     </div>
                     @endif
 
-                    <form action="{{ route('child.upload-slip.store') }}" method="POST" enctype="multipart/form-data" class="form-frc">
+                    <form action="{{ route('child.upload-slip.store') }}" method="POST" enctype="multipart/form-data" class="form-frc" id="childSlipUploadForm">
                     @csrf
                     <input type="hidden" name="enrollment_id" value="{{ $enrollment->id }}">
                     <div class="mb-3">
                         <label>Amount (PKR) <span style="color:var(--danger)">*</span></label>
                         <input type="number" name="amount" value="{{ old('amount') }}"
                             class="form-control @error('amount') is-invalid @enderror"
-                            min="0.01" step="0.01" max="{{ number_format($enrollment->outstandingAmount(), 2, '.', '') }}"
-                            placeholder="Enter amount up to PKR {{ number_format($enrollment->outstandingAmount(), 2) }}">
+                            min="1" step="1" inputmode="numeric" pattern="[0-9]*"
+                            max="{{ frc_money_input($enrollment->outstandingAmount()) }}"
+                            placeholder="Enter amount up to {{ frc_pkr($enrollment->outstandingAmount()) }}" required>
                         @error('amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        <small class="text-muted">Must be greater than 0 and cannot exceed the <strong>remaining balance for this programme</strong> only.</small>
+                        <small class="text-muted">Enter the <strong>exact whole PKR amount</strong> shown on your bank slip or transfer receipt.</small>
                     </div>
                     @php
                         $childPaymentMethods = ['bank_transfer', 'easypaisa', 'jazzcash', 'card', 'other'];
@@ -132,4 +133,19 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.getElementById('childSlipUploadForm')?.addEventListener('submit', function (e) {
+    const input = this.querySelector('input[name="amount"]');
+    const amount = input?.value?.trim();
+    if (!amount) {
+        return;
+    }
+    const label = 'PKR ' + Number(amount).toLocaleString('en-PK');
+    if (!confirm('You are submitting a payment of ' + label + ' Continue?')) {
+        e.preventDefault();
+    }
+});
+</script>
+@endpush
 @endsection

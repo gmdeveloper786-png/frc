@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Assessment;
-use App\Models\ProgressNote;
 use App\Models\User;
 use App\Services\TherapistPortalService;
 use Illuminate\Http\Request;
@@ -53,14 +52,6 @@ class TherapistChildController extends Controller
             ->limit(15)
             ->get();
 
-        $progressNotes = ProgressNote::query()
-            ->where('therapist_id', $tid)
-            ->where('child_id', $child->id)
-            ->with('service')
-            ->latest()
-            ->limit(15)
-            ->get();
-
-        return view('therapist.children.show', compact('child', 'assessments', 'sessions', 'progressNotes'));
+        return view('therapist.children.show', compact('child', 'assessments', 'sessions'));
     }
 }

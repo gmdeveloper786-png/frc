@@ -88,7 +88,7 @@
                     @foreach($payments as $p)
                         <tr>
                             <td class="child-payments-receipt">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
-                            <td class="text-amount child-payments-amount">PKR {{ number_format($p->amount, 2) }}</td>
+                            <td class="text-amount child-payments-amount">PKR {{ frc_money($p->amount) }}</td>
                             <td class="child-payments-method">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method) }}</td>
                             <td class="child-payments-date">{{ $p->payment_date?->format('d M Y') }}</td>
                             <td class="child-payments-status">

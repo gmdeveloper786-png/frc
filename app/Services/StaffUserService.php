@@ -55,9 +55,9 @@ class StaffUserService
         ]);
 
         $user->load('role');
-        $dashboardRoute = $user->dashboardRouteName();
+        $profileRoute = $user->staffProfileRouteName();
         // Relative path avoids host mismatch (e.g. APP_URL vs how the user opens the app) in notification follow checks.
-        $dashboardUrl = $dashboardRoute !== null ? route($dashboardRoute, [], false) : '/';
+        $profileUrl = $profileRoute !== null ? route($profileRoute, [], false) : '/';
 
         $this->notifications->createNotification(
             (int) $user->id,
@@ -66,7 +66,7 @@ class StaffUserService
             UserNotification::TYPE_STAFF_ACCOUNT_CREATED,
             'staff',
             null,
-            $dashboardUrl,
+            $profileUrl,
         );
 
         return $user->fresh(['role']);

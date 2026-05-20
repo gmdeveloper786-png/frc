@@ -12,7 +12,7 @@
     $dp = (float) ($e->discount_percentage ?? 0);
     $pctLabel = null;
     if ($dp > 0) {
-        $pctLabel = ($dp == floor($dp)) ? (string) (int) $dp : rtrim(rtrim(number_format($dp, 2), '0'), '.');
+        $pctLabel = frc_percent($dp);
     }
 @endphp
 <article class="card-frc card-frc--child-enrollment-detail child-enrollment-detail">
@@ -101,7 +101,7 @@
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="child-enrollment-detail__payment-tile">
                         <span class="child-enrollment-detail__payment-label">Total fee (before discount)</span>
-                        <span class="child-enrollment-detail__payment-amount">PKR {{ number_format($e->subtotal, 2) }}</span>
+                        <span class="child-enrollment-detail__payment-amount">PKR {{ frc_money($e->subtotal) }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
@@ -109,25 +109,25 @@
                         <span class="child-enrollment-detail__payment-label">
                             Discount @if($pctLabel !== null)<span class="text-muted">({{ $pctLabel }}%)</span>@endif
                         </span>
-                        <span class="child-enrollment-detail__payment-amount">PKR {{ number_format($e->discount_amount, 2) }}</span>
+                        <span class="child-enrollment-detail__payment-amount">PKR {{ frc_money($e->discount_amount) }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="child-enrollment-detail__payment-tile child-enrollment-detail__payment-tile--highlight">
                         <span class="child-enrollment-detail__payment-label">Final payable amount</span>
-                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--emphasis">PKR {{ number_format($e->final_total, 2) }}</span>
+                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--emphasis">PKR {{ frc_money($e->final_total) }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="child-enrollment-detail__payment-tile child-enrollment-detail__payment-tile--paid">
                         <span class="child-enrollment-detail__payment-label">Paid amount</span>
-                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--paid">PKR {{ number_format($e->paid_amount, 2) }}</span>
+                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--paid">PKR {{ frc_money($e->paid_amount) }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="child-enrollment-detail__payment-tile child-enrollment-detail__payment-tile--due">
                         <span class="child-enrollment-detail__payment-label">Remaining amount</span>
-                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--due">PKR {{ number_format($outstanding, 2) }}</span>
+                        <span class="child-enrollment-detail__payment-amount child-enrollment-detail__payment-amount--due">PKR {{ frc_money($outstanding) }}</span>
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">

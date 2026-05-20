@@ -59,6 +59,10 @@
 
             <div class="frc-profile-detail-grid">
                 <div class="frc-profile-detail-item">
+                    <div class="frc-profile-detail-label">GR number</div>
+                    <div class="frc-profile-detail-value" style="font-family:monospace;">{{ $child->gr_number ?? '—' }}</div>
+                </div>
+                <div class="frc-profile-detail-item">
                     <div class="frc-profile-detail-label">Father name</div>
                     <div class="frc-profile-detail-value">{{ $child->father_name ?: '—' }}</div>
                 </div>

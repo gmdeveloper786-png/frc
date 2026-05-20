@@ -100,4 +100,31 @@ final class SessionTimeSlotParser
 
         return $at->greaterThanOrEqualTo($startsAt) && $at->lt($endsAt);
     }
+
+    /** Calendar date of the occurrence at start-of-day in the application timezone. */
+    public static function sessionDayStart(Carbon|string $sessionDay): Carbon
+    {
+        $tz = config('app.timezone');
+        $dateIso = $sessionDay instanceof Carbon ? $sessionDay->format('Y-m-d') : (string) $sessionDay;
+
+        return Carbon::parse($dateIso, $tz)->startOfDay();
+    }
+
+    /** True when "now" falls on the same calendar day as the session (APP_TIMEZONE). */
+    public static function isSessionDayToday(Carbon|string $sessionDay, ?Carbon $at = null): bool
+    {
+        $at ??= now();
+        $tz = config('app.timezone');
+
+        return $at->copy()->timezone($tz)->startOfDay()->equalTo(self::sessionDayStart($sessionDay));
+    }
+
+    /** True when the session calendar day is before today (APP_TIMEZONE). */
+    public static function isSessionDayPast(Carbon|string $sessionDay, ?Carbon $at = null): bool
+    {
+        $at ??= now();
+        $tz = config('app.timezone');
+
+        return $at->copy()->timezone($tz)->startOfDay()->greaterThan(self::sessionDayStart($sessionDay));
+    }
 }

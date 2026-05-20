@@ -25,7 +25,7 @@
                     @foreach($enrollments as $e)
                         @php $remaining = (float) $e->getRawOriginal('remaining_amount'); @endphp
                         <option value="{{ $e->id }}" data-search="{{ strtolower('#'.$e->id.' '.$e->child?->full_name) }}" {{ (old('enrollment_id', request('enrollment_id')) == $e->id) ? 'selected' : '' }}>
-                            #{{ $e->id }} — {{ $e->child?->full_name }} (PKR {{ number_format($remaining, 2) }} remaining)
+                            #{{ $e->id }} — {{ $e->child?->full_name }} (PKR {{ frc_money($remaining) }} remaining)
                         </option>
                     @endforeach
                 </select>
@@ -42,7 +42,7 @@
             <div class="row g-3">
                 <div class="col-12">
                     <label>Amount (PKR) <span style="color:var(--danger)">*</span></label>
-                    <input type="number" name="amount" value="{{ old('amount') }}" class="form-control @error('amount') is-invalid @enderror" min="0.01" step="0.01" placeholder="Enter amount">
+                    <input type="number" name="amount" value="{{ old('amount') }}" class="form-control @error('amount') is-invalid @enderror" min="1" step="1" placeholder="Enter amount">
                     @error('amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
@@ -107,7 +107,7 @@ function loadEnrollmentInfo(id) {
     `;
     el.style.display = 'block';
     // Auto-fill amount with remaining
-    document.querySelector('[name=amount]').value = parseFloat(e.remaining_amount).toFixed(2);
+    document.querySelector('[name=amount]').value = Math.round(parseFloat(e.remaining_amount) || 0);
 }
 
 const searchInput = document.getElementById('enrollmentSearch');

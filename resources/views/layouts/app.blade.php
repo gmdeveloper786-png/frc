@@ -110,7 +110,6 @@
                                     'assessments' => 'fa-solid fa-clipboard-list',
                                     'enrollments' => 'fa-solid fa-file-contract',
                                     'sessions' => 'fa-solid fa-calendar-check',
-                                    'progress_notes' => 'fa-solid fa-file-waveform',
                                     default => 'fa-solid fa-bell',
                                 };
                         @endphp

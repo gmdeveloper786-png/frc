@@ -48,13 +48,13 @@
                                 <span class="dashboard-stat-row-label">
                                     <span class="dashboard-stat-swatch" style="background:#16acac;"></span>Cash
                                 </span>
-                                <strong>PKR {{ number_format($payCash) }}</strong>
+                                <strong>{{ frc_pkr($payCash) }}</strong>
                             </li>
                             <li class="dashboard-stat-row">
                                 <span class="dashboard-stat-row-label">
                                     <span class="dashboard-stat-swatch" style="background:#11517c;"></span>Online / Bank
                                 </span>
-                                <strong>PKR {{ number_format($payOnline) }}</strong>
+                                <strong>{{ frc_pkr($payOnline) }}</strong>
                             </li>
                         </ul>
                     @endif

@@ -24,19 +24,19 @@
                 <canvas id="feeOverviewChart" aria-label="Fee overview: paid vs pending"></canvas>
                 <div class="dashboard-fee-donut-center">
                     <span class="dashboard-fee-donut-label">Total Expected</span>
-                    <strong class="dashboard-fee-donut-value">PKR {{ number_format($stats['fee_total_expected']) }}</strong>
+                    <strong class="dashboard-fee-donut-value">{{ frc_pkr($stats['fee_total_expected']) }}</strong>
                 </div>
             </div>
             <ul class="dashboard-fee-donut-legend list-unstyled mb-0">
                 <li class="dashboard-fee-donut-legend-item">
                     <span class="dashboard-fee-donut-legend-dot dashboard-fee-donut-legend-dot--paid" aria-hidden="true"></span>
                     <span class="dashboard-fee-donut-legend-label">Total Paid</span>
-                    <strong class="dashboard-fee-donut-legend-amount">PKR {{ number_format($stats['fee_total_paid']) }}</strong>
+                    <strong class="dashboard-fee-donut-legend-amount">{{ frc_pkr($stats['fee_total_paid']) }}</strong>
                 </li>
                 <li class="dashboard-fee-donut-legend-item">
                     <span class="dashboard-fee-donut-legend-dot dashboard-fee-donut-legend-dot--pending" aria-hidden="true"></span>
                     <span class="dashboard-fee-donut-legend-label">Pending / Overdue</span>
-                    <strong class="dashboard-fee-donut-legend-amount dashboard-fee-donut-legend-amount--pending">PKR {{ number_format($stats['fee_pending_overdue']) }}</strong>
+                    <strong class="dashboard-fee-donut-legend-amount dashboard-fee-donut-legend-amount--pending">{{ frc_pkr($stats['fee_pending_overdue']) }}</strong>
                 </li>
             </ul>
         </div>

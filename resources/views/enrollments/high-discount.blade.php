@@ -134,16 +134,16 @@
                                 <div style="font-weight:700;color:var(--navy);">{{ $e->total_sessions }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:700;color:var(--navy);">PKR {{ number_format($e->subtotal) }}</div>
+                                <div style="font-weight:700;color:var(--navy);">{{ frc_pkr($e->subtotal) }}</div>
                             </td>
                             <td>
                                 <span style="background:rgba(220,53,69,.1);color:var(--danger);padding:4px 10px;border-radius:20px;font-weight:600;font-size:13px;">
                                     {{ $e->discount_percentage }}%
                                 </span>
-                                <div style="font-size:12px;color:var(--danger);margin-top:4px;">- PKR {{ number_format($e->discount_amount) }}</div>
+                                <div style="font-size:12px;color:var(--danger);margin-top:4px;">- {{ frc_pkr($e->discount_amount) }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:700;color:var(--navy);">PKR {{ number_format($e->final_total) }}</div>
+                                <div style="font-weight:700;color:var(--navy);">{{ frc_pkr($e->final_total) }}</div>
                             </td>
                             <td style="max-width:200px;">
                                 <p style="font-size:12px;color:var(--text-muted);margin:0;white-space:pre-wrap;">{{ Str::limit($e->discount_reason, 80) }}</p>

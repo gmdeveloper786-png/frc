@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\EnrollmentSchedule;
 use App\Services\SessionOccurrenceDetailService;
+use App\Services\SessionOccurrenceStateService;
+use App\Services\SessionTimeSlotParser;
 use App\Services\TherapistPortalService;
 use App\Services\TherapistSessionService;
 use Carbon\Carbon;
@@ -19,6 +21,7 @@ class TherapistSessionController extends Controller
         private readonly TherapistPortalService $portal,
         private readonly TherapistSessionService $sessionService,
         private readonly SessionOccurrenceDetailService $occurrenceDetailService,
+        private readonly SessionOccurrenceStateService $occurrenceState,
     ) {}
 
     public function index(Request $request): View
@@ -84,6 +87,85 @@ class TherapistSessionController extends Controller
         ));
     }
 
+    public function showGroupOccurrence(Request $request, EnrollmentSchedule $schedule): View|RedirectResponse
+    {
+        $therapist = auth()->user();
+        $this->occurrenceDetailService->authorizeAssignedTherapist($therapist, $schedule);
+
+        $sessionDate = (string) $request->query('session_date', '');
+        abort_if($sessionDate === '', 404);
+
+        $schedule->loadMissing('enrollment');
+        if (! filled($schedule->enrollment?->enrollment_group_id)) {
+            return redirect()->route('therapist.sessions.show', [
+                'schedule'     => $schedule->id,
+                'session_date' => $sessionDate,
+            ]);
+        }
+
+        abort_unless(
+            $this->portal->therapistOwnsScheduleOccurrence((int) $therapist->id, $schedule, $sessionDate),
+            404,
+        );
+
+        $groupSchedules = $this->portal->groupSchedulesMatchingAnchorSlot($schedule);
+        foreach ($groupSchedules as $s) {
+            abort_unless(
+                $this->portal->therapistOwnsScheduleOccurrence((int) $therapist->id, $s, $sessionDate),
+                404,
+            );
+        }
+
+        $sessionDay = Carbon::parse($sessionDate)->startOfDay();
+        $memberRows = [];
+        foreach ($groupSchedules as $s) {
+            $this->occurrenceState->repairLegacyTemplateOccurrence($s, $sessionDay);
+            $s->refresh();
+            $detail = $this->occurrenceDetailService->buildTherapistOccurrenceDetail($s, $sessionDate);
+            if ($detail === []) {
+                continue;
+            }
+            $detailStatus = (string) ($detail['status'] ?? $s->status);
+            $statusBadge = match ($detailStatus) {
+                'scheduled' => 'badge-session-scheduled',
+                'in_progress' => 'badge-session-in-progress',
+                'completed' => 'badge-session-completed',
+                'cancelled' => 'badge-session-cancelled',
+                'no_show' => 'badge-session-no-show',
+                default => 'badge-draft',
+            };
+            $memberRows[] = [
+                'schedule'     => $s,
+                'detail'       => $detail,
+                'status_badge' => $statusBadge,
+            ];
+        }
+
+        abort_if($memberRows === [], 404);
+
+        $allScheduled = collect($memberRows)->every(
+            fn (array $r): bool => ($r['detail']['status'] ?? '') === 'scheduled',
+        );
+        $allInProgress = collect($memberRows)->every(
+            fn (array $r): bool => ($r['detail']['status'] ?? '') === 'in_progress',
+        );
+        $canCancelGroup = collect($memberRows)->every(function (array $r): bool {
+            $s = (string) ($r['detail']['status'] ?? '');
+
+            return in_array($s, ['scheduled', 'in_progress'], true);
+        });
+        $canStartGroup = $allScheduled && SessionTimeSlotParser::isSessionDayToday($sessionDay);
+
+        return view('therapist.sessions.group-show', [
+            'sessionDate'     => $sessionDate,
+            'memberRows'      => $memberRows,
+            'anchorSchedule'  => $schedule,
+            'canStartGroup'   => $canStartGroup,
+            'allInProgress'   => $allInProgress,
+            'canCancelGroup'  => $canCancelGroup,
+        ]);
+    }
+
     public function showOccurrence(Request $request, EnrollmentSchedule $schedule): View
     {
         $therapist = auth()->user();
@@ -96,6 +178,12 @@ class TherapistSessionController extends Controller
             $this->portal->therapistOwnsScheduleOccurrence((int) $therapist->id, $schedule, $sessionDate),
             404,
         );
+
+        $this->occurrenceState->repairLegacyTemplateOccurrence(
+            $schedule,
+            Carbon::parse($sessionDate)->startOfDay(),
+        );
+        $schedule->refresh();
 
         $occurrenceDetail = $this->occurrenceDetailService->buildTherapistOccurrenceDetail($schedule, $sessionDate);
         abort_if($occurrenceDetail === [], 404);
@@ -111,6 +199,90 @@ class TherapistSessionController extends Controller
         };
 
         return view('therapist.sessions.show', compact('schedule', 'occurrenceDetail', 'statusBadge'));
+    }
+
+    public function startGroup(Request $request, EnrollmentSchedule $schedule): RedirectResponse
+    {
+        $this->occurrenceDetailService->authorizeAssignedTherapist(auth()->user(), $schedule);
+
+        $data = $request->validate([
+            'session_date' => ['required', 'date'],
+        ]);
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+
+        $count = $this->sessionService->startGroupSessions(auth()->user(), $schedule, $iso);
+
+        return redirect()->back()->with(
+            'success',
+            $count > 1
+                ? "Group session started for {$count} children."
+                : 'Session started successfully.',
+        );
+    }
+
+    public function completeGroup(Request $request, EnrollmentSchedule $schedule): RedirectResponse
+    {
+        $this->occurrenceDetailService->authorizeAssignedTherapist(auth()->user(), $schedule);
+
+        $data = $request->validate([
+            'session_date'    => ['required', 'date'],
+            'completion_note' => ['nullable', 'string', 'max:5000'],
+            'session_notes'   => ['nullable', 'string', 'max:5000'],
+        ]);
+        $trimmed = trim((string) ($data['completion_note'] ?? ''));
+        if ($trimmed === '') {
+            $trimmed = trim((string) ($data['session_notes'] ?? ''));
+        }
+
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $count = $this->sessionService->completeGroupSessions(
+            auth()->user(),
+            $schedule,
+            $iso,
+            $trimmed !== '' ? $trimmed : null,
+        );
+
+        return redirect()->back()->with(
+            'success',
+            $count > 1
+                ? "Group session marked completed for {$count} children."
+                : 'Session marked completed.',
+        );
+    }
+
+    public function cancelGroup(Request $request, EnrollmentSchedule $schedule): RedirectResponse
+    {
+        $this->occurrenceDetailService->authorizeAssignedTherapist(auth()->user(), $schedule);
+
+        $merged = trim((string) $request->input('cancellation_reason', ''));
+        if ($merged === '') {
+            $merged = trim((string) $request->input('session_notes', ''));
+        }
+        $request->merge(['cancellation_reason' => $merged]);
+
+        $data = $request->validate([
+            'session_date'        => ['required', 'date'],
+            'cancellation_reason' => ['required', 'string', 'max:5000', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (trim((string) $value) === '') {
+                    $fail('Cancellation reason is required.');
+                }
+            }],
+        ]);
+
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $count = $this->sessionService->cancelGroupSessions(
+            auth()->user(),
+            $schedule,
+            $iso,
+            trim($data['cancellation_reason']),
+        );
+
+        return redirect()->back()->with(
+            'success',
+            $count > 1
+                ? "Group session cancelled for {$count} children."
+                : 'Session cancelled.',
+        );
     }
 
     public function occurrenceDetail(Request $request, EnrollmentSchedule $schedule): JsonResponse
@@ -169,6 +341,7 @@ class TherapistSessionController extends Controller
         $request->merge(['cancellation_reason' => $merged]);
 
         $data = $request->validate([
+            'session_date'        => ['required', 'date'],
             'cancellation_reason' => ['required', 'string', 'max:5000', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (trim((string) $value) === '') {
                     $fail('Cancellation reason is required.');
@@ -176,7 +349,13 @@ class TherapistSessionController extends Controller
             }],
         ]);
 
-        $this->sessionService->cancelSession(auth()->user(), $schedule, trim($data['cancellation_reason']));
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $this->sessionService->cancelSession(
+            auth()->user(),
+            $schedule,
+            $iso,
+            trim($data['cancellation_reason']),
+        );
 
         return redirect()->back()->with('success', 'Session cancelled.');
     }
@@ -184,9 +363,11 @@ class TherapistSessionController extends Controller
     public function noShow(Request $request, EnrollmentSchedule $schedule): RedirectResponse
     {
         $data = $request->validate([
+            'session_date'  => ['required', 'date'],
             'session_notes' => ['nullable', 'string', 'max:5000'],
         ]);
-        $this->sessionService->markNoShow(auth()->user(), $schedule, $data['session_notes'] ?? null);
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $this->sessionService->markNoShow(auth()->user(), $schedule, $iso, $data['session_notes'] ?? null);
 
         return redirect()->back()->with('success', 'Marked as no-show.');
     }

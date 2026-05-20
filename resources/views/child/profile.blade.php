@@ -16,8 +16,11 @@
                             {{ strtoupper(substr($user->full_name ?? 'C', 0, 1)) }}
                         </div>
                         <div class="child-profile-hero-text">
-                            <h2 class="child-profile-display-name">{{ $user->full_name }}</h2>
-                            <p class="child-profile-email mb-0">{{ $user->email }}</p>
+                            <h2 class="child-profile-display-name">{{ $user->full_name ?? '—' }}</h2>
+                            @if($user->gr_number)
+                                <p class="child-profile-gr mb-1" style="font-family:monospace;font-size:14px;color:var(--navy);">GR No. {{ $user->gr_number ?? '—' }}</p>
+                            @endif
+                            <p class="child-profile-email mb-0">{{ $user->email ?? '—' }}</p>
                             @if($user->status)
                                 <span class="badge-status badge-{{ $user->status }} child-profile-status">{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $user->status)) }}</span>
                             @endif

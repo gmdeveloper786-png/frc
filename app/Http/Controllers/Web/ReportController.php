@@ -108,7 +108,7 @@ class ReportController extends Controller
             fputcsv($out, ['sep=,']);
 
             fputcsv($out, ['Faizan Rehabilitation Centre — Finance Report']);
-            fputcsv($out, ['Generated', now()->format('d M Y, h:i A')]);
+            fputcsv($out, ['Generated', frc_datetime()]);
             fputcsv($out, ['Export file', 'finance-report_' . $stamp . '.csv']);
             fputcsv($out, []);
 
@@ -131,6 +131,7 @@ class ReportController extends Controller
             fputcsv($out, [
                 '#',
                 'Receipt Number',
+                'GR Number',
                 'Child Name',
                 'Child Status',
                 'Branch',
@@ -147,25 +148,27 @@ class ReportController extends Controller
 
             $rowNumber = 0;
             $this->reportService->chunkFinancePaymentRecords($filters, function (Collection $chunk) use ($out, &$rowNumber): void {
-                foreach ($chunk as $p) {
-                    /** @var Payment $p */
-                    $enr = $p->enrollment;
+                foreach ($chunk as $payment) {
+                    /** @var Payment $payment */
+                    $enrollment = $payment->enrollment;
+                    $child = $payment->child ?? $enrollment?->child;
                     $rowNumber++;
                     fputcsv($out, [
                         $rowNumber,
-                        $p->hasPrintableReceipt() ? $p->receipt_number : '',
-                        $p->child?->full_name ?? '',
-                        $p->child ? Str::title(str_replace('_', ' ', (string) $p->child->status)) : '',
-                        $enr?->branch?->name ?? '',
-                        $enr ? $this->financeCsvAmount((float) $enr->final_total) : '',
-                        $enr ? $this->financeCsvAmount((float) $enr->paid_amount) : '',
-                        $enr ? $this->financeCsvAmount((float) $enr->remaining_amount) : '',
-                        $enr ? Payment::labelForEnrollmentPaymentStatus($enr->payment_status) : '',
-                        $this->financeCsvAmount((float) $p->amount),
-                        Payment::labelForVerificationStatus($p->status) ?: '',
-                        Payment::labelForPaymentMethod($p->payment_method) ?: '',
-                        $p->payment_date?->format('d M Y') ?? '',
-                        $p->enrollment_id ? (string) $p->enrollment_id : '',
+                        $payment->hasPrintableReceipt() ? $payment->receipt_number : '',
+                        $child?->gr_number ?? '',
+                        $child?->full_name ?? '',
+                        $child ? Str::title(str_replace('_', ' ', (string) $child->status)) : '',
+                        $enrollment?->branch?->name ?? '',
+                        $enrollment ? $this->financeCsvAmount((float) $enrollment->final_total) : '',
+                        $enrollment ? $this->financeCsvAmount((float) $enrollment->paid_amount) : '',
+                        $enrollment ? $this->financeCsvAmount((float) $enrollment->remaining_amount) : '',
+                        $enrollment ? Payment::labelForEnrollmentPaymentStatus($enrollment->payment_status) : '',
+                        $this->financeCsvAmount((float) $payment->amount),
+                        Payment::labelForVerificationStatus($payment->status) ?: '',
+                        Payment::labelForPaymentMethod($payment->payment_method) ?: '',
+                        $payment->payment_date?->format('d M Y') ?? '',
+                        $enrollment ? (string) $enrollment->id : '',
                     ]);
                 }
             });
@@ -174,7 +177,7 @@ class ReportController extends Controller
 
     private function financeCsvAmount(float $value): string
     {
-        return number_format($value, 2, '.', '');
+        return \App\Support\Money::exportAmount($value);
     }
 
     /**
@@ -191,6 +194,6 @@ class ReportController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('isHtml5ParserEnabled', true);
 
-        return $pdf->download('finance-report_' . $stamp . '.pdf');
+        return $pdf->stream('finance-report_' . $stamp . '.pdf');
     }
 }

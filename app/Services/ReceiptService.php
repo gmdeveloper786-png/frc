@@ -16,6 +16,7 @@ class ReceiptService
             'verified_at'       => $payment->verified_at?->format('d M Y h:i A'),
             'verified_by'       => $payment->verifiedBy?->full_name,
             'child_name'        => $payment->child->full_name,
+            'child_gr_number'   => $payment->child->gr_number,
             'child_email'       => $payment->child->email,
             'branch'            => $payment->enrollment->branch?->name,
             'therapist'         => $payment->enrollment->therapist?->full_name,

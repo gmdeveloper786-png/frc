@@ -112,6 +112,8 @@
                     @foreach($sessions as $row)
                         @php
                             $sch = $row['schedule'];
+                            $groupMembers = $row['group_members'] ?? null;
+                            $isGroupRow = ! empty($groupMembers);
                             $occStatus = (string) ($row['status'] ?? $sch->status);
                             $badge = match ($occStatus) {
                                 'scheduled' => 'badge-session-scheduled',
@@ -123,24 +125,31 @@
                             };
                             $cid = $sch->enrollment?->child_id;
                             $dateIso = $row['effective_date']->toDateString();
-                            $pnCreate = $cid
-                                ? route('therapist.progress-notes.create', array_filter([
-                                    'child_id' => $cid,
-                                    'session_date' => $dateIso,
-                                    'service_id' => $sch->enrollment?->service_id,
-                                    'enrollment_id' => $sch->enrollment_id,
-                                    'enrollment_schedule_id' => $sch->id,
-                                ], fn ($v) => $v !== null && $v !== ''))
+                            $groupShowUrl = $isGroupRow
+                                ? route('therapist.sessions.group-show', ['schedule' => $sch->id]).'?session_date='.urlencode($dateIso)
                                 : null;
-                            $meta = $row['progress_meta'] ?? [];
-                            $pnDraftId = $meta['draft_id'] ?? null;
-                            $pnCompletedId = $meta['completed_id'] ?? null;
                         @endphp
                         <tr>
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">{{ $row['effective_date']->format('d M Y') }}</td>
                             <td class="small text-muted white-space:nowrap;">{{ $row['effective_date']->format('l') }}</td>
                             <td style="white-space:nowrap;">{{ $row['time_slot'] }}</td>
-                            <td style="white-space:nowrap;">{{ $row['child_name'] }}</td>
+                            <td style="white-space:normal;max-width:360px;line-height:1.45;">
+                                @if($isGroupRow)
+                                    @foreach($groupMembers as $idx => $member)
+                                        @if($idx > 0)<span class="text-muted">, </span>@endif
+                                        @if((int) ($member['child_id'] ?? 0) > 0)
+                                            <a href="{{ route('therapist.children.show', $member['child_id']) }}" style="color:var(--navy);text-decoration:underline;">{{ $member['child_name'] }}</a>
+                                        @else
+                                            {{ $member['child_name'] }}
+                                        @endif
+                                    @endforeach
+                                    <span class="badge-status badge-draft" style="font-size:10px;margin-left:6px;vertical-align:middle;">Group</span>
+                                @elseif($cid)
+                                    <a href="{{ route('therapist.children.show', $cid) }}" style="color:var(--navy);text-decoration:underline;">{{ $row['child_name'] }}</a>
+                                @else
+                                    {{ $row['child_name'] }}
+                                @endif
+                            </td>
                             <td class="small" style="white-space:nowrap;">{{ $row['service_name'] }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $row['branch_name'] }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status {{ $badge }}" style="font-size:11px;">{{ ucfirst(str_replace('_', ' ', $occStatus)) }}</span></td>
@@ -158,13 +167,68 @@
                                         <span class="visually-hidden">Open session actions</span>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end frc-session-actions-menu">
-                                        @if($cid)
+                                        @if($isGroupRow)
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('therapist.children.show', $cid) }}">
-                                                    <i class="fa-solid fa-child"></i><span>View child</span>
+                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ $groupShowUrl }}">
+                                                    <i class="fa-solid fa-eye"></i><span>Session details</span>
                                                 </a>
                                             </li>
-                                        @endif
+                                            @if($occStatus === 'scheduled')
+                                                <li><hr class="dropdown-divider"></li>
+                                                @if($row['can_start_session_now'] ?? false)
+                                                    <li>
+                                                        <button type="button" class="dropdown-item d-flex align-items-center gap-2"
+                                                            data-bs-toggle="modal" data-bs-target="#frcTherapistStartModal"
+                                                            data-start-url="{{ route('therapist.sessions.group-start', $sch) }}"
+                                                            data-session-date="{{ $dateIso }}"
+                                                            data-is-group="1">
+                                                            <i class="fa-solid fa-play"></i><span>Start session</span>
+                                                        </button>
+                                                    </li>
+                                                @elseif(! ($row['session_start_window_passed'] ?? false))
+                                                    <li>
+                                                        <span class="dropdown-item disabled d-flex flex-column align-items-start gap-1 py-2">
+                                                            <span class="d-flex align-items-center gap-2"><i class="fa-solid fa-clock"></i><span>Start session</span></span>
+                                                            @if(! empty($row['occurrence_starts_at'] ?? null))
+                                                                <span class="small text-muted">Available on {{ $row['occurrence_starts_at']->timezone(config('app.timezone'))->format('d M Y') }}</span>
+                                                            @else
+                                                                <span class="small text-muted">Not available yet</span>
+                                                            @endif
+                                                        </span>
+                                                    </li>
+                                                @endif
+                                                <li>
+                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                        data-bs-toggle="modal" data-bs-target="#frcTherapistCancelModal"
+                                                        data-cancel-url="{{ route('therapist.sessions.group-cancel', $sch) }}"
+                                                        data-session-date="{{ $dateIso }}"
+                                                        data-is-group="1">
+                                                        <i class="fa-solid fa-ban"></i><span>Cancel</span>
+                                                    </button>
+                                                </li>
+                                            @endif
+                                            @if($occStatus === 'in_progress')
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2"
+                                                        data-bs-toggle="modal" data-bs-target="#frcTherapistCompleteModal"
+                                                        data-complete-url="{{ route('therapist.sessions.group-complete', $sch) }}"
+                                                        data-session-date="{{ $dateIso }}"
+                                                        data-is-group="1">
+                                                        <i class="fa-solid fa-check"></i><span>Complete</span>
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                        data-bs-toggle="modal" data-bs-target="#frcTherapistCancelModal"
+                                                        data-cancel-url="{{ route('therapist.sessions.group-cancel', $sch) }}"
+                                                        data-session-date="{{ $dateIso }}"
+                                                        data-is-group="1">
+                                                        <i class="fa-solid fa-ban"></i><span>Cancel</span>
+                                                    </button>
+                                                </li>
+                                            @endif
+                                        @else
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('therapist.sessions.show', ['schedule' => $sch->id, 'session_date' => $dateIso]) }}">
                                                 <i class="fa-solid fa-eye"></i><span>View session details</span>
@@ -172,13 +236,14 @@
                                         </li>
 
                                         @if($occStatus === 'scheduled')
-                                            @if($cid)<li><hr class="dropdown-divider"></li>@endif
+                                            <li><hr class="dropdown-divider"></li>
                                             @if($row['can_start_session_now'] ?? false)
                                                 <li>
                                                     <button type="button" class="dropdown-item d-flex align-items-center gap-2"
                                                         data-bs-toggle="modal" data-bs-target="#frcTherapistStartModal"
                                                         data-start-url="{{ route('therapist.sessions.start', $sch) }}"
-                                                        data-session-date="{{ $dateIso }}">
+                                                        data-session-date="{{ $dateIso }}"
+                                                        data-is-group="0">
                                                         <i class="fa-solid fa-play"></i><span>Start session</span>
                                                     </button>
                                                 </li>
@@ -186,10 +251,8 @@
                                                 <li>
                                                     <span class="dropdown-item disabled d-flex flex-column align-items-start gap-1 py-2">
                                                         <span class="d-flex align-items-center gap-2"><i class="fa-solid fa-clock"></i><span>Start session</span></span>
-                                                        @if(! empty($row['occurrence_starts_at'] ?? null) && ! empty($row['occurrence_ends_at'] ?? null))
-                                                            <span class="small text-muted">Available {{ $row['occurrence_starts_at']->timezone(config('app.timezone'))->format('g:i A') }} – {{ $row['occurrence_ends_at']->timezone(config('app.timezone'))->format('g:i A') }} on {{ $row['occurrence_starts_at']->format('d M Y') }}</span>
-                                                        @elseif(! empty($row['occurrence_starts_at'] ?? null))
-                                                            <span class="small text-muted">Available from {{ $row['occurrence_starts_at']->timezone(config('app.timezone'))->format('d M Y, g:i A') }}</span>
+                                                        @if(! empty($row['occurrence_starts_at'] ?? null))
+                                                            <span class="small text-muted">Available on {{ $row['occurrence_starts_at']->timezone(config('app.timezone'))->format('d M Y') }}</span>
                                                         @else
                                                             <span class="small text-muted">Not available yet</span>
                                                         @endif
@@ -199,50 +262,36 @@
                                             <li>
                                                 <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger"
                                                     data-bs-toggle="modal" data-bs-target="#frcTherapistCancelModal"
-                                                    data-cancel-url="{{ route('therapist.sessions.cancel', $sch) }}">
+                                                    data-cancel-url="{{ route('therapist.sessions.cancel', $sch) }}"
+                                                    data-session-date="{{ $dateIso }}"
+                                                    data-is-group="0">
                                                     <i class="fa-solid fa-ban"></i><span>Cancel</span>
                                                 </button>
                                             </li>
                                         @endif
 
                                         @if($occStatus === 'in_progress')
-                                            @if($cid)<li><hr class="dropdown-divider"></li>@endif
+                                            <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <button type="button" class="dropdown-item d-flex align-items-center gap-2"
                                                     data-bs-toggle="modal" data-bs-target="#frcTherapistCompleteModal"
                                                     data-complete-url="{{ route('therapist.sessions.complete', $sch) }}"
-                                                    data-session-date="{{ $dateIso }}">
+                                                    data-session-date="{{ $dateIso }}"
+                                                    data-is-group="0">
                                                     <i class="fa-solid fa-check"></i><span>Complete</span>
                                                 </button>
                                             </li>
                                             <li>
                                                 <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger"
                                                     data-bs-toggle="modal" data-bs-target="#frcTherapistCancelModal"
-                                                    data-cancel-url="{{ route('therapist.sessions.cancel', $sch) }}">
+                                                    data-cancel-url="{{ route('therapist.sessions.cancel', $sch) }}"
+                                                    data-session-date="{{ $dateIso }}"
+                                                    data-is-group="0">
                                                     <i class="fa-solid fa-ban"></i><span>Cancel</span>
                                                 </button>
                                             </li>
                                         @endif
 
-                                        @if($occStatus === 'completed' && ($pnDraftId || $pnCompletedId || $pnCreate))
-                                            @if($cid)
-                                                <li><hr class="dropdown-divider"></li>
-                                            @endif
-                                            <li>
-                                                @if($pnDraftId)
-                                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('therapist.progress-notes.edit', $pnDraftId) }}">
-                                                        <i class="fa-solid fa-file-lines"></i><span>Continue draft note</span>
-                                                    </a>
-                                                @elseif(!$pnCompletedId && $pnCreate)
-                                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ $pnCreate }}">
-                                                        <i class="fa-solid fa-file-circle-plus"></i><span>Add progress note</span>
-                                                    </a>
-                                                @elseif($pnCompletedId)
-                                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('therapist.progress-notes.show', $pnCompletedId) }}">
-                                                        <i class="fa-solid fa-eye"></i><span>View progress note</span>
-                                                    </a>
-                                                @endif
-                                            </li>
                                         @endif
                                     </ul>
                                 </div>
@@ -271,7 +320,7 @@
                 @csrf
                 <input type="hidden" name="session_date" value="" autocomplete="off">
                 <div class="modal-body">
-                    <p class="small text-muted mb-0">Mark this session as <strong>in progress</strong>? You can complete or cancel it afterwards.</p>
+                    <p class="small text-muted mb-0" id="frcTherapistStartModalBody">Mark this session as <strong>in progress</strong>? You can complete or cancel it afterwards.</p>
                 </div>
                 <div class="modal-footer" style="border-top:1px solid var(--border-soft);gap:8px;">
                     <button type="button" class="btn-outline-teal" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
@@ -293,7 +342,7 @@
                 @csrf
                 <input type="hidden" name="session_date" value="" autocomplete="off">
                 <div class="modal-body">
-                    <p class="small text-muted mb-2">Session moves to <strong>completed</strong>. Add an optional <strong>completion note</strong> (short wrap-up). Detailed clinical documentation belongs in a <strong>progress note</strong>.</p>
+                    <p class="small text-muted mb-2" id="frcTherapistCompleteModalBody">Session moves to <strong>completed</strong>. You can add an optional <strong>completion note</strong> (short wrap-up).</p>
                     <label class="form-label small fw-semibold" style="color:var(--navy);">Completion note <span class="text-muted fw-normal">(optional)</span></label>
                     <textarea name="completion_note" class="form-control" rows="4" maxlength="5000" placeholder="Brief summary of how the session ended…"></textarea>
                 </div>
@@ -315,7 +364,9 @@
             </div>
             <form method="post" action="">
                 @csrf
+                <input type="hidden" name="session_date" value="" autocomplete="off">
                 <div class="modal-body">
+                    <p class="small text-muted mb-2" id="frcTherapistCancelModalIntro">A cancellation reason is required.</p>
                     <label class="form-label small fw-semibold" style="color:var(--navy);">Cancellation reason <span class="text-danger">*</span></label>
                     <textarea name="cancellation_reason" class="form-control" rows="4" required minlength="1" maxlength="5000" placeholder="Explain why this session is being cancelled…"></textarea>
                 </div>
@@ -349,10 +400,17 @@
             var btn = event.relatedTarget;
             var url = btn && btn.getAttribute('data-start-url');
             var sessionDate = btn && btn.getAttribute('data-session-date');
+            var isGroup = btn && btn.getAttribute('data-is-group') === '1';
             var form = startModal.querySelector('form');
             if (form && url) form.setAttribute('action', url);
             var hid = startModal.querySelector('input[name="session_date"]');
             if (hid) hid.value = sessionDate || '';
+            var p = document.getElementById('frcTherapistStartModalBody');
+            if (p) {
+                p.innerHTML = isGroup
+                    ? 'Mark this <strong>group session</strong> as <strong>in progress</strong> for <strong>every child</strong> in the slot? You can complete or cancel afterwards.'
+                    : 'Mark this session as <strong>in progress</strong>? You can complete or cancel it afterwards.';
+            }
         });
     }
 
@@ -362,12 +420,19 @@
             var btn = event.relatedTarget;
             var url = btn && btn.getAttribute('data-complete-url');
             var sessionDate = btn && btn.getAttribute('data-session-date');
+            var isGroup = btn && btn.getAttribute('data-is-group') === '1';
             var form = completeModal.querySelector('form');
             if (form && url) form.setAttribute('action', url);
             var hid = completeModal.querySelector('input[name="session_date"]');
             if (hid) hid.value = sessionDate || '';
             var ta = completeModal.querySelector('textarea[name="completion_note"]');
             if (ta) ta.value = '';
+            var p = document.getElementById('frcTherapistCompleteModalBody');
+            if (p) {
+                p.innerHTML = isGroup
+                    ? 'This marks <strong>every child</strong> in the group slot as <strong>completed</strong>. The optional note below is saved for <strong>all</strong> enrollments.'
+                    : 'Session moves to <strong>completed</strong>. You can add an optional <strong>completion note</strong> (short wrap-up).';
+            }
         });
     }
 
@@ -387,12 +452,22 @@
         cancelModal.addEventListener('show.bs.modal', function (event) {
             var btn = event.relatedTarget;
             var url = btn && btn.getAttribute('data-cancel-url');
+            var sessionDate = btn && btn.getAttribute('data-session-date');
+            var isGroup = btn && btn.getAttribute('data-is-group') === '1';
             var form = cancelModal.querySelector('form');
             if (form && url) form.setAttribute('action', url);
+            var hid = cancelModal.querySelector('input[name="session_date"]');
+            if (hid) hid.value = sessionDate || '';
             var ta = cancelModal.querySelector('textarea[name="cancellation_reason"]');
             if (ta) {
                 ta.value = '';
                 ta.classList.remove('is-invalid');
+            }
+            var intro = document.getElementById('frcTherapistCancelModalIntro');
+            if (intro) {
+                intro.textContent = isGroup
+                    ? 'This cancels the session for every child in this group slot. A cancellation reason is required.'
+                    : 'A cancellation reason is required.';
             }
         });
     }

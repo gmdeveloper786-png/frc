@@ -22,7 +22,7 @@ class PaymentApprovedNotification extends Notification
         return [
             'type'       => 'payment_approved',
             'title'      => 'Payment Verified',
-            'message'    => 'Your payment of PKR ' . number_format($this->payment->amount, 2) . ' has been verified.'
+            'message'    => 'Your payment of ' . frc_pkr($this->payment->amount) . ' has been verified.'
                 . (filled($this->payment->receipt_number) ? ' Receipt: ' . $this->payment->receipt_number : ''),
             'payment_id' => $this->payment->id,
         ];

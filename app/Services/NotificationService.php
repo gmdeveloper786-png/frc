@@ -8,7 +8,6 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
 use App\Models\Payment;
-use App\Models\ProgressNote;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserNotification;
@@ -62,67 +61,252 @@ class NotificationService
         );
     }
 
-    public function notifyEnrollmentCreated(Enrollment $enrollment): void
-    {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
-        $child = $enrollment->child;
-        $this->inbox->createForUsers(
-            $ids,
-            'New Enrollment',
-            ($child?->full_name ?? 'A child') . ' has a new enrollment pending review.',
-            UserNotification::TYPE_ENROLLMENT_CREATED,
-            'enrollments',
-            $enrollment->id,
-            url(route('enrollments.show', $enrollment->id)),
-        );
-    }
-
     public function notifyHighDiscountApprovalRequired(Enrollment $enrollment): void
     {
+        $enrollment->loadMissing('child');
+        $childName = $enrollment->child?->full_name ?? 'a child';
         $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN]);
         $this->inbox->createForUsers(
             $ids,
             'High Discount Approval Required',
-            'Enrollment #' . $enrollment->id . ' requires Super Admin approval for the applied discount.',
+            "Enrollment for {$childName} requires high discount approval.",
             UserNotification::TYPE_HIGH_DISCOUNT_REQUESTED,
             'enrollments',
             $enrollment->id,
-            url(route('enrollments.show', $enrollment->id)),
+            route('enrollments.high-discount', [], false),
         );
     }
 
-    public function notifyEnrollmentApproved(Enrollment $enrollment): void
+    public function notifyChildEnrollmentActive(Enrollment $enrollment, User $child): void
     {
-        $child = $enrollment->child;
-        if ($child === null) {
-            return;
-        }
         $this->inbox->createForUsers(
             [(int) $child->id],
-            'Enrollment Approved',
-            'Your enrollment has been approved. You can view fees and schedule from your dashboard.',
-            UserNotification::TYPE_ENROLLMENT_APPROVED,
+            'Enrollment Active',
+            'Your enrollment has been active. You can now view your enrollment details and schedule.',
+            UserNotification::TYPE_ENROLLMENT_ACTIVE,
             'enrollments',
             $enrollment->id,
-            url(route('child.enrollment')),
+            route('child.enrollment.show', $enrollment->id, false),
         );
     }
 
-    public function notifyEnrollmentRejected(Enrollment $enrollment, string $reason): void
+    public function notifyTherapistEnrollmentAssigned(Enrollment $enrollment, ?int $therapistId = null): void
     {
-        $child = $enrollment->child;
-        if ($child === null) {
+        $enrollment->loadMissing(['child', 'service']);
+        $tid = $therapistId ?? (int) $enrollment->therapist_id;
+        if ($tid <= 0) {
             return;
         }
+
+        $childName = $enrollment->child?->full_name ?? 'A child';
+        $serviceName = $enrollment->service?->name ?? 'programme';
+
         $this->inbox->createForUsers(
-            [(int) $child->id],
-            'Enrollment Rejected',
-            'Your enrollment was rejected. ' . mb_substr($reason, 0, 400),
-            UserNotification::TYPE_ENROLLMENT_REJECTED,
+            [$tid],
+            'New Child Assigned',
+            "{$childName} has been assigned to you for {$serviceName}.",
+            UserNotification::TYPE_ENROLLMENT_ASSIGNED,
             'enrollments',
             $enrollment->id,
-            url(route('child.enrollment')),
+            $this->therapistEnrollmentUrl($enrollment),
         );
+    }
+
+    public function notifyTherapistAssignmentRemoved(Enrollment $enrollment, int $oldTherapistId): void
+    {
+        $enrollment->loadMissing('child');
+        $childName = $enrollment->child?->full_name ?? 'A child';
+
+        $this->inbox->createForUsers(
+            [$oldTherapistId],
+            'Child Assignment Removed',
+            "{$childName} is no longer assigned to you.",
+            UserNotification::TYPE_ENROLLMENT_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('therapist.children.index', [], false),
+        );
+    }
+
+    public function notifyChildTherapistUpdated(Enrollment $enrollment, User $child, string $therapistName): void
+    {
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Therapist Updated',
+            "Your therapist has been updated to {$therapistName}.",
+            UserNotification::TYPE_ENROLLMENT_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('child.enrollment.show', $enrollment->id, false),
+        );
+    }
+
+    public function notifyChildScheduleUpdated(Enrollment $enrollment, User $child): void
+    {
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Schedule Updated',
+            'Your therapy schedule has been updated. Please check your schedule.',
+            UserNotification::TYPE_ENROLLMENT_SCHEDULE_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('child.schedule.index', [], false),
+        );
+    }
+
+    public function notifyTherapistScheduleUpdated(Enrollment $enrollment): void
+    {
+        $enrollment->loadMissing('child');
+        $tid = (int) ($enrollment->therapist_id ?? 0);
+        if ($tid <= 0) {
+            return;
+        }
+
+        $childName = $enrollment->child?->full_name ?? 'child';
+
+        $this->inbox->createForUsers(
+            [$tid],
+            'Schedule Updated',
+            "Schedule for {$childName} has been updated.",
+            UserNotification::TYPE_ENROLLMENT_SCHEDULE_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            $this->therapistScheduleUrl($enrollment),
+        );
+    }
+
+    public function notifyChildServiceUpdated(Enrollment $enrollment, User $child): void
+    {
+        $enrollment->loadMissing('service');
+        $serviceName = $enrollment->service?->name ?? '—';
+
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Service Updated',
+            "Your enrolled service has been updated to {$serviceName}.",
+            UserNotification::TYPE_ENROLLMENT_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('child.enrollment.show', $enrollment->id, false),
+        );
+    }
+
+    public function notifyChildBranchUpdated(Enrollment $enrollment, User $child): void
+    {
+        $enrollment->loadMissing('branch');
+        $branchName = $enrollment->branch?->name ?? '—';
+
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Branch Updated',
+            "Your branch has been updated to {$branchName}.",
+            UserNotification::TYPE_ENROLLMENT_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('child.enrollment.show', $enrollment->id, false),
+        );
+    }
+
+    public function notifyChildEnrollmentCancelled(Enrollment $enrollment, User $child, ?string $reason): void
+    {
+        $message = 'Your enrollment has been cancelled/rejected. Please contact the centre for details.';
+        if (filled($reason)) {
+            $message .= ' ' . mb_substr(trim($reason), 0, 300);
+        }
+
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Enrollment Cancelled',
+            $message,
+            UserNotification::TYPE_ENROLLMENT_CANCELLED,
+            'enrollments',
+            $enrollment->id,
+            route('child.enrollment', [], false),
+        );
+    }
+
+    public function notifyTherapistEnrollmentCancelled(Enrollment $enrollment, int $therapistId): void
+    {
+        $enrollment->loadMissing('child');
+        $childName = $enrollment->child?->full_name ?? 'A child';
+
+        $this->inbox->createForUsers(
+            [$therapistId],
+            'Enrollment Cancelled',
+            "Enrollment for {$childName} has been cancelled.",
+            UserNotification::TYPE_ENROLLMENT_CANCELLED,
+            'enrollments',
+            $enrollment->id,
+            route('therapist.children.index', [], false),
+        );
+    }
+
+    public function notifyChildFeeUpdated(Enrollment $enrollment, User $child): void
+    {
+        $this->inbox->createForUsers(
+            [(int) $child->id],
+            'Fee Details Updated',
+            'Your enrollment fee details have been updated.',
+            UserNotification::TYPE_ENROLLMENT_FEE_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('child.enrollment.show', $enrollment->id, false),
+        );
+    }
+
+    public function notifyFinanceEnrollmentFeeUpdated(Enrollment $enrollment): void
+    {
+        $enrollment->loadMissing('child');
+        $childName = $enrollment->child?->full_name ?? 'a child';
+        $ids = $this->staffIdsByRoles([Role::FINANCE]);
+
+        $this->inbox->createForUsers(
+            $ids,
+            'Enrollment Fee Updated',
+            "Fee details for {$childName} have been updated.",
+            UserNotification::TYPE_ENROLLMENT_FEE_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            route('finance.payments', [], false),
+        );
+    }
+
+    public function notifyTherapistEnrollmentUpdated(Enrollment $enrollment, string $title, string $message): void
+    {
+        $tid = (int) ($enrollment->therapist_id ?? 0);
+        if ($tid <= 0) {
+            return;
+        }
+
+        $this->inbox->createForUsers(
+            [$tid],
+            $title,
+            $message,
+            UserNotification::TYPE_ENROLLMENT_UPDATED,
+            'enrollments',
+            $enrollment->id,
+            $this->therapistEnrollmentUrl($enrollment),
+        );
+    }
+
+    /** Child profile — assignment / enrollment context. */
+    private function therapistEnrollmentUrl(Enrollment $enrollment): string
+    {
+        $childId = (int) ($enrollment->child_id ?? 0);
+        if ($childId > 0) {
+            return route('therapist.children.show', $childId, false);
+        }
+
+        return route('therapist.sessions.index', [], false);
+    }
+
+    /** Sessions list filtered to this child — schedule changes. */
+    private function therapistScheduleUrl(Enrollment $enrollment): string
+    {
+        $childId = (int) ($enrollment->child_id ?? 0);
+        $params = $childId > 0 ? ['child_id' => $childId] : [];
+
+        return route('therapist.sessions.index', $params, false);
     }
 
     public function notifyHighDiscountApproved(Enrollment $enrollment): void
@@ -162,11 +346,11 @@ class NotificationService
     {
         $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE]);
         $child = $payment->child;
-        $amount = number_format((float) $payment->amount, 2);
+        $amount = frc_pkr($payment->amount);
         $this->inbox->createForUsers(
             $ids,
             'Payment Slip Uploaded',
-            ($child?->full_name ?? 'A child') . " uploaded a payment slip of PKR {$amount} pending verification.",
+            ($child?->full_name ?? 'A child') . " uploaded a payment slip of {$amount} pending verification.",
             UserNotification::TYPE_PAYMENT_SLIP_UPLOADED,
             'payments',
             $payment->id,
@@ -183,7 +367,7 @@ class NotificationService
         $this->inbox->createForUsers(
             [(int) $child->id],
             'Payment Approved',
-            'Your payment of PKR ' . number_format((float) $payment->amount, 2) . ' has been verified.',
+            'Your payment of ' . frc_pkr($payment->amount) . ' has been verified.',
             UserNotification::TYPE_PAYMENT_APPROVED,
             'payments',
             $payment->id,
@@ -217,7 +401,7 @@ class NotificationService
         $this->inbox->createForUsers(
             [(int) $child->id],
             'Payment Recorded',
-            'A manual payment of PKR ' . number_format((float) $payment->amount, 2) . ' has been added to your account.',
+            'A manual payment of ' . frc_pkr($payment->amount) . ' has been added to your account.',
             UserNotification::TYPE_MANUAL_PAYMENT_ADDED,
             'payments',
             $payment->id,
@@ -406,36 +590,6 @@ class NotificationService
             'sessions',
             $schedule->id,
             url(route('enrollments.schedule', $schedule->enrollment_id)),
-        );
-    }
-
-    public function notifyProgressNoteAdded(ProgressNote $note): void
-    {
-        $url = $note->child_id ? url(route('children.show', $note->child_id)) : url('/');
-
-        $this->inbox->createForUsers(
-            $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]),
-            'Progress Note Added',
-            'A progress note was added for ' . $note->child?->full_name . '.',
-            UserNotification::TYPE_PROGRESS_NOTE_ADDED,
-            'progress_notes',
-            $note->id,
-            $url,
-        );
-    }
-
-    public function notifyProgressNoteCompleted(ProgressNote $note): void
-    {
-        $url = $note->child_id ? url(route('children.show', $note->child_id)) : url('/');
-
-        $this->inbox->createForUsers(
-            $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]),
-            'Progress Note Completed',
-            'Progress note for ' . $note->child?->full_name . ' was finalized.',
-            UserNotification::TYPE_PROGRESS_NOTE_COMPLETED,
-            'progress_notes',
-            $note->id,
-            $url,
         );
     }
 

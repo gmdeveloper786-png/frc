@@ -73,10 +73,6 @@
 @endpush
 
 @section('content')
-@if(session('error'))
-    <div class="alert alert-danger border-0 mb-3" style="border-radius:10px;">{{ session('error') }}</div>
-@endif
-
 <div class="card-frc mb-3">
     <div class="card-header-frc d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h6 class="card-title-frc mb-0">

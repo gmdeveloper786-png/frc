@@ -54,6 +54,15 @@
     border-color: var(--teal, #008080);
     color: #fff;
 }
+.finance-report-table.table-frc thead th {
+    padding: 8px 10px;
+    font-size: 12px;
+}
+.finance-report-table.table-frc tbody td {
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.25;
+}
 </style>
 @endpush
 
@@ -129,7 +138,7 @@
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
         <span style="font-size:13px;font-weight:600;color:var(--navy);margin-right:8px;"><i class="fa-solid fa-download me-1" style="color:var(--teal);"></i> Export</span>
         <a href="{{ route($exportRoute, ['format' => 'csv']) }}?{{ $filterQuery }}" class="btn-outline-teal" style="font-size:12px;padding:6px 12px;">CSV</a>
-        <a href="{{ route($exportRoute, ['format' => 'pdf']) }}?{{ $filterQuery }}" class="btn-outline-teal" style="font-size:12px;padding:6px 12px;">PDF</a>
+        <a href="{{ route($exportRoute, ['format' => 'pdf']) }}?{{ $filterQuery }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:12px;padding:6px 12px;">PDF</a>
         <a href="{{ route($printRoute) }}?{{ $printQuery }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:12px;padding:6px 12px;"> Print</a>
     </div>
 </div>
@@ -143,7 +152,7 @@
             ['label'=>'Pending / Overdue','value'=>$summary['total_pending'] ?? 0,'iconClass'=>'red','icon'=>'fa-hourglass-half'],
             ['label'=>'Cash Received','value'=>$summary['cash_received'] ?? 0,'iconClass'=>'teal','icon'=>'fa-coins'],
             ['label'=>'Online/Bank','value'=>$summary['online_received'] ?? 0,'iconClass'=>'purple','icon'=>'fa-credit-card'],
-            ['label'=>'Pending Verification','value'=>$summary['pending_verification'] ?? 0,'iconClass'=>'orange','icon'=>'fa-clock'],
+            ['label'=>'Pending Verification','value'=>$summary['pending_verification'] ?? 0,'iconClass'=>'orange','icon'=>'fa-triangle-exclamation'],
         ];
         $valueColor = [
             'navy' => 'var(--navy)',
@@ -159,13 +168,13 @@
             <div class="stat-card h-100">
                 <div class="stat-icon {{ $s['iconClass'] }}"><i class="fa-solid {{ $s['icon'] }}"></i></div>
                 <div class="stat-body">
-                    <div class="stat-value" style="font-size:20px;color:{{ $valueColor[$s['iconClass']] }};">PKR {{ number_format($s['value']) }}</div>
+                    <div class="stat-value" style="font-size:16px;color:{{ $valueColor[$s['iconClass']] }};">{{ frc_pkr($s['value']) }}</div>
                     <div class="stat-label">{{ $s['label'] }}</div>
                 </div>
             </div>
         </div>
     @endforeach
-</div>
+</div>  
 
 {{-- Payment Table --}}
 <div class="card-frc">
@@ -176,63 +185,71 @@
         <div class="empty-state"><i class="fa-solid fa-receipt empty-icon"></i><h5>No Records Found</h5></div>
     @else
         <div class="table-responsive">
-            <table class="table-frc">
+            <table class="table-frc finance-report-table">
                 <thead><tr>
                     <th>#</th>
-                    <th>Receipt</th><th>Child</th><th>Status</th><th>Branch</th>
+                    <th>Receipt</th><th>GR No</th><th>Child</th><th>Status</th><th>Branch</th>
                     <th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th>
                     <th>Amount</th><th>Verification</th><th>Method</th><th>Date</th><th>Actions</th>
                 </tr></thead>
                 <tbody>
-                    @foreach($records as $p)
-                        @php $enr = $p->enrollment; @endphp
+                    @foreach($records as $payment)
+                        @php
+                            $enrollment = $payment->enrollment;
+                            $child = $payment->child ?? $enrollment?->child;
+                        @endphp
                         <tr>
-                            <td style="font-weight:700;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $records->firstItem() + $loop->index }}</td>
-                            <td style="font-weight:700;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
+                            <td style="font-weight:700;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy);">{{ $records->firstItem() + $loop->index }}</td>
+                            <td style="font-weight:700;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $payment->hasPrintableReceipt() ? $payment->receipt_number : '—' }}</td>
+                            <td style="font-family:monospace;font-size:12px;color:var(--navy); white-space:nowrap;">{{ $child?->gr_number ?? '—' }}</td>
                             <td style="font-weight:500; white-space:nowrap;">
-                                @if($p->child)
+                                @if($child)
                                     @if($staffClinical)
-                                        <a href="{{ route('children.show', $p->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $p->child->full_name }}</a>
+                                        <a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $child->full_name }}</a>
                                     @else
-                                        {{ $p->child->full_name }}
+                                        {{ $child->full_name }}
+                                    @endif
+                                    @if($enrollment)
+                                        <span style="display:block;font-size:11px;font-family:monospace;color:var(--text-muted);">Enroll#{{ $enrollment->id }}</span>
                                     @endif
                                 @else
                                     —
                                 @endif
                             </td>
                             <td style="white-space:nowrap;">
-                                @if($p->child)
-                                    <span class="badge-status badge-{{ $p->child->status }}">{{ \Illuminate\Support\Str::title(str_replace('_',' ', $p->child->status)) }}</span>
+                                @if($child)
+                                    <span class="badge-status badge-{{ $child->status }}">{{ \Illuminate\Support\Str::title(str_replace('_',' ', $child->status)) }}</span>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td style="font-size:13px; white-space:nowrap;">{{ $enr?->branch?->name }}</td>
-                            <td style="white-space:nowrap;">{{ $enr ? 'PKR '.number_format($enr->final_total) : '—' }}</td>
-                            <td style="color:var(--success); white-space:nowrap;">{{ $enr ? 'PKR '.number_format($enr->paid_amount) : '—' }}</td>
-                            <td style="color:var(--danger); white-space:nowrap;">{{ $enr ? 'PKR '.number_format($enr->remaining_amount) : '—' }}</td>
+                            <td style="font-size:13px; white-space:nowrap;">{{ $enrollment?->branch?->name ?? '—' }}</td>
+                            <td style="white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->final_total) : '—' }}</td>
+                            <td style="color:var(--success); white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->paid_amount) : '—' }}</td>
+                            <td style="color:var(--danger); white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->remaining_amount) : '—' }}</td>
                             <td style="white-space:nowrap;">
-                                @if($enr)
-                                    <span class="badge-status badge-{{ $enr->payment_status }}">{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($enr->payment_status) }}</span>
+                                @if($enrollment)
+                                    <span class="badge-status badge-{{ $enrollment->payment_status }}">{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($enrollment->payment_status) }}</span>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td style="color:var(--teal);font-weight:600; white-space:nowrap;">PKR {{ number_format($p->amount) }}</td>
-                            <td><span class="badge-status badge-{{ $p->status }}">{{ \App\Models\Payment::labelForVerificationStatus($p->status)
-                                    ? ucfirst(str_replace('_',' ',$p->status)) : '—' }}</span></td>
-                            <td style="font-size:13px; white-space:nowrap;">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method)
-                                    ? ucfirst(str_replace('_',' ',$p->payment_method)) : '—' }}</td>
-                            <td style="font-size:13px;color:var(--text-muted); white-space:nowrap;">{{ $p->payment_date?->format('d M Y') }}</td>
+                            <td style="color:var(--teal);font-weight:600; white-space:nowrap;">{{ frc_pkr($payment->amount) }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ $payment->status }}">{{ \App\Models\Payment::labelForVerificationStatus($payment->status)
+                                    ? ucfirst(str_replace('_',' ',$payment->status)) : '—' }}</span>
+                            </td>
+                            <td style="font-size:13px; white-space:nowrap;">{{ \App\Models\Payment::labelForPaymentMethod($payment->payment_method) ?: '—' }}</td>
+                            <td style="font-size:13px;color:var(--text-muted); white-space:nowrap;">{{ $payment->payment_date?->format('d M Y') ?? '—' }}</td>
                             <td style="min-width:168px;">
                                 <div style="display:flex;flex-wrap:wrap;gap:4px;">
-                                    @if($p->hasPrintableReceipt())
-                                        <a href="{{ route($receiptRoute, $p->id) }}" class="btn-outline-teal" target="_blank" style="font-size:11px;padding:3px 8px;" title="View Fee Receipt">Receipt</a>
+                                    @if($payment->hasPrintableReceipt())
+                                        <a href="{{ route($receiptRoute, $payment->id) }}" class="btn-outline-teal" target="_blank" style="font-size:11px;padding:3px 8px;" title="View Fee Receipt">Receipt</a>
                                     @else
                                         <span style="font-size:11px;color:var(--text-muted);">—</span>
                                     @endif
-                                    @if($p->payment_slip)
-                                        <a href="{{ $p->payment_slip_url }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:11px;padding:3px 8px;" title="View Fee Slip">Fee Slip</a>
+                                    @if($payment->payment_slip)
+                                        <a href="{{ $payment->payment_slip_url }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:11px;padding:3px 8px;" title="View Fee Slip">Fee Slip</a>
                                     @endif
                                 </div>
                             </td>

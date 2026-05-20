@@ -23,13 +23,21 @@ class EnrollmentController extends Controller
 
     public function store(StoreEnrollmentRequest $request): JsonResponse
     {
-        $enrollment = $this->service->create(
+        $enrollments = $this->service->createEnrollments(
             $request->validated(),
             $request->user()->id,
             $request->file('discount_file'),
         );
 
-        return response()->json(['message' => 'Enrollment created.', 'data' => new EnrollmentResource($enrollment)], 201);
+        $groupId = $enrollments[0]->enrollment_group_id;
+
+        return response()->json([
+            'message' => count($enrollments) > 1
+                ? 'Group enrollment created for ' . count($enrollments) . ' children.'
+                : 'Enrollment created.',
+            'enrollment_group_id' => $groupId,
+            'data' => EnrollmentResource::collection(collect($enrollments)),
+        ], 201);
     }
 
     public function show(Enrollment $enrollment): JsonResponse

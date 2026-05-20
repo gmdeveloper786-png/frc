@@ -43,7 +43,7 @@ class ReportService
     }
 
     /**
-     * @param  callable(\Illuminate\Support\Collection<int, \App\Models\Payment>): void  $callback
+     * @param  callable(\Illuminate\Support\Collection<int, \App\Models\Enrollment>): void  $callback
      */
     public function chunkFinancePaymentRecords(array $filters, callable $callback, int $chunkSize = self::EXPORT_CHUNK_SIZE): void
     {
@@ -77,19 +77,20 @@ class ReportService
 
         return [
             'receipt'            => $payment->hasPrintableReceipt() ? (string) $payment->receipt_number : '—',
-            'child_name'         => (string) ($payment->child?->full_name ?? '—'),
-            'child_status'       => $payment->child
-                ? Str::title(str_replace('_', ' ', (string) $payment->child->status))
+            'child_name'         => (string) ($payment->child?->full_name ?? $enrollment?->child?->full_name ?? '—'),
+            'child_gr_number'    => (string) ($payment->child?->gr_number ?? $enrollment?->child?->gr_number ?? '—'),
+            'child_status'       => ($payment->child ?? $enrollment?->child)
+                ? Str::title(str_replace('_', ' ', (string) ($payment->child ?? $enrollment->child)->status))
                 : '—',
             'branch'             => (string) ($enrollment?->branch?->name ?? '—'),
-            'enrollment_total'   => $enrollment ? number_format((float) $enrollment->final_total, 2) : '',
-            'enrollment_paid'    => $enrollment ? number_format((float) $enrollment->paid_amount, 2) : '',
-            'enrollment_remaining' => $enrollment ? number_format((float) $enrollment->remaining_amount, 2) : '',
+            'enrollment_total'   => $enrollment ? frc_money($enrollment->final_total) : '—',
+            'enrollment_paid'    => $enrollment ? frc_money($enrollment->paid_amount) : '—',
+            'enrollment_remaining' => $enrollment ? frc_money($enrollment->remaining_amount) : '—',
             'enrollment_payment_status' => $enrollment
                 ? Payment::labelForEnrollmentPaymentStatus($enrollment->payment_status)
                 : '—',
             'verification_status' => Payment::labelForVerificationStatus($payment->status) ?: '—',
-            'amount'             => number_format((float) $payment->amount, 2),
+            'amount'             => frc_money($payment->amount),
             'payment_method'     => Payment::labelForPaymentMethod($payment->payment_method) ?: '—',
             'payment_date'       => $payment->payment_date?->format('d M Y') ?? '—',
         ];

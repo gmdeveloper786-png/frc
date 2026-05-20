@@ -37,7 +37,12 @@
                             $next = $row['next_session'];
                         @endphp
                         <tr>
-                            <td style="font-weight:600;color:var(--navy); white-space:nowrap;">{{ $child->full_name }}</td>
+                            <td style="font-weight:600;color:var(--navy); white-space:nowrap;">
+                                {{ $child->full_name }}
+                                @if($child->gr_number)
+                                    <span style="display:block;font-size:11px;font-family:monospace;color:var(--text-muted);font-weight:500;">{{ $child->gr_number }}</span>
+                                @endif
+                            </td>
                             <td>{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td>{{ $child->gender ? ucfirst($child->gender) : '—' }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $child->disabilities->pluck('name')->join(', ') ?: '—' }}</td>

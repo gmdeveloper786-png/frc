@@ -122,13 +122,16 @@ class PaymentController extends Controller
 
     public function childSlipStore(StoreChildPaymentSlipRequest $request): RedirectResponse
     {
-        $this->paymentService->childUploadSlip(
+        $payment = $this->paymentService->childUploadSlip(
             $request->validated(),
             $request->user(),
             $request->file('payment_slip'),
         );
 
-        return redirect()->route('dashboard.child')->with('success', 'Payment slip submitted for verification.');
+        return redirect()->route('dashboard.child')->with(
+            'success',
+            'Payment slip submitted for verification ('.frc_pkr($payment->amount).').'
+        );
     }
 
     public function verify(VerifyPaymentRequest $request, int $id): RedirectResponse

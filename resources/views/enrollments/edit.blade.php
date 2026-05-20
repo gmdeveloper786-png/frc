@@ -146,14 +146,14 @@
             <div class="form-section-title"><i class="fa-solid fa-calculator" style="color:var(--teal);"></i> Fee Calculation</div>
             <div class="mb-3">
                 <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>
-                <input type="number" name="price_per_session" id="pricePerSession" value="{{ old('price_per_session', $enrollment->price_per_session) }}"
-                    class="form-control" min="0" step="0.01" oninput="recalculate()">
+                <input type="number" name="price_per_session" id="pricePerSession" value="{{ old('price_per_session', frc_money_input($enrollment->price_per_session)) }}"
+                    class="form-control" min="0" step="1" oninput="recalculate()">
                 @error('price_per_session') <div class="text-danger small">{{ $message }}</div> @enderror
             </div>
             <div class="mb-3">
                 <label>Discount % (0–100)</label>
-                <input type="number" name="discount_percentage" id="discountPct" value="{{ old('discount_percentage', $enrollment->discount_percentage) }}"
-                    class="form-control" min="0" max="100" step="0.01" oninput="recalculate(); checkHighDiscount()">
+                <input type="number" name="discount_percentage" id="discountPct" value="{{ old('discount_percentage', frc_percent($enrollment->discount_percentage)) }}"
+                    class="form-control" min="0" max="100" step="1" oninput="recalculate(); checkHighDiscount()">
             </div>
             <div style="background:var(--bg-light);border-radius:12px;padding:16px;margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">

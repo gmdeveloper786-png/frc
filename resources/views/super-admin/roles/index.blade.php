@@ -3,13 +3,6 @@
 @section('page-title', 'Roles & Permissions')
 
 @section('content')
-@if(session('success'))
-    <div class="alert alert-success border-0 mb-3" style="border-radius:10px;background:#e8f8ee;color:#1a7a3a;">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger border-0 mb-3" style="border-radius:10px;">{{ session('error') }}</div>
-@endif
-
 <div class="card-frc">
     <div class="card-header-frc">
         <h6 class="card-title-frc mb-0">

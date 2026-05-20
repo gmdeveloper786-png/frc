@@ -121,10 +121,10 @@
                             </td>
                             <td style="font-size:13px;">
                                 <a href="{{ route('enrollments.show', $p->enrollment_id) }}" style="color:var(--teal);">
-                                    #{{ $p->enrollment_id }} — PKR {{ number_format($p->enrollment?->final_total) }}
+                                    #{{ $p->enrollment_id }} — {{ frc_pkr($p->enrollment?->final_total) }}
                                 </a>
                             </td>
-                            <td class="text-amount" style="font-weight:700;color:var(--navy);">PKR {{ number_format($p->amount) }}</td>
+                            <td class="text-amount" style="font-weight:700;color:var(--navy);">{{ frc_pkr($p->amount) }}</td>
                             <td>
                                 @if($p->payment_slip)
                                     <a href="{{ $p->payment_slip_url }}" target="_blank" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;">
@@ -138,7 +138,7 @@
                             <td>
                                 <div class="payments-pending-actions">
                                     <form action="{{ route($paymentVerifyRoute, $p->id) }}" method="POST">@csrf
-                                        <button type="submit" class="pp-action-btn pp-action-btn--verify" onclick="return confirm('Mark as verified/paid?')">
+                                        <button type="submit" class="pp-action-btn pp-action-btn--verify">
                                             <i class="fa-solid fa-check"></i> Verify
                                         </button>
                                     </form>
@@ -185,3 +185,4 @@
 </div>
 @endforeach
 @endsection
+

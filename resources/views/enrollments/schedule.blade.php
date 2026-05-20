@@ -72,22 +72,22 @@
 
         <form method="get" action="{{ route('enrollments.schedule', $enrollment) }}" class="row g-3 align-items-end mb-4">
             <div class="col-6 col-lg">
-                <label class="small text-muted mb-1">Status</label>
-                <select name="status" class="form-control form-control-sm">
-                    <option value="all" {{ $statusFilter === 'all' ? 'selected' : '' }}>All</option>
-                    <option value="scheduled" {{ $statusFilter === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
-                    <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="cancelled" {{ $statusFilter === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    <option value="no_show" {{ $statusFilter === 'no_show' ? 'selected' : '' }}>No Show</option>
-                </select>
-            </div>
-            <div class="col-6 col-lg">
                 <label class="small text-muted mb-1">Date from</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
             </div>
             <div class="col-6 col-lg">
                 <label class="small text-muted mb-1">Date to</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-lg">
+                            <label class="small text-muted mb-1">Status</label>
+                            <select name="status" class="form-control form-control-sm">
+                                <option value="all" {{ $statusFilter==='all' ? 'selected' : '' }}>All</option>
+                                <option value="scheduled" {{ $statusFilter==='scheduled' ? 'selected' : '' }}>Scheduled</option>
+                                <option value="in_progress" {{ $statusFilter==='in_progress' ? 'selected' : '' }}>In Progress</option>
+                                <option value="completed" {{ $statusFilter==='completed' ? 'selected' : '' }}>Completed</option>
+                                <option value="cancelled" {{ $statusFilter==='cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            </select>
             </div>
             <div class="col-6 col-lg">
                 <label class="small text-muted mb-1">Service</label>

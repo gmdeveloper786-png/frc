@@ -13,6 +13,19 @@ class StoreChildPaymentSlipRequest extends FormRequest
         return $this->user()?->isChild() ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('amount')) {
+            return;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $this->input('amount'));
+
+        $this->merge([
+            'amount' => $digits !== '' ? (int) $digits : null,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
@@ -22,7 +35,7 @@ class StoreChildPaymentSlipRequest extends FormRequest
                     ->where('child_id', auth()->id())
                     ->whereIn('status', ['approved', 'active'])),
             ],
-            'amount'                => ['required', 'numeric', 'min:0.01'],
+            'amount'                => ['required', 'integer', 'min:1'],
             'payment_method'        => ['required', 'in:bank_transfer,easypaisa,jazzcash,card,other'],
             'transaction_reference' => ['nullable', 'string', 'max:255'],
             'payment_date'          => ['required', 'date', 'before_or_equal:today'],
@@ -57,7 +70,7 @@ class StoreChildPaymentSlipRequest extends FormRequest
             if ($amt > $max) {
                 $validator->errors()->add(
                     'amount',
-                    'Amount cannot be greater than your remaining balance (PKR '.number_format($max, 2).').'
+                    'Amount cannot be greater than your remaining balance ('.frc_pkr($max).').'
                 );
             }
         });

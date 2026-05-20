@@ -44,7 +44,6 @@
             ['label' => 'Completed Sessions', 'value' => $stats['completed_sessions'], 'icon' => 'fa-flag-checkered', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'completed'])],
             ['label' => 'Cancelled Sessions', 'value' => $stats['cancelled_sessions'], 'icon' => 'fa-ban', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'cancelled'])],
             ['label' => 'Assigned Children', 'value' => $stats['assigned_children'], 'icon' => 'fa-children', 'tone' => 'teal', 'href' => route('therapist.children.index')],
-            ['label' => 'Progress Notes Pending', 'value' => $stats['notes_pending'], 'icon' => 'fa-file-circle-exclamation', 'tone' => 'navy', 'hint' => 'Completed sessions missing progress notes', 'href' => route('therapist.progress-notes.pending')],
         ] as $card)
             <div class="col-12 col-sm-6 col-md-4 col-xl-3">
                 @if(! empty($card['href'] ?? null))
@@ -144,9 +143,12 @@
                     @if($todaySessionsPreview->isEmpty())
                         <div class="empty-state py-4"><p class="text-muted mb-0 small">No sessions on your roster today.</p></div>
                     @else
-                        @foreach($todaySessionsPreview as $schedule)
+                        @foreach($todaySessionsPreview as $row)
                             @php
-                                $sb = match ($schedule->status) {
+                                $sch = $row['schedule'];
+                                $occStatus = (string) ($row['status'] ?? $sch->status);
+                                $cid = $sch->enrollment?->child_id;
+                                $sb = match ($occStatus) {
                                     'scheduled' => 'badge-session-scheduled',
                                     'in_progress' => 'badge-session-in-progress',
                                     'completed' => 'badge-session-completed',
@@ -157,12 +159,14 @@
                             @endphp
                             <div class="therapist-dashboard-session-item">
                                 <div class="therapist-dashboard-session-main">
-                                    <div class="therapist-dashboard-session-name">{{ $schedule->enrollment?->child?->full_name }}</div>
-                                    <div class="therapist-dashboard-session-meta">{{ $schedule->time_slot }} · {{ $schedule->enrollment?->service?->name }}</div>
+                                    <div class="therapist-dashboard-session-name">{{ $row['child_name'] }}</div>
+                                    <div class="therapist-dashboard-session-meta">{{ $row['time_slot'] }} · {{ $row['service_name'] }}</div>
                                 </div>
                                 <div class="therapist-dashboard-session-actions">
-                                    <span class="badge-status {{ $sb }}">{{ ucfirst(str_replace('_', ' ', $schedule->status)) }}</span>
-                                    <a href="{{ route('therapist.children.show', $schedule->enrollment?->child_id) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                    <span class="badge-status {{ $sb }}">{{ ucfirst(str_replace('_', ' ', $occStatus)) }}</span>
+                                    @if($cid)
+                                        <a href="{{ route('therapist.children.show', $cid) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

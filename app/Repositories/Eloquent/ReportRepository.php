@@ -15,42 +15,38 @@ class ReportRepository implements ReportRepositoryInterface
     /** Non-cash methods counted under Online/Bank card. */
     private const ONLINE_PAYMENT_METHODS = ['bank_transfer', 'easypaisa', 'jazzcash', 'card', 'other'];
 
+    /** Enrollments included in “total expected” (matches dashboard fee totals). */
+    private const EXPECTED_ENROLLMENT_STATUSES = ['approved', 'active', 'completed'];
+
+    /** Enrollments included in “pending / overdue” remaining balance. */
+    private const PENDING_ENROLLMENT_STATUSES = ['approved', 'active'];
+
     /**
-     * Summary metrics use the same filtered payment query as the finance report table.
-     * Total fee / remaining use each distinct enrollment once (multiple payments for one enrollment do not multiply fee totals).
+     * Summary: expected/pending from enrollments; collected amounts from payments (same filters).
      */
     public function getFinanceSummary(array $filters = []): array
     {
-        $base = $this->financePaymentRecordsQuery($filters);
+        $enrollmentBase = $this->enrollmentFinanceQuery($filters);
 
-        $enrollmentIds = (clone $base)
-            ->whereNotNull('enrollment_id')
-            ->distinct()
-            ->pluck('enrollment_id');
+        $totalExpected = (float) (clone $enrollmentBase)
+            ->whereIn('status', self::EXPECTED_ENROLLMENT_STATUSES)
+            ->sum('final_total');
 
-        $totalExpected = $enrollmentIds->isEmpty()
-            ? 0.0
-            : (float) Enrollment::query()->whereIn('id', $enrollmentIds)->sum('final_total');
+        $totalPending = (float) (clone $enrollmentBase)
+            ->whereIn('status', self::PENDING_ENROLLMENT_STATUSES)
+            ->sum('remaining_amount');
 
-        $totalPending = $enrollmentIds->isEmpty()
-            ? 0.0
-            : (float) Enrollment::query()->whereIn('id', $enrollmentIds)->sum('remaining_amount');
+        $paymentBase = $this->financePaymentRecordsQuery($filters);
 
-        $paidQuery = (clone $base)->where('status', 'paid');
-
-        $totalPaid = (float) (clone $paidQuery)->sum('amount');
-        $cashReceived = (float) (clone $paidQuery)->where('payment_method', 'cash')->sum('amount');
-        $onlineReceived = (float) (clone $paidQuery)->whereIn('payment_method', self::ONLINE_PAYMENT_METHODS)->sum('amount');
-
-        $pendingVerification = (float) (clone $base)->where('status', 'pending_verification')->sum('amount');
+        $paidQuery = (clone $paymentBase)->where('status', 'paid');
 
         return [
             'total_expected'       => $totalExpected,
-            'total_paid'           => $totalPaid,
+            'total_paid'           => (float) (clone $paidQuery)->sum('amount'),
             'total_pending'        => $totalPending,
-            'cash_received'        => $cashReceived,
-            'online_received'      => $onlineReceived,
-            'pending_verification' => $pendingVerification,
+            'cash_received'        => (float) (clone $paidQuery)->where('payment_method', 'cash')->sum('amount'),
+            'online_received'      => (float) (clone $paidQuery)->whereIn('payment_method', self::ONLINE_PAYMENT_METHODS)->sum('amount'),
+            'pending_verification' => (float) (clone $paymentBase)->where('status', 'pending_verification')->sum('amount'),
         ];
     }
 
@@ -70,63 +66,138 @@ class ReportRepository implements ReportRepositoryInterface
     public function chunkFinancePaymentRecords(array $filters, int $chunkSize, callable $callback): void
     {
         $this->financePaymentRecordsQuery($filters)
-            ->select([
-                'payments.id',
-                'payments.child_id',
-                'payments.enrollment_id',
-                'payments.receipt_number',
-                'payments.amount',
-                'payments.status',
-                'payments.payment_method',
-                'payments.payment_date',
-            ])
             ->with([
-                'child:id,full_name,status',
-                'enrollment:id,branch_id,final_total,paid_amount,remaining_amount,payment_status',
+                'child:id,full_name,status,gr_number',
                 'enrollment.branch:id,name',
+                'enrollment:id,child_id,branch_id,final_total,paid_amount,remaining_amount,payment_status,status',
             ])
-            ->latest('payments.id')
-            ->chunk($chunkSize, $callback);
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
+            ->chunk($chunkSize, function (Collection $chunk) use ($callback): void {
+                $callback($chunk);
+            });
     }
 
     public function getStudentFeeRecords(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
         $paginator = $this->financePaymentRecordsQuery($filters)
-            ->with(['child', 'enrollment.branch'])
-            ->latest()
+            ->with([
+                'child',
+                'enrollment.branch',
+                'enrollment.child',
+            ])
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
             ->paginate($perPage);
 
         return $paginator->withQueryString();
     }
 
+    /**
+     * Operational enrollments for fee reporting (not limited to rows that already have payments).
+     */
+    private function enrollmentFinanceQuery(array $filters): Builder
+    {
+        $parsed = $this->parseFinanceFilters($filters);
+
+        return Enrollment::query()
+            ->whereIn('status', self::EXPECTED_ENROLLMENT_STATUSES)
+            ->when($parsed['branch_id'], fn ($q) => $q->where('branch_id', $parsed['branch_id']))
+            ->when($parsed['enrollment_payment_status'], fn ($q) => $q->where('payment_status', $parsed['enrollment_payment_status']))
+            ->when($parsed['child_search'] !== '', function ($q) use ($parsed): void {
+                $like = '%' . $parsed['child_search'] . '%';
+                $q->whereHas('child', function ($c) use ($like): void {
+                    $c->where('full_name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('gr_number', 'like', $like);
+                });
+            })
+            ->when($parsed['payment_method'], fn ($q) => $q->whereHas(
+                'payments',
+                fn ($p) => $p->where('payment_method', $parsed['payment_method']),
+            ))
+            ->when($parsed['verification_status'], fn ($q) => $q->whereHas(
+                'payments',
+                fn ($p) => $p->where('status', $parsed['verification_status']),
+            ))
+            ->when($parsed['receipt_number'] !== '', fn ($q) => $q->whereHas(
+                'payments',
+                fn ($p) => $p->where('receipt_number', 'like', '%' . $parsed['receipt_number'] . '%'),
+            ))
+            ->when($parsed['date_from'] || $parsed['date_to'], function ($q) use ($parsed): void {
+                $q->where(function ($inner) use ($parsed): void {
+                    $inner->whereHas('payments', function ($p) use ($parsed): void {
+                        if ($parsed['date_from']) {
+                            $p->whereDate('payment_date', '>=', $parsed['date_from']);
+                        }
+                        if ($parsed['date_to']) {
+                            $p->whereDate('payment_date', '<=', $parsed['date_to']);
+                        }
+                    })->orWhere(function ($noPay) use ($parsed): void {
+                        $noPay->whereDoesntHave('payments');
+                        if ($parsed['date_from']) {
+                            $noPay->whereDate('created_at', '>=', $parsed['date_from']);
+                        }
+                        if ($parsed['date_to']) {
+                            $noPay->whereDate('created_at', '<=', $parsed['date_to']);
+                        }
+                    });
+                });
+            });
+    }
+
     private function financePaymentRecordsQuery(array $filters): Builder
     {
-        $branchId = filled($filters['branch_id'] ?? null) ? (int) $filters['branch_id'] : null;
-        $paymentMethod = filled($filters['payment_method'] ?? null) ? (string) $filters['payment_method'] : null;
-        $dateFrom = filled($filters['date_from'] ?? null) ? (string) $filters['date_from'] : null;
-        $dateTo = filled($filters['date_to'] ?? null) ? (string) $filters['date_to'] : null;
-        $enrollmentPaymentStatus = filled($filters['enrollment_payment_status'] ?? null)
-            ? (string) $filters['enrollment_payment_status'] : null;
-        $verificationStatus = filled($filters['verification_status'] ?? null)
-            ? (string) $filters['verification_status'] : null;
-        $childSearch = isset($filters['child_search']) ? trim((string) $filters['child_search']) : '';
-        $receiptNumber = isset($filters['receipt_number']) ? trim((string) $filters['receipt_number']) : '';
+        $parsed = $this->parseFinanceFilters($filters);
 
         return Payment::query()
-            ->when($branchId, fn($q) => $q->whereHas('enrollment', fn($e) => $e->where('branch_id', $branchId)))
-            ->when($paymentMethod, fn($q) => $q->where('payment_method', $paymentMethod))
-            ->when($dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->whereDate('payment_date', '<=', $dateTo))
-            ->when($enrollmentPaymentStatus, fn($q) => $q->whereHas(
+            ->whereHas('enrollment', fn ($e) => $e->whereIn('status', self::EXPECTED_ENROLLMENT_STATUSES))
+            ->when($parsed['branch_id'], fn ($q) => $q->whereHas('enrollment', fn ($e) => $e->where('branch_id', $parsed['branch_id'])))
+            ->when($parsed['payment_method'], fn ($q) => $q->where('payment_method', $parsed['payment_method']))
+            ->when($parsed['date_from'], fn ($q) => $q->whereDate('payment_date', '>=', $parsed['date_from']))
+            ->when($parsed['date_to'], fn ($q) => $q->whereDate('payment_date', '<=', $parsed['date_to']))
+            ->when($parsed['enrollment_payment_status'], fn ($q) => $q->whereHas(
                 'enrollment',
-                fn($e) => $e->where('payment_status', $enrollmentPaymentStatus)
+                fn ($e) => $e->where('payment_status', $parsed['enrollment_payment_status']),
             ))
-            ->when($verificationStatus, fn($q) => $q->where('status', $verificationStatus))
-            ->when($childSearch !== '', fn($q) => $q->whereHas(
-                'child',
-                fn($c) => $c->where('full_name', 'like', '%' . $childSearch . '%')
-            ))
-            ->when($receiptNumber !== '', fn($q) => $q->where('receipt_number', 'like', '%' . $receiptNumber . '%'));
+            ->when($parsed['verification_status'], fn ($q) => $q->where('status', $parsed['verification_status']))
+            ->when($parsed['child_search'] !== '', function ($q) use ($parsed): void {
+                $like = '%' . $parsed['child_search'] . '%';
+                $q->whereHas('child', function ($c) use ($like): void {
+                    $c->where('full_name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('gr_number', 'like', $like);
+                });
+            })
+            ->when($parsed['receipt_number'] !== '', fn ($q) => $q->where('receipt_number', 'like', '%' . $parsed['receipt_number'] . '%'));
+    }
+
+    /**
+     * @return array{
+     *     branch_id: ?int,
+     *     payment_method: ?string,
+     *     date_from: ?string,
+     *     date_to: ?string,
+     *     enrollment_payment_status: ?string,
+     *     verification_status: ?string,
+     *     child_search: string,
+     *     receipt_number: string,
+     * }
+     */
+    private function parseFinanceFilters(array $filters): array
+    {
+        return [
+            'branch_id'                 => filled($filters['branch_id'] ?? null) ? (int) $filters['branch_id'] : null,
+            'payment_method'            => filled($filters['payment_method'] ?? null) ? (string) $filters['payment_method'] : null,
+            'date_from'                 => filled($filters['date_from'] ?? null) ? (string) $filters['date_from'] : null,
+            'date_to'                   => filled($filters['date_to'] ?? null) ? (string) $filters['date_to'] : null,
+            'enrollment_payment_status' => filled($filters['enrollment_payment_status'] ?? null)
+                ? (string) $filters['enrollment_payment_status'] : null,
+            'verification_status'       => filled($filters['verification_status'] ?? null)
+                ? (string) $filters['verification_status'] : null,
+            'child_search'              => isset($filters['child_search']) ? trim((string) $filters['child_search']) : '',
+            'receipt_number'            => isset($filters['receipt_number']) ? trim((string) $filters['receipt_number']) : '',
+        ];
     }
 }

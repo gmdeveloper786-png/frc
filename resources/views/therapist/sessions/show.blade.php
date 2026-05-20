@@ -81,52 +81,12 @@
             </dd>
             <dt class="col-sm-4 text-muted mb-2">Cancellation reason</dt>
             <dd class="col-sm-8 mb-2" style="white-space:pre-wrap;">{{ ! empty($occurrenceDetail['cancellation_reason']) ? $occurrenceDetail['cancellation_reason'] : '—' }}</dd>
-            <dt class="col-sm-4 text-muted mb-2">Progress note status</dt>
-            <dd class="col-sm-8 mb-2">
-                @php $ps = $occurrenceDetail['progress_note_status'] ?? 'none'; @endphp
-                @if($ps === 'none')
-                    No progress note
-                @elseif($ps === 'draft')
-                    Draft progress note
-                @else
-                    Completed progress note
-                @endif
-            </dd>
-            @if(! empty($occurrenceDetail['progress_note_preview']))
-                <dt class="col-sm-4 text-muted mb-2">Progress documentation preview</dt>
-                <dd class="col-sm-8 mb-2">
-                    <div class="small border rounded p-2" style="border-color:var(--border-soft)!important;background:var(--bg-light);">
-                        <div class="mb-1"><span class="text-muted">Progress level</span><br><strong>{{ $occurrenceDetail['progress_note_preview']['progress_level'] ?? '—' }}</strong></div>
-                        <div class="mb-1"><span class="text-muted">Therapy goal</span><br>{{ $occurrenceDetail['progress_note_preview']['therapy_goal'] ?? '—' }}</div>
-                        <div class="mb-0"><span class="text-muted">Notes preview</span><br>{{ $occurrenceDetail['progress_note_preview']['notes_excerpt'] ?? '—' }}</div>
-                    </div>
-                </dd>
-            @endif
         </dl>
 
         <div class="mt-4 d-flex flex-wrap gap-2">
             <a href="{{ route('therapist.sessions.index') }}" class="btn-outline-teal d-inline-flex align-items-center gap-1">
                 <i class="fa-solid fa-arrow-left"></i> Back to sessions
             </a>
-            @if(! empty($occurrenceDetail['progress_note_draft_id']))
-                <a href="{{ route('therapist.progress-notes.edit', $occurrenceDetail['progress_note_draft_id']) }}" class="btn-teal d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-file-lines"></i> Continue draft note
-                </a>
-            @elseif(! empty($occurrenceDetail['progress_note_completed_id']))
-                <a href="{{ route('therapist.progress-notes.show', $occurrenceDetail['progress_note_completed_id']) }}" class="btn-teal d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-eye"></i> View progress note
-                </a>
-            @elseif(($occurrenceDetail['status'] ?? '') === 'completed' && ! empty($occurrenceDetail['child_id']))
-                <a href="{{ route('therapist.progress-notes.create', array_filter([
-                    'child_id' => $occurrenceDetail['child_id'],
-                    'session_date' => $occurrenceDetail['occurrence_date_iso'] ?? null,
-                    'service_id' => $occurrenceDetail['service_id'] ?? null,
-                    'enrollment_id' => $occurrenceDetail['enrollment_id'] ?? null,
-                    'enrollment_schedule_id' => $occurrenceDetail['enrollment_schedule_id'] ?? null,
-                ], fn ($v) => $v !== null && $v !== '')) }}" class="btn-teal d-inline-flex align-items-center gap-1">
-                    <i class="fa-solid fa-file-circle-plus"></i> Add progress note
-                </a>
-            @endif
         </div>
     </div>
 </div>

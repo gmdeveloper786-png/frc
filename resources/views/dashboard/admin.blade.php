@@ -13,13 +13,13 @@
             'tone' => 'teal',
             'href' => $adminUser?->hasPermission('manage_children') ? route('children.index') : null,
         ],
-        [
-            'label' => 'Approved Children',
-            'value' => $stats['approved_children'],
-            'icon' => 'fa-circle-check',
-            'tone' => 'green',
-            'href' => $adminUser?->hasPermission('manage_children') ? route('children.index', ['status' => 'approved']) : null,
-        ],
+        // [
+        //     'label' => 'Approved Children',
+        //     'value' => $stats['approved_children'],
+        //     'icon' => 'fa-circle-check',
+        //     'tone' => 'green',
+        //     'href' => $adminUser?->hasPermission('manage_children') ? route('children.index', ['status' => 'approved']) : null,
+        // ],
         [
             'label' => 'Pending Approvals',
             'value' => $stats['pending_approvals'],
@@ -28,6 +28,20 @@
             'href' => $adminUser?->hasPermission('approve_children') ? route('children.pending') : null,
         ],
         [
+                'label' => 'Pending Payment Verifications',
+                'value' => $stats['pending_payment_verifications'],
+                'icon' => 'fa-clock-rotate-left',
+                'tone' => 'orange',
+                'href' => $adminUser?->hasPermission('verify_payments') ? route('payments.pending') : null,
+                ],
+                [
+                        'label' => 'High Discount Requests',
+                        'value' => $stats['high_discount_requests'],
+                        'icon' => 'fa-money-bill-trend-up',
+                        'tone' => 'orange',
+                        'href' => null,
+                        ],
+        [
             'label' => 'Total Therapists',
             'value' => $stats['total_therapists'],
             'icon' => 'fa-user-doctor',
@@ -35,33 +49,30 @@
             'href' => $adminUser?->hasPermission('manage_therapists') ? route('therapists.index') : null,
         ],
         [
+            'label' => 'Total Assessments',
+            'value' => number_format($stats['total_assessments']),
+            'icon' => 'fa-clipboard-list',
+            'tone' => 'navy',
+            'href' => $adminUser?->hasPermission('manage_assessments') ? route('assessments.index', ['status' => 'completed']) :
+            null,
+            ],
+        [
             'label' => 'Total Enrollments',
-            'value' => $stats['total_enrollments'],
+            'value' => number_format($stats['total_enrollments']),
             'icon' => 'fa-file-contract',
             'tone' => 'teal',
             'href' => $adminUser?->hasPermission('manage_enrollments') ? route('enrollments.index') : null,
         ],
         [
-            'label' => 'Total Assessments',
-            'value' => $stats['total_assessments'],
-            'icon' => 'fa-clipboard-list',
-            'tone' => 'navy',
-            'href' => $adminUser?->hasPermission('manage_assessments') ? route('assessments.index') : null,
-        ],
-        [
-            'label' => 'High Discount Requests',
-            'value' => $stats['high_discount_requests'],
-            'icon' => 'fa-percent',
-            'tone' => 'orange',
+            'label' => 'Total Sessions Completed',
+            'value' => number_format($stats['total_completed_sessions']),
+            'icon' => 'fa-flag-checkered',
+            'tone' => 'green',
             'href' => null,
         ],
-        [
-            'label' => 'Pending Payment Verifications',
-            'value' => $stats['pending_payment_verifications'],
-            'icon' => 'fa-clock-rotate-left',
-            'tone' => 'red',
-            'href' => $adminUser?->hasPermission('verify_payments') ? route('payments.pending') : null,
-        ],
+ 
+
+
     ];
 @endphp
 
@@ -85,6 +96,8 @@
             </div>
         @endforeach
     </div>
+
+@include('dashboard.partials.fee-summary-cards', ['stats' => $stats])
 
 {{-- Finance overview + quick actions --}}
 <div class="row g-3 mb-4">

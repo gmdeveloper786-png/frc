@@ -43,10 +43,11 @@
             @else
                 <div class="table-responsive">
                     <table class="table-frc">
-                        <thead><tr><th>Name</th><th>Age</th><th>Disabilities</th><th>Status</th></tr></thead>
+                        <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th>Disabilities</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($assessment->children as $child)
                                 <tr>
+                                    <td style="font-weight:500;font-family:monospace;">{{ $child->gr_number ?? '—' }}</td>
                                     <td style="font-weight:500;"><a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);">{{ $child->full_name }}</a></td>
                                     <td>{{ $child->age ? $child->age . 'y' : '—' }}</td>
                                     <td style="font-size:12px;color:var(--text-muted);">{{ $child->disabilities->pluck('name')->join(', ') ?: '—' }}</td>

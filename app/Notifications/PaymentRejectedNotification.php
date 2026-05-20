@@ -22,7 +22,7 @@ class PaymentRejectedNotification extends Notification
         return [
             'type'       => 'payment_rejected',
             'title'      => 'Payment Rejected',
-            'message'    => 'Your payment of PKR ' . number_format($this->payment->amount, 2) . ' was rejected. Reason: ' . $this->payment->rejection_reason,
+            'message'    => 'Your payment of ' . frc_pkr($this->payment->amount) . ' was rejected. Reason: ' . $this->payment->rejection_reason,
             'payment_id' => $this->payment->id,
         ];
     }

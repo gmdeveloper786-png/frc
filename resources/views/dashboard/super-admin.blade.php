@@ -6,13 +6,17 @@
 @php
     $statCards = [
         ['label' => 'Total Children', 'value' => number_format($stats['total_children']), 'icon' => 'fa-children', 'tone' => 'teal', 'href' => route('children.index')],
-        ['label' => 'Approved Children', 'value' => number_format($stats['approved_children']), 'icon' => 'fa-circle-check', 'tone' => 'green', 'href' => route('children.index', ['status' => 'approved'])],
+        // ['label' => 'Approved Children', 'value' => number_format($stats['approved_children']), 'icon' => 'fa-circle-check', 'tone' => 'green', 'href' => route('children.index', ['status' => 'approved'])],
         ['label' => 'Pending Approvals', 'value' => number_format($stats['pending_approvals']), 'icon' => 'fa-user-clock', 'tone' => 'orange', 'href' => route('children.pending')],
+        ['label' => 'Pending Payment Verifications', 'value' => number_format($stats['pending_payment_verifications']), 'icon'
+                => 'fa-clock-rotate-left', 'tone' => 'orange', 'href' => route('payments.pending')],
+        ['label' => 'High Discount Requests', 'value' => number_format($stats['pending_high_discount']), 'icon' => 'fa-money-bill-trend-up',
+                'tone' => 'orange', 'href' => route('enrollments.high-discount')],
         ['label' => 'Total Therapists', 'value' => number_format($stats['total_therapists']), 'icon' => 'fa-user-doctor', 'tone' => 'navy', 'href' => route('therapists.index')],
-        ['label' => 'Total Assessments', 'value' => number_format($stats['total_assessments']), 'icon' => 'fa-clipboard-list', 'tone' => 'navy', 'href' => route('assessments.index')],
+        ['label' => 'Total Assessments', 'value' => number_format($stats['total_assessments']), 'icon' => 'fa-clipboard-list', 'tone' => 'navy', 'href' => route('assessments.index', ['status' => 'completed'])],
         ['label' => 'Total Enrollments', 'value' => number_format($stats['total_enrollments']), 'icon' => 'fa-file-contract', 'tone' => 'teal', 'href' => route('enrollments.index')],
-        ['label' => 'High Discount Pending', 'value' => number_format($stats['pending_high_discount']), 'icon' => 'fa-percent', 'tone' => 'orange', 'href' => route('enrollments.high-discount')],
-        ['label' => 'Pending Verifications', 'value' => number_format($stats['pending_payment_verifications']), 'icon' => 'fa-clock-rotate-left', 'tone' => 'orange', 'href' => route('payments.pending')],
+        ['label' => 'Total Sessions Completed', 'value' => number_format($stats['total_completed_sessions']), 'icon' => 'fa-flag-checkered', 'tone' => 'green', 'href' => null],
+
     ];
 @endphp
 
@@ -37,55 +41,7 @@
         @endforeach
     </div>
 
-{{-- Fees overview (expected vs collected vs pending; split by payment channel) --}}
-<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-5 g-3 mb-4">
-    <div class="col">
-        <div class="stat-card h-100">
-            <div class="stat-icon navy"><i class="fa-solid fa-money-bill-trend-up"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;color:var(--navy);">PKR {{ number_format($stats['fee_total_expected']) }}</div>
-                <div class="stat-label">Total Expected</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="stat-card h-100">
-            <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;color:var(--success);">PKR {{ number_format($stats['fee_total_paid']) }}</div>
-                <div class="stat-label">Total Paid</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="stat-card h-100">
-            <div class="stat-icon red"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;color:var(--danger);">PKR {{ number_format($stats['fee_pending_overdue']) }}</div>
-                <div class="stat-label">Pending / Overdue</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="stat-card h-100">
-            <div class="stat-icon teal"><i class="fa-solid fa-money-bill"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;color:var(--teal-dark);">PKR {{ number_format($stats['fee_cash_received']) }}</div>
-                <div class="stat-label">Cash Received</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="stat-card h-100">
-            <div class="stat-icon purple"><i class="fa-solid fa-mobile-screen"></i></div>
-            <div class="stat-body">
-                <div class="stat-value" style="font-size:20px;color:#7c3aed;">PKR {{ number_format($stats['fee_online_bank']) }}</div>
-                <div class="stat-label">Online/Bank</div>
-            </div>
-        </div>
-    </div>
-</div>
-
+@include('dashboard.partials.fee-summary-cards', ['stats' => $stats])
 
 {{-- Recent Children, Enrollments, and Payments --}}
 <div class="row g-3 mb-4 dashboard-recent-row">
@@ -145,7 +101,7 @@
             <ul class="list-unstyled mb-0 p-3 pt-0">
                 @foreach($stats['recent_payments'] as $pay)
                 <li class="py-2 border-bottom" style="border-color:var(--border-soft)!important;">
-                    <div style="font-weight:600;color:var(--navy);">PKR {{ number_format($pay->amount, 2) }}</div>
+                    <div style="font-weight:600;color:var(--navy);">PKR {{ frc_money($pay->amount) }}</div>
                     <div class="small text-muted">{{ $pay->child?->full_name ?? '—' }} · {{ ucfirst(str_replace('_', '
                         ', $pay->status)) }} · {{ $pay->created_at->diffForHumans() }}</div>
                 </li>

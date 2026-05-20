@@ -28,6 +28,9 @@
             <tr><td>Verified By</td><td>{{ $receipt['verified_by'] }}</td></tr>
         @endif
         <tr><td>Child Name</td><td>{{ $receipt['child_name'] }}</td></tr>
+        @if(!empty($receipt['child_gr_number']))
+            <tr><td>GR Number</td><td>{{ $receipt['child_gr_number'] }}</td></tr>
+        @endif
         <tr><td>Branch</td><td>{{ $receipt['branch'] }}</td></tr>
         <tr><td>Therapist</td><td>{{ $receipt['therapist'] }}</td></tr>
         <tr><td>Payment Method</td><td>{{ $receipt['payment_method'] }}</td></tr>
@@ -37,13 +40,13 @@
     </tbody>
 </table>
 
-<p class="receipt-amt">PKR {{ number_format((float) $receipt['amount'], 2) }}</p>
+<p class="receipt-amt">PKR {{ frc_money($receipt['amount']) }}</p>
 
 <table class="receipt-table">
     <tbody>
-        <tr><td>Total Enrollment Fee</td><td>PKR {{ number_format((float) $receipt['total_fee'], 2) }}</td></tr>
-        <tr><td>Total Paid</td><td>PKR {{ number_format((float) $receipt['paid_amount'], 2) }}</td></tr>
-        <tr><td>Remaining Balance</td><td>PKR {{ number_format((float) $receipt['remaining_amount'], 2) }}</td></tr>
+        <tr><td>Total Enrollment Fee</td><td>PKR {{ frc_money($receipt['total_fee']) }}</td></tr>
+        <tr><td>Total Paid</td><td>PKR {{ frc_money($receipt['paid_amount']) }}</td></tr>
+        <tr><td>Remaining Balance</td><td>PKR {{ frc_money($receipt['remaining_amount']) }}</td></tr>
     </tbody>
 </table>
 

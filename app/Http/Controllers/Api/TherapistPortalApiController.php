@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTherapistProgressNoteRequest;
 use App\Http\Resources\AssessmentResource;
 use App\Models\Assessment;
 use App\Models\EnrollmentSchedule;
 use App\Services\AssessmentService;
 use App\Services\TherapistPortalService;
-use App\Services\TherapistProgressNoteService;
 use App\Services\TherapistSessionService;
 use App\Services\UserNotificationService;
 use Carbon\Carbon;
@@ -23,7 +21,6 @@ class TherapistPortalApiController extends Controller
         private readonly TherapistPortalService $portal,
         private readonly AssessmentService $assessmentService,
         private readonly TherapistSessionService $sessionService,
-        private readonly TherapistProgressNoteService $progressNoteService,
         private readonly UserNotificationService $userNotifications,
     ) {}
 
@@ -208,49 +205,34 @@ class TherapistPortalApiController extends Controller
         $request->merge(['cancellation_reason' => $merged]);
 
         $data = $request->validate([
+            'session_date'        => ['required', 'date'],
             'cancellation_reason' => ['required', 'string', 'max:5000', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (trim((string) $value) === '') {
                     $fail('Cancellation reason is required.');
                 }
             }],
         ]);
-        $this->sessionService->cancelSession($request->user(), $schedule, trim($data['cancellation_reason']));
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $this->sessionService->cancelSession(
+            $request->user(),
+            $schedule,
+            $iso,
+            trim($data['cancellation_reason']),
+        );
 
         return response()->json(['message' => 'Cancelled']);
     }
 
     public function sessionNoShow(Request $request, EnrollmentSchedule $schedule): JsonResponse
     {
-        $data = $request->validate(['session_notes' => ['nullable', 'string']]);
-        $this->sessionService->markNoShow($request->user(), $schedule, $data['session_notes'] ?? null);
+        $data = $request->validate([
+            'session_date'  => ['required', 'date'],
+            'session_notes' => ['nullable', 'string'],
+        ]);
+        $iso = Carbon::parse($data['session_date'])->toDateString();
+        $this->sessionService->markNoShow($request->user(), $schedule, $iso, $data['session_notes'] ?? null);
 
         return response()->json(['message' => 'No-show recorded']);
-    }
-
-    public function storeProgressNote(StoreTherapistProgressNoteRequest $request): JsonResponse
-    {
-        $note = $this->progressNoteService->create($request->user(), $request->validated());
-
-        return response()->json(['data' => ['id' => $note->id]], 201);
-    }
-
-    public function indexProgressNotes(Request $request): JsonResponse
-    {
-        $tid = (int) $request->user()->id;
-        $status = $request->filled('status') ? (string) $request->query('status') : null;
-        if ($status !== null && ! in_array($status, \App\Models\ProgressNote::STATUSES, true)) {
-            $status = null;
-        }
-
-        $filters = array_filter([
-            'child_id'   => $request->filled('child_id') ? (int) $request->query('child_id') : null,
-            'service_id' => $request->filled('service_id') ? (int) $request->query('service_id') : null,
-            'status'     => $status,
-        ], fn ($value) => $value !== null && $value !== '');
-
-        return response()->json([
-            'data' => $this->progressNoteService->paginateForTherapist($tid, $filters),
-        ]);
     }
 
     public function profile(Request $request): JsonResponse

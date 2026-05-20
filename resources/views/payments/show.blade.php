@@ -16,7 +16,7 @@
                     <dd class="col-sm-8 mb-2 fw-semibold" style="color:var(--navy);">{{ $payment->hasPrintableReceipt() ? $payment->receipt_number : '—' }}</dd>
 
                     <dt class="col-sm-4 text-muted mb-2">Amount</dt>
-                    <dd class="col-sm-8 mb-2 fw-semibold" style="color:var(--teal-dark);">PKR {{ number_format((float) $payment->amount, 2) }}</dd>
+                    <dd class="col-sm-8 mb-2 fw-semibold" style="color:var(--teal-dark);">PKR {{ frc_money($payment->amount) }}</dd>
 
                     <dt class="col-sm-4 text-muted mb-2">Method</dt>
                     <dd class="col-sm-8 mb-2">{{ \App\Models\Payment::labelForPaymentMethod($payment->payment_method) }}</dd>

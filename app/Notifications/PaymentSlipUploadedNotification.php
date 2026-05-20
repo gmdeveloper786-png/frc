@@ -22,7 +22,7 @@ class PaymentSlipUploadedNotification extends Notification
         return [
             'type'       => 'payment_slip_uploaded',
             'title'      => 'Payment Slip Uploaded',
-            'message'    => "{$this->payment->child->full_name} has uploaded a payment slip of PKR " . number_format($this->payment->amount, 2) . " pending verification.",
+            'message'    => "{$this->payment->child->full_name} has uploaded a payment slip of " . frc_pkr($this->payment->amount) . ' pending verification.',
             'payment_id' => $this->payment->id,
         ];
     }

@@ -71,7 +71,7 @@
     @else
         <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
             <table class="table-frc mb-0">
-                <thead><tr><th>#</th><th>Start date</th><th>Child</th><th>Branch</th><th>Therapist</th><th>Service</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+                <thead><tr><th>#</th><th>Start date</th><th>Child</th><th>Branch</th><th>Therapist</th><th>Service</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                     @foreach($enrollments as $e)
                         <tr>
@@ -79,15 +79,21 @@
                             <td style="color:var(--text-muted);">{{ $enrollments->firstItem() + $loop->index }}</td>
                             <td style="font-weight:500; white-space:nowrap;">{{ ($e->schedule_start_date ?? $e->created_at)?->format('d M Y') ?? '—'
                                 }}</td>
-                            <td style="font-weight:500; white-space:nowrap;"><a href="{{ route('children.show', $e->child_id) }}" style="color:var(--navy);">{{ $e->child?->full_name }}</a></td>
+                            <td style="font-weight:500; white-space:nowrap;">
+                                <a href="{{ route('children.show', $e->child_id) }}" style="color:var(--navy);">{{ $e->child?->full_name }}</a>
+                                @if($e->isGroupEnrollment())
+                                    <span class="badge-status badge-draft" style="font-size:10px;margin-left:4px;" title="Group therapy">Group ({{ $e->groupSize() }})</span>
+                                @endif
+                            </td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $e->branch?->name }}</td>
                             <td style="font-size:13px; white-space:nowrap;"><a href="{{ route('therapists.show', $e->therapist->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $e->therapist?->full_name }}</a></td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $e->service?->name ?? '—' }}</td>
-                            <td style="white-space:nowrap;">PKR {{ number_format($e->final_total) ?? 0 }}</td>
-                            <td style="color:var(--success); white-space:nowrap;">PKR {{ number_format($e->paid_amount) ?? 0 }}</td>
-                            <td style="color:var(--danger); white-space:nowrap;">PKR {{ number_format($e->remaining_amount) ?? 0 }}</td>
+                            <td style="white-space:nowrap;">{{ frc_pkr($e->final_total ?? 0) }}</td>
+                            <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($e->paid_amount ?? 0) }}</td>
+                            <td style="color:var(--danger); white-space:nowrap;">{{ frc_pkr($e->remaining_amount ?? 0) }}</td>
+                            <td style="white-space:nowrap;"><span class="badge-status badge-{{ $e->payment_status }}">{{
+                                                                \App\Models\Payment::labelForEnrollmentPaymentStatus($e->payment_status) ?? '—' }}</span></td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $e->status }}">{{ ucfirst(str_replace('_',' ',$e->status)) }}</span></td>
-                            <td style="white-space:nowrap;"><span class="badge-status badge-{{ $e->payment_status }}">{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($e->payment_status) ?? '—' }}</span></td>
                             <td>
                                 <div style="display:flex;gap:6px;">
                                     <a href="{{ route('enrollments.show', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-eye"></i></a>

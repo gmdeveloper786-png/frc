@@ -13,9 +13,6 @@
     <i class="fa-solid fa-children"></i><span>Assigned Children</span>
 </a>
 @endif
-<a href="{{ route('therapist.progress-notes.index') }}" class="nav-link {{ request()->routeIs('therapist.progress-notes.*') ? 'active' : '' }}">
-    <i class="fa-solid fa-notes-medical"></i><span>Progress Notes</span>
-</a>
 @include('partials.sidebar.staff-modules')
 <div class="nav-section-title">Updates</div>
 <a href="{{ route('notifications.index') }}" class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">

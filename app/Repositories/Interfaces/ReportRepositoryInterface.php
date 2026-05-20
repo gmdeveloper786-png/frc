@@ -19,5 +19,6 @@ interface ReportRepositoryInterface
      */
     public function chunkFinancePaymentRecords(array $filters, int $chunkSize, callable $callback): void;
 
+    /** @return LengthAwarePaginator<int, \App\Models\Payment> */
     public function getStudentFeeRecords(array $filters = [], int $perPage = 15): LengthAwarePaginator;
 }
