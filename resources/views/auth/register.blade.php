@@ -5,20 +5,18 @@
 <style>
 .step-panel { display: none; }
 .step-panel.active { display: block; }
-.auth-card-register { max-width: 740px; }
 </style>
 @endpush
 
 @section('content')
-<div class="auth-card auth-card-register" style="flex-direction:column;">
-    {{-- Header --}}
-    <div style="background:linear-gradient(135deg,var(--navy-dark) 0%,var(--teal) 100%);padding:28px 40px;display:flex;align-items:center;gap:16px;">
-        <div style="width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-            <i class="fa-solid fa-hands-holding-child" style="color:#fff;font-size:22px;"></i>
+<div class="auth-card auth-card-register">
+    <div class="auth-register-header">
+        <div class="auth-register-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}">
         </div>
-        <div>
-            <h4 style="color:#fff;margin:0;font-family:'Poppins',sans-serif;font-weight:700;">Child Registration</h4>
-            <p style="color:rgba(255,255,255,.75);margin:0;font-size:13px;">{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}</p>
+        <div class="auth-register-header-text">
+            <h4>Child Registration</h4>
+            <p>{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}</p>
         </div>
     </div>
 
@@ -200,7 +198,7 @@
                 <div class="register-info-box">
                     <i class="fa-solid fa-circle-info"></i>
                     <div>
-                        <strong>Important:</strong> After submitting your registration, your account will be <strong>pending admin approval</strong>. You will be able to login once an admin reviews and approves your registration.
+                        <strong>Important:</strong> After submitting your registration, your account will be <strong>pending admin approval</strong>. You will be able to login once an admin reviews and approves your registration. An email will be sent to you once your account is approved.
                     </div>
                 </div>
 

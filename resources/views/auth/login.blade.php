@@ -6,7 +6,7 @@
     {{-- Left Panel --}}
     <div class="auth-left">
         <div class="auth-logo">
-            <i class="fa-solid fa-hands-holding-child"></i>
+            <img src="{{ asset('images/logo.png') }}" alt="{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}">
         </div>
         <h2>{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}</h2>
         <p class="auth-tagline">"Care, Support, Growth & Hope"</p>
@@ -16,14 +16,16 @@
             <span class="auth-pill"><i class="fa-solid fa-leaf me-1"></i> Behavioral Therapy</span>
             <span class="auth-pill"><i class="fa-solid fa-puzzle-piece me-1"></i> Special Education</span>
         </div>
-        {{-- Soft decorative doodles --}}
-        <div style="position:absolute;bottom:24px;left:0;right:0;text-align:center;color:rgba(255,255,255,.3);font-size:22px;">
-            ✦ &nbsp; ❤ &nbsp; ✿ &nbsp; ✦
-        </div>
     </div>
 
     {{-- Right Panel --}}
     <div class="auth-right">
+        <div class="auth-mobile-brand">
+            <div class="auth-mobile-logo">
+                <img src="{{ asset('images/logo.png') }}" alt="{{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}">
+            </div>
+        </div>
+
         <h3>Welcome Back</h3>
         <p class="auth-subtitle">Sign in to your account to continue</p>
 
@@ -48,11 +50,11 @@
 
             <div class="mb-3">
                 <label for="password">Password</label>
-                <div style="position:relative;">
+                <div class="auth-pass-wrap">
                     <input type="password" id="password" name="password"
                         class="form-control @error('password') is-invalid @enderror"
                         placeholder="Enter your password" autocomplete="current-password">
-                    <button type="button" onclick="togglePass()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+                    <button type="button" class="auth-pass-toggle" onclick="togglePass()" aria-label="Show password">
                         <i class="fa-regular fa-eye" id="passIcon"></i>
                     </button>
                 </div>
@@ -61,22 +63,22 @@
                 @enderror
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:14px;">
-                    <input type="checkbox" name="remember" style="width:15px;height:15px;accent-color:var(--teal);">
+            <div class="auth-form-options">
+                <label>
+                    <input type="checkbox" name="remember">
                     Remember me
                 </label>
-                <a href="{{ route('password.request') }}" style="color:var(--teal);font-size:13px;font-weight:500;">Forgot password?</a>
+                <a href="{{ route('password.request') }}" style="color:var(--teal);font-size:13px;font-weight:500;white-space:nowrap;">Forgot password?</a>
             </div>
 
-            <button type="submit" class="btn-teal" style="width:100%;padding:12px;font-size:15px;justify-content:center;">
+            <button type="submit" class="btn-teal auth-btn-full">
                 <i class="fa-solid fa-right-to-bracket"></i> Sign In
             </button>
         </form>
 
         @if($frc['child_registration_enabled'] ?? true)
-            <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--text-muted);">
-                New patient? <a href="{{ route('register') }}" style="color:var(--teal);font-weight:600;">Register here</a>
+            <div class="auth-register-link">
+                New patient? <a href="{{ route('register') }}">Register here</a>
             </div>
         @endif
     </div>

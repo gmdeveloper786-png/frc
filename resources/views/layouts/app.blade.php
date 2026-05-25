@@ -23,13 +23,13 @@
 {{-- ── Sidebar ────────────────────────────────────────────────────────────── --}}
 <aside class="frc-sidebar" id="frcSidebar">
     <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">
-            <i class="fa-solid fa-hands-holding-child"></i>
+        <div class="sidebar-brand-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="{{ $frc['organisation_short_name'] ?? 'Faizan Rehab' }}">
         </div>
-        <div class="sidebar-brand-text">
+        {{-- <div class="sidebar-brand-text">
             <div class="brand-text">{{ $frc['organisation_short_name'] ?? 'Faizan Rehab' }}</div>
             <div class="brand-sub">{{ $frc['organisation_tagline'] ?? 'Management System' }}</div>
-        </div>
+        </div> --}}
     </div>
 
     <div class="sidebar-nav-scroll">
