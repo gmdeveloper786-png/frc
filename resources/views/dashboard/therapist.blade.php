@@ -45,7 +45,7 @@
             ['label' => 'Cancelled Sessions', 'value' => $stats['cancelled_sessions'], 'icon' => 'fa-ban', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'cancelled'])],
             ['label' => 'Assigned Children', 'value' => $stats['assigned_children'], 'icon' => 'fa-children', 'tone' => 'teal', 'href' => route('therapist.children.index')],
         ] as $card)
-            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+            <div class="col-12 col-sm-6 col-xl-4">
                 @if(! empty($card['href'] ?? null))
                     <a href="{{ $card['href'] }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
                 @endif

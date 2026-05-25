@@ -164,7 +164,7 @@
         ];
     @endphp
     @foreach($stats as $s)
-        <div class="col-md-2 col-sm-4">
+        <div class="col-md-4 col-sm-6">
             <div class="stat-card h-100">
                 <div class="stat-icon {{ $s['iconClass'] }}"><i class="fa-solid {{ $s['icon'] }}"></i></div>
                 <div class="stat-body">
