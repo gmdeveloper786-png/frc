@@ -78,23 +78,23 @@
                     };
                 @endphp
                 <table class="enrollment-detail-kv">
-                    <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Discount reason</td><td style="padding:6px 0;">{{ filled($enrollment->discount_reason) ? $enrollment->discount_reason : '—' }}</td></tr>
-                    <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Supporting file</td><td style="padding:6px 0;">
+                    <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Discount reason </td><td style="padding:6px 6px;">{{ filled($enrollment->discount_reason) ? $enrollment->discount_reason : '—' }}</td></tr>
+                    <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Supporting file</td><td style="padding:6px 6px;">
                         @if($enrollment->discount_file)
                             <a href="{{ frc_storage_url($enrollment->discount_file) }}" target="_blank" rel="noopener" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-file"></i> View file</a>
                         @else
                             <span class="text-muted">—</span>
                         @endif
                     </td></tr>
-                    <tr><td style="color:var(--text-muted);padding:6px 0;">Approval status</td><td style="padding:6px 0;"><span class="badge-status badge-{{ $enrollment->status }}">{{ $hdStatus }}</span></td></tr>
+                    <tr><td style="color:var(--text-muted);padding:6px 0;">Approval status</td><td style="padding:6px 6px;"><span class="badge-status badge-{{ $enrollment->status }}">{{ $hdStatus }}</span></td></tr>
                     @if(in_array($enrollment->status, ['approved', 'active', 'completed'], true))
-                        <tr><td style="color:var(--text-muted);padding:6px 0;">Approved by</td><td>{{ $enrollment->approvedBy?->full_name ?? '—' }}</td></tr>
-                        <tr><td style="color:var(--text-muted);padding:6px 0;">Approval date</td><td>{{ $enrollment->approved_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                        <tr><td style="color:var(--text-muted);padding:6px 0;">Approved by</td><td style="padding:6px 6px;">{{ $enrollment->approvedBy?->full_name ?? '—' }}</td></tr>
+                        <tr><td style="color:var(--text-muted);padding:6px 0;">Approval date</td><td style="padding:6px 6px;">{{ $enrollment->approved_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                     @endif
                     @if($enrollment->status === 'rejected')
-                        <tr><td style="color:var(--text-muted);padding:6px 0;">Rejected by</td><td>{{ $enrollment->rejectedBy?->full_name ?? '—' }}</td></tr>
-                        <tr><td style="color:var(--text-muted);padding:6px 0;">Rejection date</td><td>{{ $enrollment->rejected_at?->format('d M Y H:i') ?? '—' }}</td></tr>
-                        <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Rejection reason</td><td style="padding:6px 0;color:var(--danger);white-space:pre-wrap;">{{ filled($enrollment->rejection_reason) ? $enrollment->rejection_reason : '—' }}</td></tr>
+                        <tr><td style="color:var(--text-muted);padding:6px 0;">Rejected by</td><td style="padding:6px 6px;">{{ $enrollment->rejectedBy?->full_name ?? '—' }}</td></tr>
+                        <tr><td style="color:var(--text-muted);padding:6px 0;">Rejection date</td><td style="padding:6px 6px;">{{ $enrollment->rejected_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                        <tr><td style="color:var(--text-muted);padding:6px 0;vertical-align:top;">Rejection reason</td><td style="padding:6px 6px;color:var(--danger);white-space:pre-wrap;">{{ filled($enrollment->rejection_reason) ? $enrollment->rejection_reason : '—' }}</td></tr>
                     @endif
                 </table>
             </div>

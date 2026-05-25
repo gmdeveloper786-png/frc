@@ -146,8 +146,8 @@
                                 <div style="font-weight:700;color:var(--navy);">{{ frc_pkr($e->final_total) }}</div>
                             </td>
                             <td style="max-width:200px;">
-                                <p style="font-size:12px;color:var(--text-muted);margin:0;white-space:pre-wrap;">{{ Str::limit($e->discount_reason, 80) }}</p>
-                                @if(strlen($e->discount_reason) > 80)
+                                <p style="font-size:12px;color:var(--text-muted);margin:0;white-space:pre-wrap;">{{ Str::limit($e->discount_reason, 30) }}</p>
+                                @if(strlen($e->discount_reason) > 30)
                                     <a href="{{ route('enrollments.show', $e->id) }}" style="font-size:12px;color:var(--teal);">See more</a>
                                 @endif
                             </td>

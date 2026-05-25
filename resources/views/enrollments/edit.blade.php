@@ -98,7 +98,8 @@
                     <label>First session starts on <span style="color:var(--danger)">*</span></label>
                     <input type="date" name="schedule_start_date" id="scheduleStartDate"
                         class="form-control @error('schedule_start_date') is-invalid @enderror"
-                        value="{{ $scheduleStartDefault }}" required>
+                        value="{{ $scheduleStartDefault }}"
+                        min="{{ now()->toDateString() }}" required>
                     @error('schedule_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     <p class="text-muted small mb-0 mt-1" id="firstSessionHint">Pehla session is date ke baad pehla matching weekday hoga; weekly repeat us ke baad chalega.</p>
                 </div>
