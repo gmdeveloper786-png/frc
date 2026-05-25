@@ -56,17 +56,19 @@ class StoreChildPaymentSlipRequest extends FormRequest
                 return;
             }
 
-            if ($enrollment->outstandingAmount() <= 0) {
-                $validator->errors()->add(
-                    'enrollment_id',
-                    'Your fee is fully paid for this programme. No payment slip is required.'
-                );
+            if ($enrollment->outstandingForSlipUpload() <= 0) {
+                $pending = $enrollment->sumPendingVerificationAmount();
+                $message = $pending > 0
+                    ? 'You already submitted '.frc_pkr($pending).' for verification on this programme. Please wait for finance to verify before uploading another slip.'
+                    : 'Your fee is fully paid for this programme. No payment slip is required.';
+
+                $validator->errors()->add('enrollment_id', $message);
 
                 return;
             }
 
             $amt = Money::round($this->input('amount'));
-            $max = $enrollment->outstandingAmount();
+            $max = $enrollment->outstandingForSlipUpload();
             if ($amt > $max) {
                 $validator->errors()->add(
                     'amount',

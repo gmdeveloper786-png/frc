@@ -196,6 +196,16 @@ class Enrollment extends Model
     }
 
     /**
+     * Sum of child/staff slips awaiting finance verification (not yet in paid_amount).
+     */
+    public function sumPendingVerificationAmount(): float
+    {
+        return Money::round(
+            (float) $this->payments()->where('status', 'pending_verification')->sum('amount')
+        );
+    }
+
+    /**
      * Rupees still owed (final minus sum of paid payments), rounded to 2 dp.
      */
     public function outstandingAmount(): float
@@ -203,6 +213,17 @@ class Enrollment extends Model
         $final = Money::format($this->getAttributes()['final_total'] ?? 0);
 
         return Money::sub($final, $this->sumPaidFromPayments());
+    }
+
+    /**
+     * Remaining balance the child may still submit a slip for (excludes pending verification).
+     */
+    public function outstandingForSlipUpload(): float
+    {
+        $out = $this->outstandingAmount();
+        $pending = $this->sumPendingVerificationAmount();
+
+        return max(0, Money::sub($out, $pending));
     }
 
     protected function paidAmount(): Attribute

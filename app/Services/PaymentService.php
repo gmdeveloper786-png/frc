@@ -79,9 +79,14 @@ class PaymentService
             throw ValidationException::withMessages(['amount' => ['Amount must be greater than 0.']]);
         }
 
-        $outstanding = $enrollment->outstandingAmount();
+        $outstanding = $enrollment->outstandingForSlipUpload();
         if ($outstanding <= 0) {
-            throw ValidationException::withMessages(['enrollment_id' => ['Your fee is fully paid. No payment slip is required.']]);
+            $pending = $enrollment->sumPendingVerificationAmount();
+            $message = $pending > 0
+                ? 'A payment slip of '.frc_pkr($pending).' is already pending verification for this programme.'
+                : 'Your fee is fully paid. No payment slip is required.';
+
+            throw ValidationException::withMessages(['enrollment_id' => [$message]]);
         }
 
         if ($amount > $outstanding) {

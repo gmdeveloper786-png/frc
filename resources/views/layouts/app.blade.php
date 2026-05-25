@@ -197,8 +197,8 @@
 {{-- ── Main Content ───────────────────────────────────────────────────────── --}}
 <main class="frc-main">
 
-    {{-- Flash Messages --}}
-    @if(session('success'))
+    {{-- Flash Messages (success on upload-slip is shown inside the card only) --}}
+    @if(session('success') && ! request()->routeIs('child.upload-slip'))
         <div class="alert-frc success mb-3">
             <i class="fa-solid fa-circle-check"></i>
             <div>{{ session('success') }}</div>

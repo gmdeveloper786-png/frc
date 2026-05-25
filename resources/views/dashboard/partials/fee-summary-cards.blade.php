@@ -4,7 +4,7 @@
         ? route('payments.pending')
         : null;
 @endphp
-<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-6 g-3 mb-4">
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3 mb-4">
     <div class="col">
         <div class="stat-card h-100">
             <div class="stat-icon navy"><i class="fa-solid fa-money-bill-trend-up"></i></div>

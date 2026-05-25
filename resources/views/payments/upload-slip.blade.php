@@ -4,7 +4,9 @@
 
 @section('content')
 @php
+    $pickerList = isset($picker) ? $picker : collect();
     $eligibleList = isset($eligible) ? $eligible : collect();
+    $repopulateForm = $errors->any();
 @endphp
 <div class="row g-3 justify-content-center">
     <div class="col-lg-7 col-md-9">
@@ -13,13 +15,35 @@
                 <i class="fa-solid fa-upload me-2" style="color:var(--teal);"></i>Fee payment — {{ auth()->user()->full_name }}
             </h6>
 
+            @if(session('success'))
+                <div class="alert-frc success mb-3">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <div>{{ session('success') }}</div>
+                </div>
+            @endif
+
             @if(! ($hasVisibleEnrollments ?? false))
                 <div class="empty-state" style="padding:32px 20px;">
                     <i class="fa-solid fa-file-contract empty-icon"></i>
                     <h5>No enrollment</h5>
                     <p class="mb-0">You don’t have an approved enrollment yet. Please contact the administration.</p>
                 </div>
-            @elseif($eligibleList->isEmpty())
+            @elseif($pickerList->isEmpty())
+                @if($pendingOnlyEnrollment ?? null)
+                    <div style="background:#fff4e5;border-radius:14px;padding:18px 20px;margin-bottom:20px;border:1px solid #ffe0b2;">
+                        <div style="display:flex;gap:12px;align-items:flex-start;">
+                            <i class="fa-solid fa-hourglass-half" style="color:#c77800;font-size:22px;margin-top:2px;"></i>
+                            <div>
+                                <strong style="color:var(--navy);display:block;margin-bottom:6px;">Payment slip awaiting verification</strong>
+                                <span style="font-size:13px;color:var(--text-muted);">
+                                    {{ $pendingOnlyEnrollment->service?->name ?? 'Programme' }} (Enrollment #{{ $pendingOnlyEnrollment->id }}):
+                                    {{ frc_pkr($pendingOnlyEnrollment->sumPendingVerificationAmount()) }} is pending finance verification.
+                                    No further slip is needed for this balance until it is approved or rejected.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @else
                 <div style="background:var(--teal-light);border-radius:14px;padding:18px 20px;margin-bottom:20px;border:1px solid rgba(0,128,128,.15);">
                     <div style="display:flex;gap:12px;align-items:flex-start;">
                         <i class="fa-solid fa-circle-check" style="color:var(--teal);font-size:22px;margin-top:2px;"></i>
@@ -29,15 +53,25 @@
                         </div>
                     </div>
                 </div>
+                @endif
             @else
-                @if($eligibleList->count() > 1)
+                @if($pickerList->count() > 1)
                     <form method="GET" action="{{ route('child.upload-slip') }}" class="form-frc mb-4" id="enrollmentPickForm">
                         <label class="form-label" style="font-weight:600;color:var(--navy);">Which programme are you paying for? <span class="text-danger">*</span></label>
-                        <p class="text-muted small mb-2">Each enrollment has its own fee. Select the one this slip belongs to, then fill the form below.</p>
+                        <p class="text-muted small mb-2">Each enrollment has its own fee. Pick the programme for this slip.</p>
                         <select name="enrollment_id" class="form-control" onchange="document.getElementById('enrollmentPickForm').submit()">
-                            @foreach($eligibleList as $opt)
+                            @foreach($pickerList as $opt)
+                                @php
+                                    $optUploadable = $opt->outstandingForSlipUpload();
+                                    $optPending = $opt->sumPendingVerificationAmount();
+                                @endphp
                                 <option value="{{ $opt->id }}" @selected($enrollment && (int) $enrollment->id === (int) $opt->id)>
-                                    #{{ $opt->id }} — {{ $opt->service?->name ?? 'Programme' }} — remaining {{ frc_pkr($opt->outstandingAmount()) }}
+                                    #{{ $opt->id }} — {{ $opt->service?->name ?? 'Programme' }} —
+                                    @if($optUploadable > 0)
+                                        pay up to {{ frc_pkr($optUploadable) }}
+                                    @else
+                                        {{ frc_pkr($optPending) }} pending verification
+                                    @endif
                                 </option>
                             @endforeach
                         </select>
@@ -52,8 +86,11 @@
                     <div style="background:var(--bg-light);border-radius:14px;padding:16px;margin-bottom:20px;">
                         <div class="row g-3" style="font-size:13px;">
                             <div class="col-sm-6"><span class="text-muted d-block mb-1">Total fee</span><strong class="text-navy">PKR {{ frc_money($enrollment->final_total) }}</strong></div>
-                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Paid</span><strong style="color:var(--success);">PKR {{ frc_money($enrollment->paid_amount) }}</strong></div>
-                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Remaining (max you can pay)</span><strong style="color:var(--danger);">{{ frc_pkr($enrollment->outstandingAmount()) }}</strong></div>
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Paid (verified)</span><strong style="color:var(--success);">PKR {{ frc_money($enrollment->paid_amount) }}</strong></div>
+                            @if(($pendingSlipAmount ?? 0) > 0)
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">Pending verification</span><strong style="color:#e08000;">{{ frc_pkr($pendingSlipAmount) }}</strong></div>
+                            @endif
+                            <div class="col-sm-6"><span class="text-muted d-block mb-1">You can pay now (max)</span><strong style="color:var(--danger);">{{ frc_pkr($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}</strong></div>
                             <div class="col-sm-6"><span class="text-muted d-block mb-1">Branch</span><strong>{{ $enrollment->branch?->name }}</strong></div>
                         </div>
                     </div>
@@ -74,16 +111,16 @@
                     </div>
                     @endif
 
-                    <form action="{{ route('child.upload-slip.store') }}" method="POST" enctype="multipart/form-data" class="form-frc" id="childSlipUploadForm">
+                    <form action="{{ route('child.upload-slip.store') }}" method="POST" enctype="multipart/form-data" class="form-frc" id="childSlipUploadForm" autocomplete="off">
                     @csrf
                     <input type="hidden" name="enrollment_id" value="{{ $enrollment->id }}">
                     <div class="mb-3">
                         <label>Amount (PKR) <span style="color:var(--danger)">*</span></label>
-                        <input type="number" name="amount" value="{{ old('amount') }}"
+                        <input type="number" name="amount" value="{{ $repopulateForm ? old('amount') : '' }}"
                             class="form-control @error('amount') is-invalid @enderror"
                             min="1" step="1" inputmode="numeric" pattern="[0-9]*"
-                            max="{{ frc_money_input($enrollment->outstandingAmount()) }}"
-                            placeholder="Enter amount up to {{ frc_pkr($enrollment->outstandingAmount()) }}" required>
+                            max="{{ frc_money_input($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}"
+                            placeholder="Enter amount up to {{ frc_pkr($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}" required autocomplete="off">
                         @error('amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         <small class="text-muted">Enter the <strong>exact whole PKR amount</strong> shown on your bank slip or transfer receipt.</small>
                     </div>
@@ -95,14 +132,14 @@
                         <select name="payment_method" class="form-control @error('payment_method') is-invalid @enderror" required>
                             <option value="">Select payment method</option>
                             @foreach($childPaymentMethods as $m)
-                                <option value="{{ $m }}" {{ old('payment_method') === $m ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $m)) }}</option>
+                                <option value="{{ $m }}" {{ $repopulateForm && old('payment_method') === $m ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $m)) }}</option>
                             @endforeach
                         </select>
                         @error('payment_method') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="mb-3">
                         <label>Transaction / Reference ID <span style="color:var(--text-muted);font-weight:normal;font-size:12px;">(optional)</span></label>
-                        <input type="text" name="transaction_reference" value="{{ old('transaction_reference') }}"
+                        <input type="text" name="transaction_reference" value="{{ $repopulateForm ? old('transaction_reference') : '' }}"
                             class="form-control @error('transaction_reference') is-invalid @enderror"
                             placeholder="Bank ref, Easypaisa TID, etc.">
                         @error('transaction_reference') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -116,18 +153,36 @@
                     </div>
                     <div class="mb-3">
                         <label>Payment Date <span style="color:var(--danger)">*</span></label>
-                        <input type="date" name="payment_date" value="{{ old('payment_date', date('Y-m-d')) }}"
+                        <input type="date" name="payment_date" value="{{ $repopulateForm ? old('payment_date', date('Y-m-d')) : date('Y-m-d') }}"
                             class="form-control @error('payment_date') is-invalid @enderror">
                         @error('payment_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="mb-3">
                         <label>Notes (optional)</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Any notes...">{{ old('notes') }}</textarea>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Any notes..." autocomplete="off">{{ $repopulateForm ? old('notes') : '' }}</textarea>
                     </div>
                     <button type="submit" class="btn-teal w-100 justify-content-center py-2">
                         <i class="fa-solid fa-upload"></i> Submit Payment Slip
                     </button>
                     </form>
+                @elseif($enrollment && ($pendingSlipAmount ?? 0) > 0)
+                    <div class="mb-3" style="font-size:13px;color:var(--navy);">
+                        <strong>{{ $enrollment->service?->name ?? 'Programme' }}</strong>
+                        <span class="text-muted">· Enrollment #{{ $enrollment->id }}</span>
+                    </div>
+                    <div style="background:#fff4e5;border-radius:14px;padding:18px 20px;border:1px solid #ffe0b2;">
+                        <div style="display:flex;gap:12px;align-items:flex-start;">
+                            <i class="fa-solid fa-hourglass-half" style="color:#c77800;font-size:22px;margin-top:2px;"></i>
+                            <div>
+                                <strong style="color:var(--navy);display:block;margin-bottom:6px;">Payment slip already submitted</strong>
+                                <span style="font-size:13px;color:var(--text-muted);">
+                                    {{ frc_pkr($pendingSlipAmount) }} is awaiting finance verification for this programme.
+                                    You cannot upload another slip for the same balance until it is verified or rejected.
+                                    Check <a href="{{ route('child.payments') }}" style="color:var(--teal);font-weight:600;">Payment History</a> for status.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             @endif
         </div>
@@ -135,6 +190,26 @@
 </div>
 @push('scripts')
 <script>
+(function () {
+    function reloadIfBackForward() {
+        const nav = performance.getEntriesByType('navigation')[0];
+        if (nav && nav.type === 'back_forward') {
+            window.location.replace(window.location.href);
+            return true;
+        }
+        return false;
+    }
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted && !reloadIfBackForward()) {
+            window.location.replace(window.location.href);
+        }
+    });
+    if (document.readyState === 'complete') {
+        reloadIfBackForward();
+    } else {
+        window.addEventListener('load', reloadIfBackForward);
+    }
+})();
 document.getElementById('childSlipUploadForm')?.addEventListener('submit', function (e) {
     const input = this.querySelector('input[name="amount"]');
     const amount = input?.value?.trim();

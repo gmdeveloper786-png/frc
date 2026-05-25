@@ -16,6 +16,7 @@ use App\Services\ChildPortalService;
 use App\Services\PaymentService;
 use App\Services\ReceiptService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -100,24 +101,52 @@ class PaymentController extends Controller
         return redirect()->route($listRoute)->with('success', 'Payment recorded.');
     }
 
-    public function childSlipCreate(Request $request): View
+    public function childSlipCreate(Request $request): Response
     {
         $child = $request->user();
+        $picker = $this->childPortalService->getEnrollmentsForSlipPicker($child);
         $eligible = $this->childPortalService->getEnrollmentsForFeeSlipUpload($child);
         $requestedId = $request->query('enrollment_id');
 
         $enrollment = null;
         if ($requestedId !== null && $requestedId !== '') {
-            $enrollment = $eligible->firstWhere('id', (int) $requestedId);
+            $enrollment = $picker->firstWhere('id', (int) $requestedId);
         }
         if (! $enrollment) {
-            $enrollment = $eligible->first();
+            $enrollment = $eligible->first() ?? $picker->first();
         }
 
-        $canUpload = $enrollment instanceof Enrollment;
+        $pendingSlipAmount = $enrollment instanceof Enrollment
+            ? $enrollment->sumPendingVerificationAmount()
+            : 0.0;
+        $uploadableAmount = $enrollment instanceof Enrollment
+            ? $enrollment->outstandingForSlipUpload()
+            : 0.0;
+
+        $canUpload = $enrollment instanceof Enrollment && $uploadableAmount > 0;
         $hasVisibleEnrollments = $this->childPortalService->childHasVisibleEnrollment($child);
 
-        return view('payments.upload-slip', compact('enrollment', 'canUpload', 'eligible', 'hasVisibleEnrollments'));
+        $pendingOnlyEnrollment = null;
+        if ($eligible->isEmpty() && $hasVisibleEnrollments && $picker->isNotEmpty()) {
+            $pendingOnlyEnrollment = $picker->first(
+                fn(Enrollment $e): bool => $e->sumPendingVerificationAmount() > 0
+                    && $e->outstandingForSlipUpload() <= 0
+            );
+        }
+
+        return response()
+            ->view('payments.upload-slip', compact(
+                'enrollment',
+                'canUpload',
+                'eligible',
+                'picker',
+                'hasVisibleEnrollments',
+                'pendingSlipAmount',
+                'uploadableAmount',
+                'pendingOnlyEnrollment',
+            ))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     public function childSlipStore(StoreChildPaymentSlipRequest $request): RedirectResponse
@@ -128,10 +157,13 @@ class PaymentController extends Controller
             $request->file('payment_slip'),
         );
 
-        return redirect()->route('dashboard.child')->with(
-            'success',
-            'Payment slip submitted for verification ('.frc_pkr($payment->amount).').'
-        );
+        return redirect()
+            ->route('child.upload-slip', ['enrollment_id' => $payment->enrollment_id])
+            ->with(
+                'success',
+                'Payment slip submitted for verification (' . frc_pkr($payment->amount) . '). Finance will verify it soon.'
+            )
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function verify(VerifyPaymentRequest $request, int $id): RedirectResponse

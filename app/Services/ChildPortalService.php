@@ -34,13 +34,15 @@ class ChildPortalService
      *   next_session_display:?array,
      *   pending_payment_verification_count:int,
      *   session_counts:array{total:int,completed:int,upcoming_scheduled:int},
+     *   total_sessions_completed:int,
      *   dashboard_summary:array{
      *     total_enrollments:int,
      *     total_assessments:int,
      *     slips_pending:int,
      *     total_expected:float,
      *     total_paid:float,
-     *     pending_overdue:float
+     *     pending_overdue:float,
+     *     pending_verification:float
      *   },
      *   notifications:Collection,
      *   unread_count:int
@@ -86,7 +88,8 @@ class ChildPortalService
                 ->where('child_id', $childId)
                 ->where('status', 'pending_verification')
                 ->count(),
-            'session_counts'                     => $this->sessionCountsForEnrollment($primaryEnrollment),
+            'session_counts'                     => $this->sessionCountsForChild($childId),
+            'total_sessions_completed'           => $this->countCompletedSessionsForChild($childId),
             'dashboard_summary'                  => $this->buildDashboardSummary($childId, $assessmentCount),
             'can_upload_fee_slip'                => $slipEnrollments->isNotEmpty(),
             'notifications'                      => $this->userNotifications->getLatestNotifications($childId, 8),
@@ -170,6 +173,25 @@ class ChildPortalService
     }
 
     /**
+     * All programmes that still have a balance or a slip awaiting verification (for the picker).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Enrollment>
+     */
+    public function getEnrollmentsForSlipPicker(User $child): Collection
+    {
+        return Enrollment::with(['branch', 'service', 'therapist'])
+            ->where('child_id', $child->id)
+            ->visibleToChild()
+            ->whereIn('status', ['approved', 'active'])
+            ->orderByDesc('remaining_amount')
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn (Enrollment $e): bool => $e->outstandingAmount() > 0
+                || $e->sumPendingVerificationAmount() > 0)
+            ->values();
+    }
+
+    /**
      * Enrollments where the child may upload a bank / mobile-wallet fee slip (each programme billed separately).
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Enrollment>
@@ -180,10 +202,11 @@ class ChildPortalService
             ->where('child_id', $child->id)
             ->visibleToChild()
             ->whereIn('status', ['approved', 'active'])
-            ->where('remaining_amount', '>', 0)
             ->orderByDesc('remaining_amount')
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->filter(fn (Enrollment $e): bool => $e->outstandingForSlipUpload() > 0)
+            ->values();
     }
 
     public function childHasVisibleEnrollment(User $child): bool
@@ -199,7 +222,7 @@ class ChildPortalService
         return $enrollment instanceof Enrollment
             && $enrollment->isVisibleToChild()
             && in_array($enrollment->status, ['approved', 'active'], true)
-            && $enrollment->outstandingAmount() > 0;
+            && $enrollment->outstandingForSlipUpload() > 0;
     }
 
     /**
@@ -211,16 +234,32 @@ class ChildPortalService
      *   slips_pending:int,
      *   total_expected:float,
      *   total_paid:float,
-     *   pending_overdue:float
+     *   pending_overdue:float,
+     *   pending_verification:float
      * }
      */
     private function buildDashboardSummary(int $childId, int $totalAssessments): array
     {
+        $enrollmentRows = Enrollment::query()
+            ->where('child_id', $childId)
+            ->visibleToChild()
+            ->whereIn('status', ['approved', 'active'])
+            ->get(['id', 'final_total', 'paid_amount', 'remaining_amount']);
+
         $enrollmentTotals = Enrollment::query()
-            ->selectRaw('COUNT(*) as enrollment_count, COALESCE(SUM(final_total), 0) as sum_expected, COALESCE(SUM(paid_amount), 0) as sum_paid, COALESCE(SUM(remaining_amount), 0) as sum_remaining')
+            ->selectRaw('COUNT(*) as enrollment_count, COALESCE(SUM(final_total), 0) as sum_expected, COALESCE(SUM(paid_amount), 0) as sum_paid')
             ->where('child_id', $childId)
             ->visibleToChild()
             ->first();
+
+        $uploadableRemaining = $enrollmentRows->sum(
+            fn (Enrollment $e): float => $e->outstandingForSlipUpload()
+        );
+
+        $pendingVerificationAmount = (float) Payment::query()
+            ->where('child_id', $childId)
+            ->where('status', 'pending_verification')
+            ->sum('amount');
 
         return [
             'total_enrollments' => (int) ($enrollmentTotals->enrollment_count ?? 0),
@@ -231,7 +270,8 @@ class ChildPortalService
                 ->count(),
             'total_expected'    => (float) ($enrollmentTotals->sum_expected ?? 0),
             'total_paid'        => (float) ($enrollmentTotals->sum_paid ?? 0),
-            'pending_overdue'   => (float) ($enrollmentTotals->sum_remaining ?? 0),
+            'pending_overdue'   => (float) $uploadableRemaining,
+            'pending_verification' => $pendingVerificationAmount,
         ];
     }
 
@@ -300,6 +340,34 @@ class ChildPortalService
             'badge'       => (string) ($occ['badge_class'] ?? $this->scheduleStatusBadgeClass((string) ($occ['status'] ?? 'scheduled'))),
             'schedule_id' => (int) ($occ['schedule_id'] ?? 0),
             'date_iso'    => (string) ($occ['date_iso'] ?? $sessionDate->toDateString()),
+        ];
+    }
+
+    /**
+     * Completed session occurrences across all visible enrollments (recurring + fixed-date).
+     */
+    public function countCompletedSessionsForChild(int $childId): int
+    {
+        return (int) $this->childSchedule->getExpandedOccurrences($childId)
+            ->where('status', 'completed')
+            ->count();
+    }
+
+    /**
+     * @return array{total:int,completed:int,upcoming_scheduled:int}
+     */
+    private function sessionCountsForChild(int $childId): array
+    {
+        $rows = $this->childSchedule->getExpandedOccurrences($childId);
+        $today = now()->startOfDay();
+
+        return [
+            'total'              => $rows->count(),
+            'completed'          => $rows->where('status', 'completed')->count(),
+            'upcoming_scheduled' => $rows->filter(
+                fn (array $r): bool => ($r['status'] ?? '') === 'scheduled'
+                    && $r['session_date']->greaterThanOrEqualTo($today),
+            )->count(),
         ];
     }
 
@@ -499,7 +567,7 @@ class ChildPortalService
     {
         return $enrollment->isVisibleToChild()
             && in_array($enrollment->status, ['approved', 'active'], true)
-            && $enrollment->outstandingAmount() > 0;
+            && $enrollment->outstandingForSlipUpload() > 0;
     }
 
     private function presentEnrollmentRow(Enrollment $enrollment): array

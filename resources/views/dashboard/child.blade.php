@@ -12,10 +12,26 @@
     $totalPaid = (float) ($summary['total_paid'] ?? 0);
     $pendingOverdue = (float) ($summary['pending_overdue'] ?? 0);
     $canUploadSlip = (bool) ($stats['can_upload_fee_slip'] ?? false);
+    $pendingVerification = (float) ($summary['pending_verification'] ?? 0);
+    $totalSessionsCompleted = (int) ($stats['total_sessions_completed'] ?? 0);
 
     $formatPkr = fn (float $amount): string => 'PKR ' . frc_money($amount);
 
     $statCards = [
+        [
+            'label' => 'Total Sessions Completed',
+            'value' => $totalSessionsCompleted,
+            'icon' => 'fa-flag-checkered',
+            'tone' => $totalSessionsCompleted > 0 ? 'green' : 'teal',
+            'href' => route('child.schedule.index'),
+        ],
+        [
+                'label' => 'Total Assessment',
+                'value' => $totalAssessments,
+                'icon' => 'fa-clipboard-list',
+                'tone' => 'teal',
+                'href' => route('child.assessments'),
+                ],
         [
             'label' => 'Total enrollment',
             'value' => $totalEnrollments,
@@ -23,13 +39,7 @@
             'tone' => 'navy',
             'href' => route('child.enrollment'),
         ],
-        [
-            'label' => 'Total Assessment',
-            'value' => $totalAssessments,
-            'icon' => 'fa-clipboard-list',
-            'tone' => 'teal',
-            'href' => route('child.assessments'),
-        ],
+
         [
             'label' => 'Slip Pending',
             'value' => $slipsPending,
@@ -55,10 +65,16 @@
         [
             'label' => 'Pending / Overdue',
             'value' => $totalEnrollments > 0 ? $formatPkr($pendingOverdue) : '—',
-            'icon' => 'fa-wallet',
-            'tone' => $pendingOverdue > 0 ? 'orange' : 'green',
+            'icon' => 'fa-hourglass-half',
+            'tone' => $pendingOverdue > 0 ? 'red' : 'navy',
             'href' => $canUploadSlip ? route('child.upload-slip') : route('child.enrollment'),
-            'hint' => $pendingOverdue > 0 && $canUploadSlip ? 'Upload fee slip' : null,
+        ],
+        [
+            'label' => 'Pending Verification Amount',
+            'value' => $totalEnrollments > 0 ? $formatPkr($pendingVerification) : '—',
+            'icon' => 'fa-triangle-exclamation',
+            'tone' => $pendingVerification > 0 ? 'orange' : 'teal',
+            'href' => route('child.payments'),
         ],
     ];
 @endphp
@@ -66,7 +82,7 @@
 <div class="child-dashboard-page">
     <div class="row g-3 mb-4 child-dashboard-stats">
         @foreach($statCards as $card)
-            <div class="col-12 col-sm-6 col-xl-4">
+            <div class="col-12 col-sm-6 col-xl-3">
                 @if(! empty($card['href']))
                     <a href="{{ $card['href'] }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
                 @endif
