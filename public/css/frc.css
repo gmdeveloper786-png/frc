@@ -973,7 +973,32 @@ a.frc-notif-item:focus-visible {
   transition: background .2s, transform .15s;
   display: inline-flex; align-items: center; gap: 6px;
 }
-.btn-teal:hover { background: var(--teal-dark); color: #fff; transform: translateY(-1px); }
+.btn-teal:hover:not(:disabled):not([disabled]) {
+  background: var(--teal-dark);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.btn-teal:disabled,
+.btn-teal[disabled] {
+  background: #9ecaca;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: not-allowed !important;
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+}
+.btn-teal:disabled:hover,
+.btn-teal[disabled]:hover {
+  background: #9ecaca;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: not-allowed;
+  transform: none;
+}
+#enrollForm button[type="submit"].btn-teal:disabled,
+#enrollForm button[type="submit"].btn-teal[disabled] {
+  background: #8fb8b8;
+  color: rgba(255, 255, 255, 0.88);
+}
 .btn-navy {
   background: var(--navy);
   color: #fff;

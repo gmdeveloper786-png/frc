@@ -157,6 +157,9 @@ async function loadScheduleOptions(opts = {}) {
             occupiedSlotKeys.add(occupiedSlotKey(o.day, o.time_slot));
         }
         if (reset) resetSchedules();
+        if (document.getElementById('scheduleStartDate')?.value) {
+            syncStartDateToScheduleDay({ autoAdd: reset });
+        }
     } catch(e) { console.error(e); }
 }
 
@@ -354,10 +357,61 @@ function toggleDuration() {
 const dayNameToIso = {
     monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7,
 };
+const jsWeekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function formatDateHint(d) {
     if (!d || Number.isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function dayNameFromYmd(ymd) {
+    const d = new Date(ymd + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) return '';
+    return jsWeekdayNames[d.getDay()] || '';
+}
+
+function findAvailableDayMatch(dayName) {
+    const lower = String(dayName || '').trim().toLowerCase();
+    if (!lower) return null;
+    return (availableDays || []).find(d => String(d).trim().toLowerCase() === lower) || null;
+}
+
+function getSelectedScheduleDays() {
+    const days = [];
+    document.querySelectorAll('#scheduleRows select[name*="[day]"]').forEach(sel => {
+        if (sel.value) days.push(sel.value);
+    });
+    return days;
+}
+
+function scheduleHasDay(dayName) {
+    const lower = String(dayName || '').trim().toLowerCase();
+    return getSelectedScheduleDays().some(d => String(d).trim().toLowerCase() === lower);
+}
+
+function isScheduleStartAligned() {
+    const startInput = document.getElementById('scheduleStartDate');
+    if (!startInput?.value) {
+        return true;
+    }
+    const matchedDay = findAvailableDayMatch(dayNameFromYmd(startInput.value));
+    return !!matchedDay && scheduleHasDay(matchedDay);
+}
+
+function updateEnrollmentSaveState() {
+    const form = document.getElementById('enrollForm');
+    const btn = form?.querySelector('button[type="submit"]');
+    if (!btn) {
+        return;
+    }
+    const aligned = isScheduleStartAligned();
+    btn.disabled = !aligned;
+    btn.setAttribute('aria-disabled', aligned ? 'false' : 'true');
+    if (!aligned) {
+        btn.title = 'Fix the start date and session schedule before saving.';
+    } else {
+        btn.removeAttribute('title');
+    }
 }
 
 function firstMatchingSessionDate(startYmd, dayName) {
@@ -374,21 +428,140 @@ function firstMatchingSessionDate(startYmd, dayName) {
     return null;
 }
 
+/** When start date changes, auto-add that weekday to schedule if therapist works that day. */
+function syncStartDateToScheduleDay(opts = {}) {
+    const autoAdd = opts.autoAdd !== false;
+    const startInput = document.getElementById('scheduleStartDate');
+    if (!startInput?.value) {
+        updateFirstSessionHint();
+        return;
+    }
+
+    const startYmd = startInput.value;
+    const startDayLabel = dayNameFromYmd(startYmd);
+    const matchedDay = findAvailableDayMatch(startDayLabel);
+
+    if (!matchedDay) {
+        updateFirstSessionHint();
+        return;
+    }
+
+    if (scheduleHasDay(matchedDay)) {
+        updateFirstSessionHint();
+        return;
+    }
+
+    if (!autoAdd) {
+        updateFirstSessionHint();
+        return;
+    }
+
+    const rows = document.querySelectorAll('#scheduleRows .schedule-row');
+    let placed = false;
+    for (const row of rows) {
+        const dSel = row.querySelector('select[name*="[day]"]');
+        if (dSel && !dSel.value) {
+            const idx = parseInt(String(dSel.id).replace('daySelect', ''), 10);
+            selectOptionIfMissing(dSel, matchedDay, matchedDay);
+            updateSlots(idx);
+            placed = true;
+            break;
+        }
+    }
+
+    if (!placed) {
+        addScheduleRow();
+        const idx = rowIndex - 1;
+        const dSel = document.getElementById('daySelect' + idx);
+        selectOptionIfMissing(dSel, matchedDay, matchedDay);
+        updateSlots(idx);
+    }
+
+    recalculate();
+    updateFirstSessionHint();
+}
+
 function updateFirstSessionHint() {
     const hint = document.getElementById('firstSessionHint');
     const startInput = document.getElementById('scheduleStartDate');
     if (!hint || !startInput) return;
+
     const startYmd = startInput.value;
-    const daySel = document.querySelector('#scheduleRows select[name*="[day]"]');
-    const day = daySel?.value || '';
-    const first = firstMatchingSessionDate(startYmd, day);
-    if (first && day) {
-        hint.textContent = `The first ${day} session: ${formatDateHint(first)}. The weekly repeat will follow after that.`;
-    } else if (startYmd) {
-        hint.textContent = 'Select a day — the first session will be on the first matching weekday after the selected date.';
-    } else {
-        hint.textContent = 'The first session will be on the first matching weekday after the selected date; the weekly repeat will follow after that.';
+    if (!startYmd) {
+        hint.textContent = 'Pick a start date — if the therapist works that day, it will be added to the schedule automatically.';
+        updateEnrollmentSaveState();
+        return;
     }
+
+    const startDate = new Date(startYmd + 'T12:00:00');
+    const startDayLabel = dayNameFromYmd(startYmd);
+    const matchedDay = findAvailableDayMatch(startDayLabel);
+    const selectedDays = getSelectedScheduleDays();
+
+    if (!matchedDay) {
+        hint.textContent = `${startDayLabel} is not a working day for this therapist — choose another start date or therapist.`;
+        updateEnrollmentSaveState();
+        return;
+    }
+
+    if (!scheduleHasDay(matchedDay)) {
+        hint.textContent = `Start date is ${formatDateHint(startDate)} (${matchedDay}). Change the date again to auto-add ${matchedDay}, or select ${matchedDay} in the day list below.`;
+        updateEnrollmentSaveState();
+        return;
+    }
+
+    const anchorFirst = firstMatchingSessionDate(startYmd, matchedDay);
+    const sameCalendarDay = anchorFirst
+        && anchorFirst.getFullYear() === startDate.getFullYear()
+        && anchorFirst.getMonth() === startDate.getMonth()
+        && anchorFirst.getDate() === startDate.getDate();
+
+    let text = sameCalendarDay
+        ? `First session is on: ${formatDateHint(startDate)} (${matchedDay}).`
+        : `The first session: ${formatDateHint(anchorFirst)}.`;
+
+    const otherParts = selectedDays
+        .filter(d => String(d).trim().toLowerCase() !== String(matchedDay).trim().toLowerCase())
+        .map(day => {
+            const first = firstMatchingSessionDate(startYmd, day);
+            return first ? `first ${day}: ${formatDateHint(first)}` : null;
+        })
+        .filter(Boolean);
+
+    if (otherParts.length){
+        text += ' Weekly repeat follows from this date.';
+    }
+
+    hint.textContent = text;
+    updateEnrollmentSaveState();
+}
+
+function validateScheduleStartAlignment() {
+    const startInput = document.getElementById('scheduleStartDate');
+    if (!startInput?.value) {
+        return true;
+    }
+
+    const startYmd = startInput.value;
+    const startDate = new Date(startYmd + 'T12:00:00');
+    const startDayLabel = dayNameFromYmd(startYmd);
+    const matchedDay = findAvailableDayMatch(startDayLabel);
+
+    if (!matchedDay) {
+        alert(`${startDayLabel} is not a working day for this therapist. Choose another start date or therapist.`);
+        startInput.focus();
+        return false;
+    }
+
+    if (!scheduleHasDay(matchedDay)) {
+        alert(
+            `The schedule must include ${matchedDay} because the first session starts on ${formatDateHint(startDate)}. ` +
+            'Change the start date or add that day to the schedule.'
+        );
+        return false;
+    }
+
+    return true;
 }
 
 async function applyInitialSchedulesFromEdit() {
@@ -421,11 +594,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const form = document.getElementById('enrollForm');
     const startDate = document.getElementById('scheduleStartDate');
     if (startDate) {
-        startDate.addEventListener('change', updateFirstSessionHint);
-        updateFirstSessionHint();
+        startDate.addEventListener('change', () => syncStartDateToScheduleDay({ autoAdd: true }));
+        syncStartDateToScheduleDay({ autoAdd: false });
     }
     document.getElementById('scheduleRows')?.addEventListener('change', (e) => {
-        if (e.target?.name?.includes('[day]')) updateFirstSessionHint();
+        if (e.target?.name?.includes('[day]') || e.target?.name?.includes('[time_slot]')) {
+            updateFirstSessionHint();
+        }
     });
 
     if (isEdit && b?.value && therapistIdInit) {
@@ -443,6 +618,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     form.addEventListener('submit', function(e) {
+        if (!validateScheduleStartAlignment()) {
+            e.preventDefault();
+            return false;
+        }
+
         const seen = new Set();
         for (const row of document.querySelectorAll('#scheduleRows .schedule-row')) {
             const d = row.querySelector('select[name*="[day]"]');

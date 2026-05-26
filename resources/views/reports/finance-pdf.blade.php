@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <title>Finance Report</title>
 <style>
+    :root {
+        --navy: #11517c;
+        --teal: #008080;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --text-muted: #64748b;
+        --border-soft: #e2e8f0;
+        --bg-light: #f8fafc;
+        }
+    * { box-sizing: border-box; }
     body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1e293b; }
     h1 { font-size: 14px; margin: 0 0 8px 0; color: #0f766e; }
     .sum { width: 100%; margin-bottom: 10px; border-collapse: collapse; }
@@ -37,37 +47,66 @@
 <table class="data">
     <thead>
         <tr>
-            <th class="seq">#</th>
-            <th>Receipt#</th>
-            <th>GR No</th>
-            <th>Child</th>
-            <th>Status</th>
+            <th>#</th>
+            <th>Receipt Number</th>
+            <th>GR Number</th>
+            <th>Enrollment ID</th>
+            <th>Child Name</th>
+            <th>Child Status</th>
             <th>Branch</th>
-            <th>Total</th>
+            <th>Total Fee</th>
             <th>Paid</th>
-            <th>Rem.</th>
-            <th>Pay st.</th>
-            <th>Verif.</th>
-            <th>Amt</th>
-            <th>Method</th>
-            <th>Date</th>
+            <th>Remaining</th>
+            <th>Payment Status</th>
+            <th>Amount</th>
+            <th>Verification Status</th>
+            <th>Payment Method</th>
+            <th>Payment Date</th>
         </tr>
     </thead>
     <tbody>
         @foreach($rows as $r)
             <tr>
-                <td class="seq">{{ $loop->iteration }}</td>
-                <td>{{ $r['receipt'] }}</td>
-                <td>{{ $r['child_gr_number'] }}</td>
+                <td style="text-align:center;font-weight:600;color:var(--navy);">{{ $loop->iteration }}</td>
+                <td style="font-weight:600;">{{ $r['receipt'] }}</td>
+                <td style="font-size:8px;">{{ $r['enrollment_id'] }}</td>
+                <td style="font-size:8px;">{{ $r['child_gr_number'] }}</td>
                 <td>{{ $r['child_name'] }}</td>
-                <td>{{ $r['child_status'] }}</td>
+                <td>
+                    @if(strtolower($r['child_status']) === 'approved')
+                    <span style="color:green;font-weight:600;">Approved</span>
+                    @elseif(strtolower($r['child_status']) === 'active')
+                    <span style="color:green;font-weight:600;">Active</span>
+                    @elseif(strtolower($r['child_status']) === 'inactive')
+                    <span style="color:red;font-weight:600;">Inactive</span>
+                    @elseif(strtolower($r['child_status']) === 'pending')
+                    <span style="color:orange;font-weight:600;">Pending</span>
+                    @elseif(strtolower($r['child_status']) === 'rejected')
+                    <span style="color:red;font-weight:600;">Rejected</span>
+                    @else
+                    <span style="color:gray;font-weight:600;">{{ $r['child_status'] }}</span>
+                    @endif
+                </td>
                 <td>{{ $r['branch'] }}</td>
-                <td class="num">{{ $r['enrollment_total'] }}</td>
-                <td class="num">{{ $r['enrollment_paid'] }}</td>
-                <td class="num">{{ $r['enrollment_remaining'] }}</td>
-                <td>{{ $r['enrollment_payment_status'] }}</td>
-                <td>{{ $r['verification_status'] }}</td>
-                <td class="num">{{ $r['amount'] }}</td>
+                <td style="font-weight:600;color:var(--teal);">{{ $r['enrollment_total'] !== '—' ? 'PKR '.$r['enrollment_total'] :
+                    '—' }}</td>
+                <td style="font-weight:600;color:var(--success);">{{ $r['enrollment_paid'] !== '—' ? 'PKR '.$r['enrollment_paid'] :
+                    '—' }}</td>
+                <td style="font-weight:600;color:var(--danger);">{{ $r['enrollment_remaining'] !== '—' ? 'PKR
+                    '.$r['enrollment_remaining'] : '—' }}</td>
+                <td @if(strtolower($r['enrollment_payment_status'])==='partial paid' ) style="color:orange;font-weight:600;"
+                    @elseif(strtolower($r['enrollment_payment_status'])==='fully paid' ) style="color:green;font-weight:600;"
+                    @elseif(strtolower($r['enrollment_payment_status'])==='unpaid' ) style="color:red;font-weight:600;"
+                    @elseif(strtolower($r['enrollment_payment_status'])==='overdue' ) style="color:red;font-weight:600;" @endif>
+                    {{ \App\Models\Payment::labelForEnrollmentPaymentStatus($r['enrollment_payment_status']) }}
+                </td>
+            
+                <td style="font-weight:600;color:var(--teal);">{{ $r['amount'] !== '—' ? 'PKR '.$r['amount'] : '—' }}</td>
+                <td @if(strtolower($r['verification_status'])==='pending_verification' ) style="color:orange;font-weight:600;"
+                    @elseif(strtolower($r['verification_status'])==='rejected' ) style="color:red;font-weight:600;"
+                    @elseif(strtolower($r['verification_status'])==='paid' ) style="color:green;font-weight:600;" @endif>
+                    {{ \App\Models\Payment::labelForVerificationStatus($r['verification_status']) }}
+                </td>
                 <td>{{ $r['payment_method'] }}</td>
                 <td>{{ $r['payment_date'] }}</td>
             </tr>

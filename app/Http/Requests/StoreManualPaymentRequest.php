@@ -15,8 +15,11 @@ class StoreManualPaymentRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $amountDigits = preg_replace('/\D/', '', (string) $this->input('amount'));
+
         $this->merge([
             'payment_method' => 'cash',
+            'amount' => $amountDigits !== '' ? (int) $amountDigits : null,
         ]);
     }
 
@@ -24,7 +27,7 @@ class StoreManualPaymentRequest extends FormRequest
     {
         return [
             'enrollment_id'  => ['required', 'exists:enrollments,id'],
-            'amount'         => ['required', 'numeric', 'min:0.01', $this->amountWithinRemaining()],
+            'amount'         => ['required', 'integer', 'min:1', $this->amountWithinRemaining()],
             'payment_method' => ['required', 'in:cash'],
             'payment_date'   => ['required', 'date'],
             'notes'          => ['nullable', 'string', 'max:1000'],

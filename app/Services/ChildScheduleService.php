@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
 use App\Models\Payment;
 use Carbon\Carbon;
+use App\Services\SessionTimeSlotParser;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -61,7 +62,7 @@ class ChildScheduleService
         $next = $this->getExpandedOccurrences($childId)
             ->filter(fn(array $row): bool => $row['status'] === 'scheduled'
                 && $row['session_date']->greaterThanOrEqualTo($today))
-            ->sortBy(fn(array $row): int => $row['session_date']->timestamp)
+            ->sortBy(fn(array $row): int => $this->sessionStartTimestamp($row))
             ->first();
 
         return $next ?: null;
@@ -522,8 +523,26 @@ class ChildScheduleService
                 }
             }
 
-            return $a['session_date']->timestamp <=> $b['session_date']->timestamp;
+            return $this->sessionStartTimestamp($a) <=> $this->sessionStartTimestamp($b);
         })->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function sessionStartTimestamp(array $row): int
+    {
+        $sessionDate = $row['session_date'] ?? null;
+        if (! $sessionDate instanceof Carbon) {
+            return 0;
+        }
+
+        $slot = (string) ($row['time_slot'] ?? '');
+        if ($slot === '') {
+            return $sessionDate->timestamp;
+        }
+
+        return SessionTimeSlotParser::occurrenceStart($sessionDate, $slot)->timestamp;
     }
 
     /**

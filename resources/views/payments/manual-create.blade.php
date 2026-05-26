@@ -42,7 +42,7 @@
             <div class="row g-3">
                 <div class="col-12">
                     <label>Amount (PKR) <span style="color:var(--danger)">*</span></label>
-                    <input type="number" name="amount" value="{{ old('amount') }}" class="form-control @error('amount') is-invalid @enderror" min="1" step="1" placeholder="Enter amount">
+                    <input type="text" name="amount" value="{{ old('amount') }}" class="form-control @error('amount') is-invalid @enderror" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="Enter amount">
                     @error('amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
@@ -117,5 +117,9 @@ if (searchInput) {
 
 const sel = document.getElementById('enrollmentSel');
 if (sel && sel.value) loadEnrollmentInfo(sel.value);
+
+document.querySelector('input[name="amount"]')?.addEventListener('input', function () {
+    this.value = String(this.value || '').replace(/\D/g, '');
+});
 </script>
 @endpush

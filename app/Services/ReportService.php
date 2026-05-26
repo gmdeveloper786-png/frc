@@ -77,6 +77,7 @@ class ReportService
 
         return [
             'receipt'            => $payment->hasPrintableReceipt() ? (string) $payment->receipt_number : '—',
+            'enrollment_id'      => $enrollment ? '#' . $enrollment->id : '—',
             'child_name'         => (string) ($payment->child?->full_name ?? $enrollment?->child?->full_name ?? '—'),
             'child_gr_number'    => (string) ($payment->child?->gr_number ?? $enrollment?->child?->gr_number ?? '—'),
             'child_status'       => ($payment->child ?? $enrollment?->child)

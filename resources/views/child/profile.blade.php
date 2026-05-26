@@ -63,7 +63,7 @@
                                     @endforeach
                                 </div>
                             @endif
-                            <p class="child-profile-hint mb-0">Assigned by your care team and cannot be edited here.</p>
+                            {{-- <p class="child-profile-hint mb-0">Assigned by your care team and cannot be edited here.</p> --}}
                         </div>
                     </div>
 

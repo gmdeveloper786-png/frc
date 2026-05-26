@@ -104,6 +104,7 @@ class TherapistPortalApiController extends Controller
             'end_date'   => ['nullable', 'date'],
             'status'     => ['nullable', 'string'],
             'child_id'   => ['nullable', 'integer', 'min:1'],
+            'service_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $startDate = $request->filled('start_date') ? (string) $request->query('start_date') : null;
@@ -113,6 +114,12 @@ class TherapistPortalApiController extends Controller
         if ($request->filled('child_id')) {
             $cid = (int) $request->query('child_id');
             $filterChildId = $cid > 0 ? $cid : null;
+        }
+
+        $filterServiceId = null;
+        if ($request->filled('service_id')) {
+            $sid = (int) $request->query('service_id');
+            $filterServiceId = $sid > 0 ? $sid : null;
         }
 
         $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
@@ -126,6 +133,7 @@ class TherapistPortalApiController extends Controller
                 $endDate,
                 $statusFilter,
                 $filterChildId,
+                $filterServiceId,
                 $perPage,
                 $page,
                 $request->url(),

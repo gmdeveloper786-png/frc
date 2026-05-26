@@ -81,7 +81,7 @@
                         value="{{ old('schedule_start_date', now()->toDateString()) }}"
                         min="{{ now()->toDateString() }}" required>
                     @error('schedule_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    <p class="text-muted small mb-0 mt-1" id="firstSessionHint">Pehla session is date ke baad pehla matching weekday hoga; weekly repeat us ke baad chalega.</p>
+                    <p class="text-muted small mb-0 mt-1" id="firstSessionHint">Pick a start date — the matching weekday is added to the schedule when the therapist works that day; then choose a time slot.</p>
                 </div>
             </div>
             <div id="scheduleRows">

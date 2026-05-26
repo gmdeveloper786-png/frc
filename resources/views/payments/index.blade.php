@@ -127,21 +127,38 @@
     @else
         <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
             <table class="table-frc mb-0">
-                <thead><tr><th>Receipt#</th><th>Child</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Amount</th><th>Verification</th><th>Method</th><th>Date</th><th>Slip</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Receipt#</th><th>GR No</th><th>Enroll#</th><th>Child</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Amount</th><th>Verification</th><th>Method</th><th>Date</th><th>Slip</th><th>Actions</th></tr></thead>
                 <tbody>
                     @foreach($payments as $p)
                         <tr>
-                            <td style="font-weight:700;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
+                            <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
+                            <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->child?->gr_number ?? '—' }}</td>
+                            <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;"> <a href="{{ route('enrollments.show', $p->enrollment?->id) }}" style="color:var(--navy);text-decoration:underline;">#{{ $p->enrollment?->id ?? '—' }}</a></td>
                             <td style="white-space:nowrap;">
                                 <div style="font-weight:500;"><a href="{{ route('children.show', $p->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $p->child?->full_name }}</a></div>
-                                <div style="font-size:11px;color:var(--text-muted);">Enroll #{{ $p->enrollment_id }}</div>
                             </td>
                             <td style="white-space:nowrap;">{{ frc_pkr($p->enrollment?->final_total) }}</td>
                             <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($p->enrollment?->paid_amount) }}</td>
                             <td style="color:var(--danger); white-space:nowrap;">{{ frc_pkr($p->enrollment?->remaining_amount) }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $p->enrollment?->payment_status }}">{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($p->enrollment?->payment_status) }}</span></td>
                             <td class="text-amount" style="font-weight:600;color:var(--teal); white-space:nowrap;">{{ frc_pkr($p->amount) }}</td>
-                            <td style="white-space:nowrap;"><span class="badge-status badge-{{ $p->status }}">{{ \App\Models\Payment::labelForVerificationStatus($p->status) }}</span></td>
+                            <td style="white-space:nowrap;">
+                                <span class="badge-status badge-{{ $p->status }}">{{ \App\Models\Payment::labelForVerificationStatus($p->status) }}</span>
+                                @if($p->status === 'rejected' && filled($p->rejection_reason))
+                                    <div class="mt-1">
+                                        <button
+                                            type="button"
+                                            class="btn-outline-teal"
+                                            style="font-size:11px;padding:3px 8px;"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#paymentRejectReasonModal"
+                                            data-reason="{{ e($p->rejection_reason) }}"
+                                        >
+                                            Reason
+                                        </button>
+                                    </div>
+                                @endif
+                            </td>
                             <td style="font-size:13px; white-space:nowrap;">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method) }}</td>
                             <td style="font-size:13px;color:var(--text-muted); white-space:nowrap;">{{ $p->payment_date?->format('d M Y') }}</td>
                             <td style="white-space:nowrap;">
@@ -207,4 +224,38 @@
         </div>
     @endif
 @endforeach
+
+<div class="modal fade" id="paymentRejectReasonModal" tabindex="-1" aria-labelledby="paymentRejectReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;border:1px solid var(--border-soft);overflow:hidden;">
+            <div class="modal-header" style="background:#fde8e8;border-bottom:1px solid var(--border-soft);">
+                <h5 class="modal-title" id="paymentRejectReasonModalLabel" style="font-family:'Poppins',sans-serif;font-weight:600;color:var(--danger);font-size:17px;">
+                    Rejection Reason
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="paymentRejectReasonText" style="white-space:pre-wrap;color:var(--text-dark);"></p>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--border-soft);">
+                <button type="button" class="btn-outline-teal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const modal = document.getElementById('paymentRejectReasonModal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (event) {
+        const trigger = event.relatedTarget;
+        const text = modal.querySelector('#paymentRejectReasonText');
+        if (!text) return;
+        text.textContent = trigger?.getAttribute('data-reason') || 'No reason provided.';
+    });
+})();
+</script>
+@endpush

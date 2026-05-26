@@ -116,11 +116,11 @@
                     <input type="hidden" name="enrollment_id" value="{{ $enrollment->id }}">
                     <div class="mb-3">
                         <label>Amount (PKR) <span style="color:var(--danger)">*</span></label>
-                        <input type="number" name="amount" value="{{ $repopulateForm ? old('amount') : '' }}"
+                        <input type="text" name="amount" value="{{ $repopulateForm ? old('amount') : '' }}"
                             class="form-control @error('amount') is-invalid @enderror"
-                            min="1" step="1" inputmode="numeric" pattern="[0-9]*"
+                            inputmode="numeric" pattern="[0-9]*" maxlength="9"
                             max="{{ frc_money_input($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}"
-                            placeholder="Enter amount up to {{ frc_pkr($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}" required autocomplete="off">
+                            placeholder="Enter amount {{ frc_pkr($uploadableAmount ?? $enrollment->outstandingForSlipUpload()) }}" required autocomplete="off">
                         @error('amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         <small class="text-muted">Enter the <strong>exact whole PKR amount</strong> shown on your bank slip or transfer receipt.</small>
                     </div>
@@ -220,6 +220,9 @@ document.getElementById('childSlipUploadForm')?.addEventListener('submit', funct
     if (!confirm('You are submitting a payment of ' + label + ' Continue?')) {
         e.preventDefault();
     }
+});
+document.querySelector('input[name="amount"]')?.addEventListener('input', function () {
+    this.value = String(this.value || '').replace(/\D/g, '');
 });
 </script>
 @endpush

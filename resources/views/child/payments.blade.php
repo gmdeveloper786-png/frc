@@ -94,7 +94,17 @@
                             <td class="child-payments-status">
                                 <span class="badge-status badge-{{ $p->status }}" style="font-size:11px;">{{ \App\Models\Payment::labelForVerificationStatus($p->status) }}</span>
                                 @if($p->status === 'rejected' && $p->rejection_reason)
-                                    <div class="small mt-1 child-payments-reject-reason">{{ $p->rejection_reason }}</div>
+                                    <div class="mt-1">
+                                        <button
+                                            type="button"
+                                            class="btn-outline-teal child-payments-action-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#paymentRejectReasonModal"
+                                            data-reason="{{ e($p->rejection_reason) }}"
+                                        >
+                                            Reason
+                                        </button>
+                                    </div>
                                 @endif
                             </td>
                             <td class="child-payments-slip">
@@ -125,4 +135,38 @@
         @endif
     @endif
 </div>
+
+<div class="modal fade" id="paymentRejectReasonModal" tabindex="-1" aria-labelledby="paymentRejectReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;border:1px solid var(--border-soft);overflow:hidden;">
+            <div class="modal-header" style="background:#fde8e8;border-bottom:1px solid var(--border-soft);">
+                <h5 class="modal-title" id="paymentRejectReasonModalLabel" style="font-family:'Poppins',sans-serif;font-weight:600;color:var(--danger);font-size:17px;">
+                    Rejection Reason
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="paymentRejectReasonText" style="white-space:pre-wrap;color:var(--text-dark);"></p>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--border-soft);">
+                <button type="button" class="btn-outline-teal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const modal = document.getElementById('paymentRejectReasonModal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (event) {
+        const trigger = event.relatedTarget;
+        const text = modal.querySelector('#paymentRejectReasonText');
+        if (!text) return;
+        text.textContent = trigger?.getAttribute('data-reason') || 'No reason provided.';
+    });
+})();
+</script>
+@endpush

@@ -31,6 +31,7 @@ class TherapistSessionController extends Controller
             'end_date'   => ['nullable', 'date'],
             'status'     => ['nullable', 'string'],
             'child_id'   => ['nullable', 'integer', 'min:1'],
+            'service_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $startDate = $request->filled('start_date') ? (string) $request->query('start_date') : null;
@@ -46,14 +47,21 @@ class TherapistSessionController extends Controller
             $filterChildId = $cid > 0 ? $cid : null;
         }
 
+        $filterServiceId = null;
+        if ($request->filled('service_id')) {
+            $sid = (int) $request->query('service_id');
+            $filterServiceId = $sid > 0 ? $sid : null;
+        }
+
         $perPage = 15;
         $currentPage = max(1, (int) $request->query('page', 1));
         $sessions = $this->portal->paginateTherapistSessionsFiltered(
             (int) auth()->id(),
             $startDate,
             $endDate,
-            $status !== null ? (string) $status : null,
+            $status !== null && $status !== 'all' ? (string) $status : null,
             $filterChildId,
+            $filterServiceId,
             $perPage,
             $currentPage,
             route('therapist.sessions.index'),
@@ -61,10 +69,12 @@ class TherapistSessionController extends Controller
         $sessions->appends($request->query());
 
         $filterChildren = $this->portal->childrenForSessionFilter(auth()->id());
+        $filterServices = $this->portal->servicesForSessionFilter(auth()->id());
 
         $hasDateFilter = $startDate !== null || $endDate !== null;
         $hasStatusFilter = $status !== 'all';
         $hasChildFilter = $filterChildId !== null;
+        $hasServiceFilter = $filterServiceId !== null;
         $defaultRangeHint = ! $hasDateFilter
             ? sprintf(
                 'Showing %d weeks before today through %d weeks ahead. Use Start/End date to see more.',
@@ -79,10 +89,13 @@ class TherapistSessionController extends Controller
             'endDate',
             'status',
             'filterChildren',
+            'filterServices',
             'filterChildId',
+            'filterServiceId',
             'hasDateFilter',
             'hasStatusFilter',
             'hasChildFilter',
+            'hasServiceFilter',
             'defaultRangeHint',
         ));
     }

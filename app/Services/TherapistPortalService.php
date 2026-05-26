@@ -6,6 +6,7 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
 use App\Models\EnrollmentScheduleOccurrence;
+use App\Models\Service;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -480,12 +481,14 @@ class TherapistPortalService
         ?string $endDate = null,
         ?string $statusFilter = null,
         ?int $childId = null,
+        ?int $serviceId = null,
     ): SupportCollection {
         $startDate = self::normalizeFilterDate($startDate);
         $endDate = self::normalizeFilterDate($endDate);
 
         $hasNonDateFilters = ($statusFilter !== null && $statusFilter !== '' && $statusFilter !== 'all')
-            || ($childId !== null && $childId > 0);
+            || ($childId !== null && $childId > 0)
+            || ($serviceId !== null && $serviceId > 0);
         $includePast = $hasNonDateFilters && $startDate === null && $endDate === null;
 
         [$from, $to] = $this->resolveSessionFilterBounds($startDate, $endDate, $includePast);
@@ -511,7 +514,42 @@ class TherapistPortalService
             });
         }
 
+        if ($serviceId !== null && $serviceId > 0) {
+            $rows = $rows->filter(function (array $r) use ($serviceId): bool {
+                if (! empty($r['group_members'])) {
+                    return collect($r['group_members'])->contains(
+                        fn(array $m): bool => (int) ($m['schedule']->enrollment?->service_id ?? 0) === $serviceId,
+                    ) || (int) ($r['schedule']->enrollment?->service_id ?? 0) === $serviceId;
+                }
+
+                return (int) ($r['schedule']->enrollment?->service_id ?? 0) === $serviceId;
+            });
+        }
+
         return $rows;
+    }
+
+    /**
+     * Services linked to this therapist's enrollments (for session list filter).
+     *
+     * @return SupportCollection<int, Service>
+     */
+    public function servicesForSessionFilter(int $therapistId): SupportCollection
+    {
+        $serviceIds = Enrollment::query()
+            ->where('therapist_id', $therapistId)
+            ->whereNotNull('service_id')
+            ->distinct()
+            ->pluck('service_id');
+
+        if ($serviceIds->isEmpty()) {
+            return collect();
+        }
+
+        return Service::query()
+            ->whereIn('id', $serviceIds)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     /**
@@ -523,11 +561,12 @@ class TherapistPortalService
         ?string $endDate,
         ?string $statusFilter,
         ?int $childId,
+        ?int $serviceId,
         int $perPage,
         int $page,
         string $path,
     ): LengthAwarePaginator {
-        $rows = $this->upcomingSessionsFiltered($therapistId, $startDate, $endDate, $statusFilter, $childId);
+        $rows = $this->upcomingSessionsFiltered($therapistId, $startDate, $endDate, $statusFilter, $childId, $serviceId);
         $page = max(1, $page);
         $pageRows = $rows->forPage($page, $perPage)->values();
 
@@ -847,6 +886,7 @@ class TherapistPortalService
         ?string $endDate,
         ?string $statusFilter,
         ?int $childId,
+        ?int $serviceId,
         int $perPage,
         int $page,
         string $path,
@@ -857,6 +897,7 @@ class TherapistPortalService
             $endDate,
             $statusFilter,
             $childId,
+            $serviceId,
             $perPage,
             $page,
             $path,

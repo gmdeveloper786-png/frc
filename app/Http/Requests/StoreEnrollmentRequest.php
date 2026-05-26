@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\SettingService;
 use App\Services\TherapistService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -140,7 +141,63 @@ class StoreEnrollmentRequest extends FormRequest
                     }
                 }
             }
+
+            $this->validateScheduleStartAlignsWithSelectedDays($validator);
         });
+    }
+
+    private function validateScheduleStartAlignsWithSelectedDays(Validator $validator): void
+    {
+        if ($validator->errors()->isNotEmpty()) {
+            return;
+        }
+
+        $startYmd = $this->input('schedule_start_date');
+        if (! is_string($startYmd) || $startYmd === '') {
+            return;
+        }
+
+        try {
+            $startDayName = Carbon::parse($startYmd)->format('l');
+        } catch (\Throwable) {
+            return;
+        }
+
+        $startDayKey = strtolower($startDayName);
+
+        $therapistId = (int) $this->input('therapist_id', 0);
+        if ($therapistId > 0) {
+            $therapist = User::with('therapistProfile')->find($therapistId);
+            $workingDays = collect($therapist?->therapistProfile?->working_days ?? [])
+                ->map(fn ($d) => strtolower(trim((string) $d)))
+                ->filter(fn ($d) => $d !== '');
+
+            if ($workingDays->isNotEmpty() && ! $workingDays->contains($startDayKey)) {
+                $validator->errors()->add(
+                    'schedule_start_date',
+                    "This therapist does not work on {$startDayName}s. Choose another start date or therapist."
+                );
+
+                return;
+            }
+        }
+
+        $schedules = $this->input('schedules', []);
+        if (! is_array($schedules)) {
+            return;
+        }
+
+        $scheduleDays = collect($schedules)
+            ->pluck('day')
+            ->filter(fn ($day) => is_string($day) && trim($day) !== '')
+            ->map(fn ($day) => strtolower(trim((string) $day)));
+
+        if (! $scheduleDays->contains($startDayKey)) {
+            $validator->errors()->add(
+                'schedules',
+                "The schedule must include {$startDayName} because the first session starts on that day."
+            );
+        }
     }
 
     public function messages(): array

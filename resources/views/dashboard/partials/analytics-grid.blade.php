@@ -150,8 +150,8 @@
                 <div class="dashboard-chart-card-head">
                     <h6 class="dashboard-chart-card-title">Collection rate</h6>
                     <div class="dashboard-chart-card-head-meta">
+                        {{-- <span class="dashboard-chart-card-sub">· % of enrolled fees</span> --}}
                         @include('dashboard.partials.chart-year-select', ['stats' => $stats, 'id' => 'chart_year_collection'])
-                        <span class="dashboard-chart-card-sub">· % of enrolled fees</span>
                     </div>
                 </div>
                 <div class="dashboard-chart-canvas-wrap dashboard-chart-canvas-wrap--line">

@@ -47,6 +47,15 @@
                     @endforeach
                     </select>
                 </div>
+                <div class="frc-sessions-filter-field">
+                    <label class="form-label small text-muted mb-1" for="filter_service_id">Service</label>
+                    <select id="filter_service_id" name="service_id" class="form-select form-select-sm w-100" onchange="this.form.submit()">
+                    <option value="">All services</option>
+                    @foreach($filterServices ?? [] as $svc)
+                        <option value="{{ $svc->id }}" @selected(($filterServiceId ?? null) === (int) $svc->id)>{{ $svc->name }}</option>
+                    @endforeach
+                    </select>
+                </div>
                 @if($hasDateFilter ?? false)
                     <div class="frc-sessions-filter-field frc-sessions-filter-actions">
                         <label class="form-label small text-muted mb-1 frc-sessions-filter-actions-label" aria-hidden="true">&nbsp;</label>
@@ -54,6 +63,7 @@
                             <a href="{{ route('therapist.sessions.index', array_filter([
                                 'status' => ($status ?? 'all') !== 'all' ? $status : null,
                                 'child_id' => $filterChildId ?? null,
+                                'service_id' => $filterServiceId ?? null,
                             ])) }}" class="btn-outline-teal">
                                 <i class="fa-solid fa-calendar-xmark me-1"></i>Clear dates
                             </a>
@@ -74,11 +84,16 @@
     </div>
     @if($sessions->isEmpty())
         @php
+            $filterServiceName = ($hasServiceFilter ?? false)
+                ? (($filterServices ?? collect())->firstWhere('id', $filterServiceId)?->name ?? 'this service')
+                : null;
             $emptyMessage = match (true) {
                 ($hasStatusFilter ?? false) && ($hasDateFilter ?? false) => 'No sessions with status “' . ($statuses[$status] ?? $status) . '” in the selected date range.',
                 ($hasStatusFilter ?? false) => 'No sessions with status “' . ($statuses[$status] ?? $status) . '”. Try another status or set a wider date range.',
                 ($hasChildFilter ?? false) && ($hasDateFilter ?? false) => 'No sessions for this child in the selected date range.',
                 ($hasChildFilter ?? false) => 'No sessions for this child. Try another child or adjust the date range.',
+                ($hasServiceFilter ?? false) && ($hasDateFilter ?? false) => 'No sessions for ' . $filterServiceName . ' in the selected date range.',
+                ($hasServiceFilter ?? false) => 'No sessions for ' . $filterServiceName . '. Try another service or adjust the date range.',
                 ($hasDateFilter ?? false) => 'No sessions between the selected start and end dates.',
                 default => 'No upcoming sessions scheduled.',
             };

@@ -18,6 +18,7 @@ class ReceiptService
             'child_name'        => $payment->child->full_name,
             'child_gr_number'   => $payment->child->gr_number,
             'child_email'       => $payment->child->email,
+            'enrollment_id'     => (int) $payment->enrollment_id,
             'branch'            => $payment->enrollment->branch?->name,
             'therapist'         => $payment->enrollment->therapist?->full_name,
             'amount'            => $payment->amount,

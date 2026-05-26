@@ -31,6 +31,9 @@
         @if(!empty($receipt['child_gr_number']))
             <tr><td>GR Number</td><td>{{ $receipt['child_gr_number'] }}</td></tr>
         @endif
+        @if(!empty($receipt['enrollment_id']))
+            <tr><td>Enrollment ID</td><td>#{{ $receipt['enrollment_id'] }}</td></tr>
+        @endif
         <tr><td>Branch</td><td>{{ $receipt['branch'] }}</td></tr>
         <tr><td>Therapist</td><td>{{ $receipt['therapist'] }}</td></tr>
         <tr><td>Payment Method</td><td>{{ $receipt['payment_method'] }}</td></tr>

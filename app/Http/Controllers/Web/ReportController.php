@@ -132,18 +132,19 @@ class ReportController extends Controller
                 '#',
                 'Receipt Number',
                 'GR Number',
+                'Enrollment ID',
                 'Child Name',
                 'Child Status',
                 'Branch',
-                'Enrollment Total (PKR)',
-                'Enrollment Paid (PKR)',
-                'Enrollment Remaining (PKR)',
-                'Enrollment Payment Status',
-                'Payment Amount (PKR)',
+                'Total Fee',
+                'Paid',
+                'Remaining',
+                'Payment Status',
+                'Amount',
                 'Verification Status',
                 'Payment Method',
                 'Payment Date',
-                'Enrollment ID',
+
             ]);
 
             $rowNumber = 0;
@@ -157,6 +158,7 @@ class ReportController extends Controller
                         $rowNumber,
                         $payment->hasPrintableReceipt() ? $payment->receipt_number : '',
                         $child?->gr_number ?? '',
+                        $enrollment ? (string) $enrollment->id : '',
                         $child?->full_name ?? '',
                         $child ? Str::title(str_replace('_', ' ', (string) $child->status)) : '',
                         $enrollment?->branch?->name ?? '',
@@ -168,7 +170,7 @@ class ReportController extends Controller
                         Payment::labelForVerificationStatus($payment->status) ?: '',
                         Payment::labelForPaymentMethod($payment->payment_method) ?: '',
                         $payment->payment_date?->format('d M Y') ?? '',
-                        $enrollment ? (string) $enrollment->id : '',
+
                     ]);
                 }
             });
