@@ -150,9 +150,9 @@
             ['label'=>'Total Expected','value'=>$summary['total_expected'] ?? 0,'iconClass'=>'navy','icon'=>'fa-money-bill-trend-up'],
             ['label'=>'Total Paid','value'=>$summary['total_paid'] ?? 0,'iconClass'=>'green','icon'=>'fa-circle-check'],
             ['label'=>'Pending / Overdue','value'=>$summary['total_pending'] ?? 0,'iconClass'=>'red','icon'=>'fa-hourglass-half'],
-            ['label'=>'Cash Received','value'=>$summary['cash_received'] ?? 0,'iconClass'=>'teal','icon'=>'fa-coins'],
-            ['label'=>'Online/Bank','value'=>$summary['online_received'] ?? 0,'iconClass'=>'purple','icon'=>'fa-credit-card'],
-            ['label'=>'Pending Verification','value'=>$summary['pending_verification'] ?? 0,'iconClass'=>'orange','icon'=>'fa-triangle-exclamation'],
+            ['label'=>'Cash Received','value'=>$summary['cash_received'] ?? 0,'iconClass'=>'teal','icon'=>'fa-money-bills'],
+            ['label'=>'Online/Bank','value'=>$summary['online_received'] ?? 0,'iconClass'=>'purple','icon'=>'fa-mobile-screen'],
+            ['label'=>'Pending Verification Amount','value'=>$summary['pending_verification'] ?? 0,'iconClass'=>'orange','icon'=>'fa-money-bill-trend-up'],
         ];
         $valueColor = [
             'navy' => 'var(--navy)',

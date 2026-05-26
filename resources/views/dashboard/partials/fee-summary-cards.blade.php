@@ -19,7 +19,7 @@
             <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
             <div class="stat-body">
                 <div class="stat-value" style="font-size:16px;color:var(--success);">{{ frc_pkr($stats['fee_total_paid'] ?? 0) }}</div>
-                <div class="stat-label">Total Paid</div>
+                <div class="stat-label">Total Collected</div>
             </div>
         </div>
     </div>
@@ -34,7 +34,7 @@
     </div>
     <div class="col">
         <div class="stat-card h-100">
-            <div class="stat-icon teal"><i class="fa-solid fa-money-bill"></i></div>
+            <div class="stat-icon teal"><i class="fa-solid fa-money-bills"></i></div>
             <div class="stat-body">
                 <div class="stat-value" style="font-size:16px;color:var(--teal-dark);">{{ frc_pkr($stats['fee_cash_received'] ?? 0) }}</div>
                 <div class="stat-label">Cash Received</div>
@@ -55,7 +55,7 @@
             <a href="{{ $pendingPaymentsHref }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
         @endif
         <div class="stat-card h-100 {{ $pendingPaymentsHref ? 'stat-card--clickable' : '' }}">
-            <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-icon orange"><i class="fa-solid fa-money-bill-trend-up"></i></div>
             <div class="stat-body">
                 <div class="stat-value" style="font-size:16px;color:#e08000;">{{ frc_pkr($stats['pending_verification_amount'] ?? 0) }}</div>
                 <div class="stat-label">Pending Verification Amount</div>

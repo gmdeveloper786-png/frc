@@ -13,9 +13,9 @@
         ['label' => 'High Discount Requests', 'value' => number_format($stats['pending_high_discount']), 'icon' => 'fa-money-bill-trend-up',
                 'tone' => 'orange', 'href' => route('enrollments.high-discount')],
         ['label' => 'Total Therapists', 'value' => number_format($stats['total_therapists']), 'icon' => 'fa-user-doctor', 'tone' => 'navy', 'href' => route('therapists.index')],
-        ['label' => 'Total Assessments', 'value' => number_format($stats['total_assessments']), 'icon' => 'fa-clipboard-list', 'tone' => 'navy', 'href' => route('assessments.index', ['status' => 'completed'])],
-        ['label' => 'Total Enrollments', 'value' => number_format($stats['total_enrollments']), 'icon' => 'fa-file-contract', 'tone' => 'teal', 'href' => route('enrollments.index')],
-        ['label' => 'Total Sessions Completed', 'value' => number_format($stats['total_completed_sessions']), 'icon' => 'fa-flag-checkered', 'tone' => 'green', 'href' => null],
+        ['label' => 'Total Assessments', 'value' => number_format($stats['total_assessments']), 'icon' => 'fa-clipboard-list', 'tone' => 'teal', 'href' => route('assessments.index', ['status' => 'completed'])],
+        ['label' => 'Total Enrollments', 'value' => number_format($stats['total_enrollments']), 'icon' => 'fa-file-contract', 'tone' => 'navy', 'href' => route('enrollments.index')],
+        ['label' => 'Total Sessions Completed', 'value' => number_format($stats['total_completed_sessions']), 'icon' => 'fa-flag-checkered', 'tone' => 'teal', 'href' => null],
 
     ];
 @endphp

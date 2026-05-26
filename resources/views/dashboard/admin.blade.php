@@ -52,7 +52,7 @@
             'label' => 'Total Assessments',
             'value' => number_format($stats['total_assessments']),
             'icon' => 'fa-clipboard-list',
-            'tone' => 'navy',
+            'tone' => 'teal',
             'href' => $adminUser?->hasPermission('manage_assessments') ? route('assessments.index', ['status' => 'completed']) :
             null,
             ],
@@ -60,14 +60,14 @@
             'label' => 'Total Enrollments',
             'value' => number_format($stats['total_enrollments']),
             'icon' => 'fa-file-contract',
-            'tone' => 'teal',
+            'tone' => 'navy',
             'href' => $adminUser?->hasPermission('manage_enrollments') ? route('enrollments.index') : null,
         ],
         [
             'label' => 'Total Sessions Completed',
             'value' => number_format($stats['total_completed_sessions']),
             'icon' => 'fa-flag-checkered',
-            'tone' => 'green',
+            'tone' => 'teal',
             'href' => null,
         ],
  

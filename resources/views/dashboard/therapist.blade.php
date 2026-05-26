@@ -39,11 +39,11 @@
             ['label' => 'Upcoming Assessments', 'value' => $stats['upcoming_assessments'], 'icon' => 'fa-calendar-plus', 'tone' => 'teal', 'hint' => 'Next 7 days', 'href' => $upcomingAssessmentsUrl],
             ['label' => 'Completed Assessments', 'value' => $stats['completed_assessments'], 'icon' => 'fa-circle-check', 'tone' => 'navy', 'href' => route('therapist.assessments.index', ['status' => 'completed'])],
             ['label' => 'Cancelled Assessments', 'value' => $stats['cancelled_assessments'], 'icon' => 'fa-calendar-xmark', 'tone' => 'teal', 'href' => route('therapist.assessments.index', ['status' => 'cancelled'])],
-            ['label' => "Today's Sessions", 'value' => $stats['today_sessions'], 'icon' => 'fa-clock', 'tone' => 'teal', 'href' => $todaySessionsUrl],
-            ['label' => 'Upcoming Sessions', 'value' => $stats['upcoming_sessions'], 'icon' => 'fa-calendar-week', 'tone' => 'navy', 'hint' => 'Next 7 days', 'href' => $upcomingSessionsUrl],
-            ['label' => 'Completed Sessions', 'value' => $stats['completed_sessions'], 'icon' => 'fa-flag-checkered', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'completed'])],
+            ['label' => "Today's Sessions", 'value' => $stats['today_sessions'], 'icon' => 'fa-clock', 'tone' => 'navy', 'href' => $todaySessionsUrl],
+            ['label' => 'Upcoming Sessions', 'value' => $stats['upcoming_sessions'], 'icon' => 'fa-calendar-week', 'tone' => 'teal', 'hint' => 'Next 7 days', 'href' => $upcomingSessionsUrl],
+            ['label' => 'Completed Sessions', 'value' => $stats['completed_sessions'], 'icon' => 'fa-flag-checkered', 'tone' => 'navy', 'href' => route('therapist.sessions.index', ['status' => 'completed'])],
             ['label' => 'Cancelled Sessions', 'value' => $stats['cancelled_sessions'], 'icon' => 'fa-ban', 'tone' => 'teal', 'href' => route('therapist.sessions.index', ['status' => 'cancelled'])],
-            ['label' => 'Assigned Children', 'value' => $stats['assigned_children'], 'icon' => 'fa-children', 'tone' => 'teal', 'href' => route('therapist.children.index')],
+            ['label' => 'Assigned Children', 'value' => $stats['assigned_children'], 'icon' => 'fa-children', 'tone' => 'navy', 'href' => route('therapist.children.index')],
         ] as $card)
             <div class="col-12 col-sm-6 col-xl-4">
                 @if(! empty($card['href'] ?? null))
