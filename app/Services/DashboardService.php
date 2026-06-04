@@ -40,19 +40,26 @@ class DashboardService
         );
     }
 
-    public function getAdminStats(?int $chartYear = null): array
+    public function getAdminStats(?int $chartYear = null, ?User $admin = null): array
     {
         [$chartYear, $chartYears] = $this->resolveChartYear($chartYear);
 
+        $branchScope = $this->branchScopeId($admin);
+
         return array_merge(
-            $this->adminHeadlines(),
-            $this->completedSessionsTotal(),
-            $this->feeTotals(),
-            $this->cachedChartPayload($chartYear),
+            $this->adminHeadlines($admin),
+            $this->completedSessionsTotal($branchScope),
+            $this->feeTotals($branchScope),
+            $this->cachedChartPayload($chartYear, $branchScope),
             [
                 'chart_year'      => $chartYear,
                 'chart_years'     => $chartYears,
-                'recent_children' => User::children()->with('disabilities')->latest()->limit(3)->get(),
+                'recent_children' => User::children()
+                    ->when($admin, fn ($q) => $q->visibleToStaff($admin))
+                    ->with('disabilities')
+                    ->latest()
+                    ->limit(3)
+                    ->get(),
             ],
         );
     }
@@ -127,20 +134,23 @@ class DashboardService
     /**
      * @return array<string, mixed>
      */
-    private function adminHeadlines(): array
+    private function adminHeadlines(?User $admin = null): array
     {
+        $branchScope   = $this->branchScopeId($admin);
+        $childrenQuery = User::children()->when($admin, fn ($q) => $q->visibleToStaff($admin));
+
         return [
-            'total_children'                => User::children()->count(),
-            'pending_approvals'             => User::children()->pending()->count(),
-            'approved_children'             => User::children()->approved()->count(),
-            'total_assessments'             => \App\Models\Assessment::where('status', 'completed')->count(),
-            'assessments_today'             => \App\Models\Assessment::whereDate('date', today())->where('status', 'publish')->count(),
-            'upcoming_assessments'          => \App\Models\Assessment::upcoming()->count(),
-            'cancelled_assessments'         => \App\Models\Assessment::where('status', 'cancelled')->count(),
-            'total_therapists'              => User::byRole(Role::THERAPIST)->count(),
-            'total_enrollments'             => Enrollment::whereIn('status', ['active', 'completed'])->count(),
-            'high_discount_requests'        => Enrollment::where('status', 'pending_super_admin_approval')->count(),
-            'pending_payment_verifications' => Payment::where('status', 'pending_verification')->count(),
+            'total_children'                => (clone $childrenQuery)->count(),
+            'pending_approvals'             => (clone $childrenQuery)->pending()->count(),
+            'approved_children'             => (clone $childrenQuery)->approved()->count(),
+            'total_assessments'             => $this->applyAssessmentBranchScope(\App\Models\Assessment::query()->where('status', 'completed'), $branchScope)->count(),
+            'assessments_today'             => $this->applyAssessmentBranchScope(\App\Models\Assessment::query()->whereDate('date', today())->where('status', 'publish'), $branchScope)->count(),
+            'upcoming_assessments'          => $this->applyAssessmentBranchScope(\App\Models\Assessment::upcoming(), $branchScope)->count(),
+            'cancelled_assessments'         => $this->applyAssessmentBranchScope(\App\Models\Assessment::query()->where('status', 'cancelled'), $branchScope)->count(),
+            'total_therapists'              => $this->therapistsInBranchScope($branchScope)->count(),
+            'total_enrollments'             => $this->applyEnrollmentBranchScope(Enrollment::query()->whereIn('status', ['active', 'completed']), $branchScope)->count(),
+            'high_discount_requests'        => $this->applyEnrollmentBranchScope(Enrollment::query()->where('status', 'pending_super_admin_approval'), $branchScope)->count(),
+            'pending_payment_verifications' => $this->applyPaymentBranchScope(Payment::query()->where('status', 'pending_verification'), $branchScope)->count(),
         ];
     }
 
@@ -160,46 +170,58 @@ class DashboardService
      *
      * @return array{total_completed_sessions: int}
      */
-    private function completedSessionsTotal(): array
+    private function completedSessionsTotal(?int $branchScope = null): array
     {
-        $fixed = EnrollmentSchedule::query()
+        $fixedQuery = EnrollmentSchedule::query()
             ->whereNotNull('session_date')
-            ->where('status', 'completed')
-            ->count();
+            ->where('status', 'completed');
 
-        $recurring = EnrollmentScheduleOccurrence::query()
-            ->where('status', 'completed')
-            ->count();
+        $recurringQuery = EnrollmentScheduleOccurrence::query()
+            ->where('status', 'completed');
 
-        return ['total_completed_sessions' => $fixed + $recurring];
+        if ($branchScope !== null) {
+            $fixedQuery->whereHas('enrollment', fn ($eq) => $branchScope === 0
+                ? $eq->whereRaw('0 = 1')
+                : $eq->where('branch_id', $branchScope));
+            $recurringQuery->whereHas('schedule.enrollment', fn ($eq) => $branchScope === 0
+                ? $eq->whereRaw('0 = 1')
+                : $eq->where('branch_id', $branchScope));
+        }
+
+        return ['total_completed_sessions' => $fixedQuery->count() + $recurringQuery->count()];
     }
 
     /**
      * @return array<string, float>
      */
-    private function feeTotals(): array
+    private function feeTotals(?int $branchScope = null): array
     {
+        $enrollmentBase = $this->applyEnrollmentBranchScope(Enrollment::query(), $branchScope);
+        $paymentBase    = $this->applyPaymentBranchScope(Payment::query(), $branchScope);
+
         return [
-            'fee_total_expected'  => (float) Enrollment::whereIn('status', ['approved', 'active', 'completed'])->sum('final_total'),
-            'fee_total_paid'      => (float) Payment::where('status', 'paid')->sum('amount'),
-            'fee_pending_overdue' => (float) Enrollment::whereIn('status', ['approved', 'active'])->sum('remaining_amount'),
-            'fee_cash_received'   => (float) Payment::where('status', 'paid')->where('payment_method', 'cash')->sum('amount'),
-            'fee_online_bank'     => (float) Payment::where('status', 'paid')->where('payment_method', '!=', 'cash')->sum('amount'),
-            'pending_verification_amount' => (float) Payment::where('status', 'pending_verification')->sum('amount'),
+            'fee_total_expected'  => (float) (clone $enrollmentBase)->whereIn('status', ['approved', 'active', 'completed'])->sum('final_total'),
+            'fee_total_paid'      => (float) (clone $paymentBase)->where('status', 'paid')->sum('amount'),
+            'fee_pending_overdue' => (float) (clone $enrollmentBase)->whereIn('status', ['approved', 'active'])->sum('remaining_amount'),
+            'fee_cash_received'   => (float) (clone $paymentBase)->where('status', 'paid')->where('payment_method', 'cash')->sum('amount'),
+            'fee_online_bank'     => (float) (clone $paymentBase)->where('status', 'paid')->where('payment_method', '!=', 'cash')->sum('amount'),
+            'pending_verification_amount' => (float) (clone $paymentBase)->where('status', 'pending_verification')->sum('amount'),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function cachedChartPayload(int $chartYear): array
+    private function cachedChartPayload(int $chartYear, ?int $branchScope = null): array
     {
-        return $this->rememberDashboardCharts("charts.{$chartYear}", function () use ($chartYear): array {
+        $scopeKey = $this->chartCacheScopeKey($branchScope);
+
+        return $this->rememberDashboardCharts("charts.{$chartYear}.{$scopeKey}", function () use ($chartYear, $branchScope): array {
             return [
-                'monthly_revenue'     => $this->getMonthlyRevenue($chartYear),
-                'monthly_expected'    => $this->getMonthlyExpected($chartYear),
-                'monthly_enrollments' => $this->getMonthlyEnrollments($chartYear),
-                'chart_analytics'     => $this->buildChartAnalytics($chartYear),
+                'monthly_revenue'     => $this->getMonthlyRevenue($chartYear, $branchScope),
+                'monthly_expected'    => $this->getMonthlyExpected($chartYear, $branchScope),
+                'monthly_enrollments' => $this->getMonthlyEnrollments($chartYear, $branchScope),
+                'chart_analytics'     => $this->buildChartAnalytics($chartYear, $branchScope),
             ];
         });
     }
@@ -209,9 +231,10 @@ class DashboardService
         return Cache::remember('frc.dashboard.' . $key, self::CHART_CACHE_TTL_SECONDS, $callback);
     }
 
-    private function getMonthlyRevenue(int $year): array
+    private function getMonthlyRevenue(int $year, ?int $branchScope = null): array
     {
-        return Payment::where('status', 'paid')
+        return $this->applyPaymentBranchScope(Payment::query(), $branchScope)
+            ->where('status', 'paid')
             ->whereYear('payment_date', $year)
             ->selectRaw('MONTH(payment_date) as month, SUM(amount) as total')
             ->groupBy('month')
@@ -221,9 +244,10 @@ class DashboardService
     }
 
     /** Sum of final_total for enrollments created each month (PKR enrolled that month, not payment count). */
-    private function getMonthlyExpected(int $year): array
+    private function getMonthlyExpected(int $year, ?int $branchScope = null): array
     {
-        return Enrollment::whereIn('status', ['approved', 'active', 'completed'])
+        return $this->applyEnrollmentBranchScope(Enrollment::query(), $branchScope)
+            ->whereIn('status', ['approved', 'active', 'completed'])
             ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month, SUM(final_total) as total')
             ->groupBy('month')
@@ -232,9 +256,10 @@ class DashboardService
             ->toArray();
     }
 
-    private function getMonthlyEnrollments(int $year): array
+    private function getMonthlyEnrollments(int $year, ?int $branchScope = null): array
     {
-        return Enrollment::whereYear('created_at', $year)
+        return $this->applyEnrollmentBranchScope(Enrollment::query(), $branchScope)
+            ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month, COUNT(*) as count')
             ->groupBy('month')
             ->orderBy('month')
@@ -242,44 +267,52 @@ class DashboardService
             ->toArray();
     }
 
-    private function buildChartAnalytics(int $year): array
+    private function buildChartAnalytics(int $year, ?int $branchScope = null): array
     {
-        $childrenByStatus = User::children()
+        $childrenByStatus = $this->applyChildBranchScope(User::children(), $branchScope)
             ->whereYear('users.created_at', $year)
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status')
             ->toArray();
 
-        $paymentChannels = Payment::query()
+        $paymentChannels = $this->applyPaymentBranchScope(Payment::query(), $branchScope)
             ->where('status', 'paid')
             ->whereYear('payment_date', $year)
             ->selectRaw("COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_total")
             ->selectRaw("COALESCE(SUM(CASE WHEN payment_method != 'cash' THEN amount ELSE 0 END), 0) as online_total")
             ->first();
 
-        $enrollmentsByStatus = Enrollment::query()
+        $enrollmentsByStatus = $this->applyEnrollmentBranchScope(Enrollment::query(), $branchScope)
             ->whereYear('enrollments.created_at', $year)
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status')
             ->toArray();
 
-        $branchCollected = Payment::query()
+        $branchCollectedQuery = Payment::query()
             ->where('payments.status', 'paid')
             ->whereYear('payments.payment_date', $year)
             ->join('enrollments', 'payments.enrollment_id', '=', 'enrollments.id')
-            ->join('branches', 'enrollments.branch_id', '=', 'branches.id')
+            ->join('branches', 'enrollments.branch_id', '=', 'branches.id');
+
+        if ($branchScope !== null && $branchScope > 0) {
+            $branchCollectedQuery->where('enrollments.branch_id', $branchScope);
+        } elseif ($branchScope === 0) {
+            $branchCollectedQuery->whereRaw('0 = 1');
+        }
+
+        $branchCollected = $branchCollectedQuery
             ->select('branches.name', DB::raw('SUM(payments.amount) as total'))
             ->groupBy('branches.id', 'branches.name')
             ->orderByDesc('total')
             ->limit(8)
             ->get()
-            ->map(fn($row) => ['label' => $row->name, 'value' => (float) $row->total])
+            ->map(fn ($row) => ['label' => $row->name, 'value' => (float) $row->total])
             ->values()
             ->all();
 
-        $servicePopularity = Enrollment::query()
+        $servicePopularity = $this->applyEnrollmentBranchScope(Enrollment::query(), $branchScope)
             ->whereYear('enrollments.created_at', $year)
             ->join('services', 'enrollments.service_id', '=', 'services.id')
             ->select('services.name', DB::raw('COUNT(*) as total'))
@@ -287,7 +320,7 @@ class DashboardService
             ->orderByDesc('total')
             ->limit(8)
             ->get()
-            ->map(fn($row) => ['label' => $row->name, 'value' => (int) $row->total])
+            ->map(fn ($row) => ['label' => $row->name, 'value' => (int) $row->total])
             ->values()
             ->all();
 
@@ -313,20 +346,20 @@ class DashboardService
             ],
             'branch_collected'    => $branchCollected,
             'service_popularity'  => $servicePopularity,
-            'monthly_child_registrations' => $this->getMonthlyChildRegistrations($year),
-            'operational_alerts' => $this->operationalAlertSlices(),
+            'monthly_child_registrations' => $this->getMonthlyChildRegistrations($year, $branchScope),
+            'operational_alerts' => $this->operationalAlertSlices($branchScope),
         ];
     }
 
     /**
      * @return list<array{label: string, value: int, color: string}>
      */
-    private function operationalAlertSlices(): array
+    private function operationalAlertSlices(?int $branchScope = null): array
     {
         return [
-            ['label' => 'Child approvals', 'value' => User::children()->pending()->count(), 'color' => '#e08000'],
-            ['label' => 'Payment verify', 'value' => Payment::where('status', 'pending_verification')->count(), 'color' => '#7c3aed'],
-            ['label' => 'High discount', 'value' => Enrollment::where('status', 'pending_super_admin_approval')->count(), 'color' => '#11517c'],
+            ['label' => 'Child approvals', 'value' => $this->applyChildBranchScope(User::children()->pending(), $branchScope)->count(), 'color' => '#e08000'],
+            ['label' => 'Payment verify', 'value' => $this->applyPaymentBranchScope(Payment::query()->where('status', 'pending_verification'), $branchScope)->count(), 'color' => '#7c3aed'],
+            ['label' => 'High discount', 'value' => $this->applyEnrollmentBranchScope(Enrollment::query()->where('status', 'pending_super_admin_approval'), $branchScope)->count(), 'color' => '#11517c'],
         ];
     }
 
@@ -357,15 +390,111 @@ class DashboardService
         return $slices;
     }
 
-    private function getMonthlyChildRegistrations(int $year): array
+    private function getMonthlyChildRegistrations(int $year, ?int $branchScope = null): array
     {
-        return User::children()
+        return $this->applyChildBranchScope(User::children(), $branchScope)
             ->whereYear('created_at', $year)
             ->selectRaw('MONTH(created_at) as month, COUNT(*) as count')
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('count', 'month')
             ->toArray();
+    }
+
+    /**
+     * null = all branches (super admin); positive int = branch id; 0 = no branch assigned (empty).
+     */
+    private function branchScopeId(?User $staff): ?int
+    {
+        if ($staff === null || $staff->isSuperAdmin()) {
+            return null;
+        }
+
+        if ($staff->isAdmin()) {
+            return $staff->branch_id ? (int) $staff->branch_id : 0;
+        }
+
+        return null;
+    }
+
+    private function chartCacheScopeKey(?int $branchScope): string
+    {
+        if ($branchScope === null) {
+            return 'global';
+        }
+
+        return $branchScope === 0 ? 'branch.none' : 'branch.' . $branchScope;
+    }
+
+    private function therapistsInBranchScope(?int $branchScope)
+    {
+        $query = User::byRole(Role::THERAPIST);
+
+        if ($branchScope === null) {
+            return $query;
+        }
+
+        if ($branchScope === 0) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereHas('therapistProfile', fn ($q) => $q->where('branch_id', $branchScope));
+    }
+
+    private function applyChildBranchScope($query, ?int $branchScope)
+    {
+        if ($branchScope === null) {
+            return $query;
+        }
+
+        if ($branchScope === 0) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->where('users.branch_id', $branchScope);
+    }
+
+    private function applyEnrollmentBranchScope($query, ?int $branchScope)
+    {
+        if ($branchScope === null) {
+            return $query;
+        }
+
+        if ($branchScope === 0) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        $table = $query->getModel()->getTable();
+
+        return $query->where("{$table}.branch_id", $branchScope);
+    }
+
+    private function applyAssessmentBranchScope($query, ?int $branchScope)
+    {
+        if ($branchScope === null) {
+            return $query;
+        }
+
+        if ($branchScope === 0) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        $table = $query->getModel()->getTable();
+
+        return $query->where("{$table}.branch_id", $branchScope);
+    }
+
+    private function applyPaymentBranchScope($query, ?int $branchScope)
+    {
+        if ($branchScope === null) {
+            return $query;
+        }
+
+        if ($branchScope === 0) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereHas('enrollment', fn ($q) => $q->where('branch_id', $branchScope));
     }
 
     /** @return array{0: int, 1: int[]} */

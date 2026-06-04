@@ -8,8 +8,8 @@ use App\Http\Requests\CompleteAssessmentRequest;
 use App\Http\Requests\StoreAssessmentRequest;
 use App\Http\Requests\UpdateAssessmentRequest;
 use App\Models\Assessment;
-use App\Models\Branch;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Support\StaffBranchScope;
 use App\Services\AssessmentNoteVisibilityService;
 use App\Services\AssessmentService;
 use Illuminate\Http\RedirectResponse;
@@ -26,17 +26,23 @@ class AssessmentController extends Controller
 
     public function index(\Illuminate\Http\Request $request): View
     {
-        $assessments = $this->service->getAll($request->only(['status', 'branch_id', 'date_from', 'date_to']));
-        $branches    = Branch::published()->get();
+        $filters = $request->only(['status', 'branch_id', 'date_from', 'date_to']);
+        if ($lockedBranch = StaffBranchScope::lockedBranchId($request->user())) {
+            $filters['branch_id'] = $lockedBranch;
+        }
+
+        $assessments = $this->service->getAll($filters);
+        $branches    = StaffBranchScope::publishedBranchesFor($request->user());
 
         return view('assessments.index', compact('assessments', 'branches'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        $branches = Branch::published()->orderBy('name')->get();
+        $branches = StaffBranchScope::publishedBranchesFor($request->user());
         $initialChildren = $this->userRepository->getApprovedChildrenByIds(
             array_map('intval', (array) old('child_ids', [])),
+            $request->user(),
         );
 
         return view('assessments.create', compact('branches', 'initialChildren'));
@@ -51,6 +57,8 @@ class AssessmentController extends Controller
 
     public function show(Request $request, Assessment $assessment): View
     {
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
+
         $assessment->load([
             'branch',
             'services',
@@ -68,14 +76,16 @@ class AssessmentController extends Controller
         return view('assessments.show', compact('assessment', 'structuredNotesVisible'));
     }
 
-    public function edit(Assessment $assessment): View
+    public function edit(Request $request, Assessment $assessment): View
     {
         abort_if(in_array($assessment->status, ['completed', 'cancelled'], true), 403);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
-        $branches = Branch::published()->orderBy('name')->get();
+        $branches = StaffBranchScope::publishedBranchesFor($request->user());
         $assessment->load(['branch', 'services', 'children', 'therapist']);
         $initialChildren = $this->userRepository->getApprovedChildrenByIds(
             array_map('intval', (array) old('child_ids', $assessment->children->pluck('id')->all())),
+            $request->user(),
         );
 
         return view('assessments.edit', compact('assessment', 'branches', 'initialChildren'));
@@ -84,14 +94,16 @@ class AssessmentController extends Controller
     public function update(UpdateAssessmentRequest $request, Assessment $assessment): RedirectResponse
     {
         abort_if(in_array($assessment->status, ['completed', 'cancelled'], true), 403);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $this->service->update($assessment, $request->validated(), $request->user()->id);
 
         return redirect()->route('assessments.index')->with('success', 'Assessment updated successfully.');
     }
 
-    public function destroy(Assessment $assessment): RedirectResponse
+    public function destroy(Request $request, Assessment $assessment): RedirectResponse
     {
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
         $this->service->delete($assessment);
 
         return redirect()->route('assessments.index')->with('success', 'Assessment deleted.');
@@ -100,6 +112,7 @@ class AssessmentController extends Controller
     public function complete(CompleteAssessmentRequest $request, Assessment $assessment): RedirectResponse
     {
         abort_unless($request->user()->hasPermission('manage_assessments'), 403);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $this->service->complete($assessment, $request->user(), $request->validated());
 
@@ -108,6 +121,8 @@ class AssessmentController extends Controller
 
     public function cancel(CancelAssessmentRequest $request, Assessment $assessment): RedirectResponse
     {
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
+
         $this->service->cancel($assessment, $request->user(), $request->validated()['cancellation_reason']);
 
         return redirect()->route('assessments.show', $assessment)->with('success', 'Assessment cancelled.');

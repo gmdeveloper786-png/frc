@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\User;
 use App\Support\Money;
+use App\Support\StaffBranchScope;
 use App\Repositories\Interfaces\EnrollmentRepositoryInterface;
 use App\Repositories\Interfaces\PaymentRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -36,9 +37,12 @@ class PaymentService
     /**
      * @return Collection<int, Enrollment>
      */
-    public function getEnrollmentsForManualPaymentPicker(int $limit = 500): Collection
+    public function getEnrollmentsForManualPaymentPicker(User $staff, int $limit = 500): Collection
     {
-        return $this->enrollmentRepository->getEligibleForManualPayment($limit);
+        return $this->enrollmentRepository->getEligibleForManualPayment(
+            $limit,
+            StaffBranchScope::lockedBranchId($staff),
+        );
     }
 
     /** All payments visible on child's portal (every verification status). */
@@ -123,6 +127,8 @@ class PaymentService
         if (! $enrollment || ! in_array($enrollment->status, ['approved', 'active'], true)) {
             throw ValidationException::withMessages(['enrollment_id' => ['Enrollment is not active.']]);
         }
+
+        StaffBranchScope::enforceEnrollmentBranch($staff, $enrollment);
 
         $amount = Money::round($data['amount']);
         if ($amount <= 0) {

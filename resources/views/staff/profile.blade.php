@@ -80,6 +80,12 @@
                                 @endif
                             </div>
                         </div>
+                        @if($user->isAdmin())
+                            <div class="frc-profile-detail-item">
+                                <div class="frc-profile-detail-label">Branch</div>
+                                <div class="frc-profile-detail-value">{{ $user->branch?->displayLabel() ?? '—' }}</div>
+                            </div>
+                        @endif
                         <div class="frc-profile-detail-item frc-profile-detail-item--full">
                             <div class="frc-profile-detail-label">Address</div>
                             <div class="frc-profile-detail-value">{{ $user->address ?: '—' }}</div>

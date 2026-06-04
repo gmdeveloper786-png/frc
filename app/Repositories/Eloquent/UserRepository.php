@@ -37,11 +37,12 @@ class UserRepository implements UserRepositoryInterface
         return $user->delete();
     }
 
-    public function getChildren(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function getChildren(array $filters = [], int $perPage = 15, ?User $viewer = null): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
-        $paginator = User::with(['role', 'disabilities'])
+        $paginator = User::with(['role', 'disabilities', 'branch'])
             ->children()
+            ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['search']), fn($q) => $q->where(function ($q) use ($filters) {
                 $q->where('full_name', 'like', '%' . $filters['search'] . '%')
@@ -60,7 +61,7 @@ class UserRepository implements UserRepositoryInterface
         return User::children()->approved()->orderBy('full_name')->get();
     }
 
-    public function getApprovedChildrenByIds(array $ids): Collection
+    public function getApprovedChildrenByIds(array $ids, ?User $viewer = null): Collection
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
 
@@ -69,18 +70,22 @@ class UserRepository implements UserRepositoryInterface
         }
 
         return User::children()
+            ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->approved()
             ->whereIn('id', $ids)
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'phone_number', 'gender', 'date_of_birth']);
     }
 
-    public function searchApprovedChildren(string $search, int $limit = 40): Collection
+    public function searchApprovedChildren(string $search, int $limit = 40, ?User $viewer = null): Collection
     {
         $search = trim($search);
         $limit = min(50, max(1, $limit));
 
-        $query = User::children()->approved()->orderBy('full_name');
+        $query = User::children()
+            ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
+            ->approved()
+            ->orderBy('full_name');
 
         if (ctype_digit($search)) {
             $id = (int) $search;
@@ -99,11 +104,12 @@ class UserRepository implements UserRepositoryInterface
         return $query->limit($limit)->get(['id', 'full_name', 'gr_number', 'phone_number', 'gender', 'date_of_birth']);
     }
 
-    public function getPendingChildren(int $perPage = 15): LengthAwarePaginator
+    public function getPendingChildren(int $perPage = 15, ?User $viewer = null): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
-        $paginator = User::with(['disabilities'])
+        $paginator = User::with(['disabilities', 'branch'])
             ->children()
+            ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->pending()
             ->latest()
             ->paginate($perPage);

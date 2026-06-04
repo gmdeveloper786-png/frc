@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterChildRequest;
+use App\Models\Branch;
 use App\Models\Disability;
 use App\Services\AuthService;
 use App\Services\SettingService;
@@ -24,8 +25,9 @@ class RegisterController extends Controller
         }
 
         $disabilities = Disability::published()->orderBy('name')->get();
+        $branches     = Branch::published()->forDropdown()->orderedForDropdown()->get();
 
-        return view('auth.register', compact('disabilities'));
+        return view('auth.register', compact('disabilities', 'branches'));
     }
 
     public function register(RegisterChildRequest $request): RedirectResponse

@@ -35,7 +35,8 @@
             <tr><td>Enrollment ID</td><td>#{{ $receipt['enrollment_id'] }}</td></tr>
         @endif
         <tr><td>Branch</td><td>{{ $receipt['branch'] }}</td></tr>
-        <tr><td>Therapist</td><td>{{ $receipt['therapist'] }}</td></tr>
+        <tr><td>Therapist</td><td>{{ $receipt['therapist'] ?? '—' }}</td></tr>
+        <tr><td>Service</td><td>{{ $receipt['service'] ?? '—' }}</td></tr>
         <tr><td>Payment Method</td><td>{{ $receipt['payment_method'] }}</td></tr>
         @if(!empty($receipt['transaction_ref']))
             <tr><td>Transaction Reference</td><td>{{ $receipt['transaction_ref'] }}</td></tr>

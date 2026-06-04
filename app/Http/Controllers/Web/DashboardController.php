@@ -26,7 +26,7 @@ class DashboardController extends Controller
     public function admin(Request $request): View
     {
         $chartYear = $request->filled('chart_year') ? (int) $request->input('chart_year') : null;
-        $stats = $this->dashboardService->getAdminStats($chartYear);
+        $stats = $this->dashboardService->getAdminStats($chartYear, $request->user());
 
         return view('dashboard.admin', compact('stats'));
     }

@@ -31,7 +31,7 @@ class TherapistPortalApiController extends Controller
 
         return response()->json([
             'stats' => $this->portal->dashboardStats($tid),
-            'notifications_preview' => $this->userNotifications->getLatestNotifications((int) $user->id, 8)->map(fn ($n) => [
+            'notifications_preview' => $this->userNotifications->getLatestNotifications($user, 8)->map(fn ($n) => [
                 'id'      => $n->id,
                 'read_at' => $n->read_at?->toDateTimeString(),
                 'is_read' => $n->is_read,

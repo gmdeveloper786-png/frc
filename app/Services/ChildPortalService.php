@@ -92,8 +92,8 @@ class ChildPortalService
             'total_sessions_completed'           => $this->countCompletedSessionsForChild($childId),
             'dashboard_summary'                  => $this->buildDashboardSummary($childId, $assessmentCount),
             'can_upload_fee_slip'                => $slipEnrollments->isNotEmpty(),
-            'notifications'                      => $this->userNotifications->getLatestNotifications($childId, 8),
-            'unread_count'                       => $this->userNotifications->getUnreadCount($childId),
+            'notifications'                      => $this->userNotifications->getLatestNotifications($child, 8),
+            'unread_count'                       => $this->userNotifications->getUnreadCount($child),
         ];
     }
 

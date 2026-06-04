@@ -54,6 +54,8 @@
             <th>Child Name</th>
             <th>Child Status</th>
             <th>Branch</th>
+            <th>Therapist</th>
+            <th>Service</th>
             <th>Total Fee</th>
             <th>Paid</th>
             <th>Remaining</th>
@@ -67,10 +69,10 @@
     <tbody>
         @foreach($rows as $r)
             <tr>
-                <td style="text-align:center;font-weight:600;color:var(--navy);">{{ $loop->iteration }}</td>
-                <td style="font-weight:600;">{{ $r['receipt'] }}</td>
-                <td style="font-size:8px;">{{ $r['enrollment_id'] }}</td>
-                <td style="font-size:8px;">{{ $r['child_gr_number'] }}</td>
+                <td class="seq">{{ $loop->iteration }}</td>
+                <td>{{ $r['receipt'] }}</td>
+                <td>{{ $r['child_gr_number'] }}</td>
+                <td>{{ $r['enrollment_id'] }}</td>
                 <td>{{ $r['child_name'] }}</td>
                 <td>
                     @if(strtolower($r['child_status']) === 'approved')
@@ -88,8 +90,9 @@
                     @endif
                 </td>
                 <td>{{ $r['branch'] }}</td>
-                <td style="font-weight:600;color:var(--teal);">{{ $r['enrollment_total'] !== '—' ? 'PKR '.$r['enrollment_total'] :
-                    '—' }}</td>
+                <td>{{ $r['therapist'] }}</td>
+                <td>{{ $r['service'] }}</td>
+                <td class="num">{{ $r['enrollment_total'] }}</td>
                 <td style="font-weight:600;color:var(--success);">{{ $r['enrollment_paid'] !== '—' ? 'PKR '.$r['enrollment_paid'] :
                     '—' }}</td>
                 <td style="font-weight:600;color:var(--danger);">{{ $r['enrollment_remaining'] !== '—' ? 'PKR

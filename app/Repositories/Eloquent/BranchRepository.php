@@ -32,7 +32,7 @@ class BranchRepository implements BranchRepositoryInterface
 
     public function getPublished(): Collection
     {
-        return Branch::published()->orderBy('name')->get();
+        return Branch::published()->forDropdown()->orderedForDropdown()->get();
     }
 
     public function create(array $data): Branch

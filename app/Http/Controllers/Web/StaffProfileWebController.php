@@ -16,7 +16,7 @@ class StaffProfileWebController extends Controller
     {
         abort_unless($request->user()->isAdmin() || $request->user()->isFinance(), 403);
 
-        $user = $request->user()->load('role');
+        $user = $request->user()->load(['role', 'branch']);
         $passwordUrl = $request->user()->isAdmin()
             ? route('admin.profile.password')
             : route('finance.profile.password');

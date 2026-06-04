@@ -22,6 +22,9 @@
             <div class="p-3 p-md-4">
                 <div class="row g-3">
                     @foreach($items as $setting)
+                        @if($setting->key === \App\Support\SettingKeys::CITY_SESSION_PRICES)
+                            @continue
+                        @endif
                         @php
                             $key = $setting->key;
                             $type = $setting->type;
@@ -78,6 +81,43 @@
             </div>
         </div>
     @endforeach
+
+    <div class="card-frc mb-3">
+        <div class="card-header-frc">
+            <h6 class="card-title-frc mb-0">
+                <i class="fa-solid fa-city me-2" style="color:var(--teal);"></i> City session pricing
+            </h6>
+        </div>
+        <div class="p-3 p-md-4">
+            <p class="text-muted small mb-3">
+                Default <strong>price per session (PKR)</strong> when creating or editing an enrollment. The branch’s city is used
+                (e.g. all Karachi branches share one rate). This price is applied automatically and cannot be changed on the enrollment form.
+            </p>
+            @if(empty($pricingCities))
+                <p class="mb-0 text-muted">Add cities to your branches first, then set prices here.</p>
+            @else
+                <div class="row g-3">
+                    @foreach($pricingCities as $city)
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label">{{ $city }} (PKR / session)</label>
+                            <input
+                                type="number"
+                                name="city_session_prices[{{ $city }}]"
+                                value="{{ old('city_session_prices.'.$city, $citySessionPrices[$city] ?? '') }}"
+                                class="form-control @error('city_session_prices.'.$city) is-invalid @enderror"
+                                min="0"
+                                step="1"
+                                placeholder="0"
+                            >
+                            @error('city_session_prices.'.$city)
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
 
     <div class="d-flex flex-wrap gap-2">
         <button type="submit" class="btn-teal">

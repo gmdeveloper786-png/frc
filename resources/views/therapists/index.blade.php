@@ -64,20 +64,25 @@
         <a href="{{ route('therapists.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;"><i class="fa-solid fa-plus"></i> Add Therapist</a>
     </div>
     <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+        @if($branches->count() === 1)
+            <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
+        @endif
         <div class="row g-2 align-items-end">
             <div class="col-12 col-md-4">
                 <label class="form-label small text-muted mb-1">Search</label>
                 <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
             </div>
+            @if($branches->count() > 1)
             <div class="col-12 col-sm-6 col-md-4">
                 <label class="form-label small text-muted mb-1">Branch</label>
                 <select name="branch_id" class="form-control">
                     <option value="">All Branches</option>
                     @foreach($branches as $branch)
-                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
                     @endforeach
                 </select>
             </div>
+            @endif
             <div class="col-12 col-md-4 filter-actions">
                 <button type="submit" class="btn-teal">Filter</button>
                 @if(request()->hasAny(['search','branch_id']))

@@ -15,6 +15,7 @@ use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\ChildPortalService;
 use App\Services\PaymentService;
 use App\Services\ReceiptService;
+use App\Support\StaffBranchScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -32,7 +33,7 @@ class PaymentController extends Controller
 
     public function index(Request $request): View
     {
-        $payments = $this->paymentService->getAll($request->only([
+        $filters = StaffBranchScope::paymentFiltersForStaff($request->user(), $request->only([
             'status',
             'verification_status',
             'enrollment_payment_status',
@@ -43,32 +44,40 @@ class PaymentController extends Controller
             'branch_id',
             'search',
         ]));
-        $branches = Branch::published()->get();
+        $payments = $this->paymentService->getAll($filters);
+        $branches = StaffBranchScope::publishedBranchesFor($request->user());
 
         return view('payments.index', compact('payments', 'branches'));
     }
 
-    public function pendingVerification(): View
+    public function pendingVerification(Request $request): View
     {
-        $payments = $this->paymentService->getAll(['status' => 'pending_verification']);
+        $filters = StaffBranchScope::paymentFiltersForStaff($request->user(), [
+            'status' => 'pending_verification',
+        ]);
+        $payments = $this->paymentService->getAll($filters);
 
         return view('payments.pending', compact('payments'));
     }
 
     public function createManual(Request $request): View
     {
-        $enrollments = $this->paymentService->getEnrollmentsForManualPaymentPicker(500);
+        $user = $request->user();
+        $enrollments = $this->paymentService->getEnrollmentsForManualPaymentPicker($user, 500);
 
         $preselectId = $request->integer('enrollment_id');
         if ($preselectId > 0 && ! $enrollments->contains('id', $preselectId)) {
             $extra = Enrollment::query()
-                ->select(['id', 'child_id', 'final_total', 'paid_amount', 'remaining_amount'])
+                ->select(['id', 'child_id', 'branch_id', 'final_total', 'paid_amount', 'remaining_amount'])
                 ->with(['child:id,full_name'])
                 ->active()
                 ->where('remaining_amount', '>', 0)
                 ->find($preselectId);
             if ($extra) {
-                $enrollments->prepend($extra);
+                $lockedBranch = StaffBranchScope::lockedBranchId($user);
+                if ($lockedBranch === null || (int) $extra->branch_id === $lockedBranch) {
+                    $enrollments->prepend($extra);
+                }
             }
         }
 
@@ -169,6 +178,7 @@ class PaymentController extends Controller
     public function verify(VerifyPaymentRequest $request, int $id): RedirectResponse
     {
         $payment = $this->paymentService->findById($id);
+        StaffBranchScope::enforcePaymentBranch($request->user(), $payment);
         $this->paymentService->verify($payment, $request->user());
 
         return redirect()->back()->with('success', 'Payment verified successfully.');
@@ -229,6 +239,8 @@ class PaymentController extends Controller
             $user->hasPermission('manage_payments') || $user->hasPermission('verify_payments'),
             403,
         );
+
+        StaffBranchScope::enforcePaymentBranch($user, $payment);
     }
 
     /** Children may view only their own receipts; staff with payment permissions may view any. */

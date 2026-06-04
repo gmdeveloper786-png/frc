@@ -46,10 +46,16 @@ class UpdateStaffUserRequest extends FormRequest
             'phone_number'     => ['nullable', 'string', 'max:30'],
             'whatsapp_number'  => ['nullable', 'string', 'max:30'],
             'gender'           => ['nullable', 'in:male,female,other'],
-            'date_of_birth'    => ['nullable', 'date'],
+            'date_of_birth'    => ['nullable', 'date', 'before:today'],
             'address'          => ['nullable', 'string', 'max:2000'],
             'status'           => ['required', 'in:active,inactive'],
             'role'             => ['required', 'in:admin,finance'],
+            'branch_id'        => [
+                Rule::requiredIf(fn (): bool => $this->input('role') === Role::ADMIN),
+                'nullable',
+                'integer',
+                'exists:branches,id',
+            ],
         ];
     }
 
@@ -60,9 +66,15 @@ class UpdateStaffUserRequest extends FormRequest
             $this->request->remove('password_confirmation');
         }
 
-        $this->merge([
+        $merge = [
             'email' => is_string($this->input('email')) ? strtolower(trim($this->input('email'))) : $this->input('email'),
-        ]);
+        ];
+
+        if ($this->input('role') === Role::FINANCE) {
+            $merge['branch_id'] = null;
+        }
+
+        $this->merge($merge);
     }
 
     public function validated($key = null, $default = null): array

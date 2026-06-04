@@ -104,6 +104,8 @@
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Role</th>
+                        <th>Branch</th>
+                        <th>City</th>
                         <th>Status</th>
                         <th>Created</th>
                         <th>Actions</th>
@@ -117,12 +119,14 @@
                             <td style="white-space:nowrap;">{{ $row->email ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ $row->phone_number ?? '—' }}</td>
                             <td><span class="badge-status badge-publish" style="text-transform:capitalize;">{{ $row->role?->name ?? '—' }}</span></td>
+                            <td style="white-space:nowrap;">{{ $row->branch?->name ?? '—' }}</td>
+                            <td style="white-space:nowrap;">{{ $row->branch?->city ?? '—' }}</td>
                             <td>
                                 @if($row->status === 'active')
-                                    <span class="badge-status badge-approved">Active</span></span>
+                                    <span class="badge-status badge-approved">Active</span>
                                 @else
-                                    <span class="badge-status badge-draft">Inactive</span></span>
-                                @endif</span>
+                                    <span class="badge-status badge-draft">Inactive</span>
+                                @endif
                             </td>
                             <td style="white-space:nowrap;">{{ $row->created_at?->format('d M Y') ?? '—' }}</td>
                             <td style="white-space:nowrap;">

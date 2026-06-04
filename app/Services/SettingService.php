@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Support\CitySessionPricing;
 use App\Support\SettingKeys;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -52,6 +53,12 @@ class SettingService
     public function isHighDiscount(float $discountPercentage): bool
     {
         return $discountPercentage > $this->highDiscountThreshold();
+    }
+
+    /** @return array<string, float> */
+    public function citySessionPrices(): array
+    {
+        return app(CitySessionPricing::class)->all();
     }
 
     public function childRegistrationEnabled(): bool
@@ -132,6 +139,8 @@ class SettingService
 
             if ($meta['type'] === 'boolean') {
                 $value = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+            } elseif ($meta['type'] === 'json') {
+                $value = is_string($value) ? trim($value) : '';
             } else {
                 $value = is_scalar($value) ? trim((string) $value) : '';
             }
@@ -182,6 +191,7 @@ class SettingService
             SettingKeys::CONTACT_EMAIL           => 'Contact email',
             SettingKeys::CONTACT_ADDRESS         => 'Contact address',
             SettingKeys::HIGH_DISCOUNT_THRESHOLD => 'High discount threshold (%)',
+            SettingKeys::CITY_SESSION_PRICES      => 'City session prices (JSON)',
             SettingKeys::BANK_ACCOUNT_TITLE      => 'Bank account title',
             SettingKeys::BANK_ACCOUNT_NUMBER     => 'Bank account number',
             SettingKeys::BANK_NAME               => 'Bank name',

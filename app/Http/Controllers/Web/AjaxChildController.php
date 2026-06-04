@@ -27,7 +27,7 @@ class AjaxChildController extends Controller
         }
 
         $limit = (int) $request->query('limit', 40);
-        $children = $this->userRepository->searchApprovedChildren($term, $limit);
+        $children = $this->userRepository->searchApprovedChildren($term, $limit, $request->user());
 
         return response()->json([
             'data' => $children->map(static function ($child): array {

@@ -39,14 +39,20 @@ class ReportRepository implements ReportRepositoryInterface
         $paymentBase = $this->financePaymentRecordsQuery($filters);
 
         $paidQuery = (clone $paymentBase)->where('status', 'paid');
+        $parsed = $this->parseFinanceFilters($filters);
+        $methodFilter = $parsed['payment_method'];
+
+        $cashReceived = (float) (clone $paidQuery)->where('payment_method', 'cash')->sum('amount');
+        $onlineReceived = (float) (clone $paidQuery)->whereIn('payment_method', self::ONLINE_PAYMENT_METHODS)->sum('amount');
 
         return [
             'total_expected'       => $totalExpected,
             'total_paid'           => (float) (clone $paidQuery)->sum('amount'),
             'total_pending'        => $totalPending,
-            'cash_received'        => (float) (clone $paidQuery)->where('payment_method', 'cash')->sum('amount'),
-            'online_received'      => (float) (clone $paidQuery)->whereIn('payment_method', self::ONLINE_PAYMENT_METHODS)->sum('amount'),
+            'cash_received'        => $cashReceived,
+            'online_received'      => $onlineReceived,
             'pending_verification' => (float) (clone $paymentBase)->where('status', 'pending_verification')->sum('amount'),
+            'payment_method_filter' => $methodFilter,
         ];
     }
 
@@ -69,7 +75,9 @@ class ReportRepository implements ReportRepositoryInterface
             ->with([
                 'child:id,full_name,status,gr_number',
                 'enrollment.branch:id,name',
-                'enrollment:id,child_id,branch_id,final_total,paid_amount,remaining_amount,payment_status,status',
+                'enrollment.service:id,name',
+                'enrollment.therapist:id,full_name',
+                'enrollment:id,child_id,branch_id,service_id,therapist_id,final_total,paid_amount,remaining_amount,payment_status,status',
             ])
             ->orderByDesc('payment_date')
             ->orderByDesc('id')
@@ -85,6 +93,8 @@ class ReportRepository implements ReportRepositoryInterface
             ->with([
                 'child',
                 'enrollment.branch',
+                'enrollment.service',
+                'enrollment.therapist',
                 'enrollment.child',
             ])
             ->orderByDesc('payment_date')
@@ -95,7 +105,11 @@ class ReportRepository implements ReportRepositoryInterface
     }
 
     /**
-     * Operational enrollments for fee reporting (not limited to rows that already have payments).
+     * Enrollment scope for fee totals (expected / pending).
+     *
+     * Payment-specific filters (method, verification, payment dates) apply only to
+     * {@see financePaymentRecordsQuery()} so summary cards do not mix full enrollment
+     * fees with a single payment channel.
      */
     private function enrollmentFinanceQuery(array $filters): Builder
     {
@@ -104,6 +118,8 @@ class ReportRepository implements ReportRepositoryInterface
         return Enrollment::query()
             ->whereIn('status', self::EXPECTED_ENROLLMENT_STATUSES)
             ->when($parsed['branch_id'], fn ($q) => $q->where('branch_id', $parsed['branch_id']))
+            ->when($parsed['therapist_id'], fn ($q) => $q->where('therapist_id', $parsed['therapist_id']))
+            ->when($parsed['service_id'], fn ($q) => $q->where('service_id', $parsed['service_id']))
             ->when($parsed['enrollment_payment_status'], fn ($q) => $q->where('payment_status', $parsed['enrollment_payment_status']))
             ->when($parsed['child_search'] !== '', function ($q) use ($parsed): void {
                 $like = '%' . $parsed['child_search'] . '%';
@@ -113,38 +129,10 @@ class ReportRepository implements ReportRepositoryInterface
                         ->orWhere('gr_number', 'like', $like);
                 });
             })
-            ->when($parsed['payment_method'], fn ($q) => $q->whereHas(
-                'payments',
-                fn ($p) => $p->where('payment_method', $parsed['payment_method']),
-            ))
-            ->when($parsed['verification_status'], fn ($q) => $q->whereHas(
-                'payments',
-                fn ($p) => $p->where('status', $parsed['verification_status']),
-            ))
-            ->when($parsed['receipt_number'] !== '', fn ($q) => $q->whereHas(
-                'payments',
-                fn ($p) => $p->where('receipt_number', 'like', '%' . $parsed['receipt_number'] . '%'),
-            ))
-            ->when($parsed['date_from'] || $parsed['date_to'], function ($q) use ($parsed): void {
-                $q->where(function ($inner) use ($parsed): void {
-                    $inner->whereHas('payments', function ($p) use ($parsed): void {
-                        if ($parsed['date_from']) {
-                            $p->whereDate('payment_date', '>=', $parsed['date_from']);
-                        }
-                        if ($parsed['date_to']) {
-                            $p->whereDate('payment_date', '<=', $parsed['date_to']);
-                        }
-                    })->orWhere(function ($noPay) use ($parsed): void {
-                        $noPay->whereDoesntHave('payments');
-                        if ($parsed['date_from']) {
-                            $noPay->whereDate('created_at', '>=', $parsed['date_from']);
-                        }
-                        if ($parsed['date_to']) {
-                            $noPay->whereDate('created_at', '<=', $parsed['date_to']);
-                        }
-                    });
-                });
-            });
+            ->when($parsed['gr_number'] !== '', fn ($q) => $q->whereHas(
+                'child',
+                fn ($c) => $c->where('gr_number', 'like', '%' . $parsed['gr_number'] . '%'),
+            ));
     }
 
     private function financePaymentRecordsQuery(array $filters): Builder
@@ -154,6 +142,8 @@ class ReportRepository implements ReportRepositoryInterface
         return Payment::query()
             ->whereHas('enrollment', fn ($e) => $e->whereIn('status', self::EXPECTED_ENROLLMENT_STATUSES))
             ->when($parsed['branch_id'], fn ($q) => $q->whereHas('enrollment', fn ($e) => $e->where('branch_id', $parsed['branch_id'])))
+            ->when($parsed['therapist_id'], fn ($q) => $q->whereHas('enrollment', fn ($e) => $e->where('therapist_id', $parsed['therapist_id'])))
+            ->when($parsed['service_id'], fn ($q) => $q->whereHas('enrollment', fn ($e) => $e->where('service_id', $parsed['service_id'])))
             ->when($parsed['payment_method'], fn ($q) => $q->where('payment_method', $parsed['payment_method']))
             ->when($parsed['date_from'], fn ($q) => $q->whereDate('payment_date', '>=', $parsed['date_from']))
             ->when($parsed['date_to'], fn ($q) => $q->whereDate('payment_date', '<=', $parsed['date_to']))
@@ -170,25 +160,35 @@ class ReportRepository implements ReportRepositoryInterface
                         ->orWhere('gr_number', 'like', $like);
                 });
             })
-            ->when($parsed['receipt_number'] !== '', fn ($q) => $q->where('receipt_number', 'like', '%' . $parsed['receipt_number'] . '%'));
+            ->when($parsed['gr_number'] !== '', function ($q) use ($parsed): void {
+                $like = '%' . $parsed['gr_number'] . '%';
+                $q->where(function ($inner) use ($like): void {
+                    $inner->whereHas('child', fn ($c) => $c->where('gr_number', 'like', $like))
+                        ->orWhereHas('enrollment.child', fn ($c) => $c->where('gr_number', 'like', $like));
+                });
+            });
     }
 
     /**
      * @return array{
      *     branch_id: ?int,
+     *     therapist_id: ?int,
+     *     service_id: ?int,
      *     payment_method: ?string,
      *     date_from: ?string,
      *     date_to: ?string,
      *     enrollment_payment_status: ?string,
      *     verification_status: ?string,
      *     child_search: string,
-     *     receipt_number: string,
+     *     gr_number: string,
      * }
      */
     private function parseFinanceFilters(array $filters): array
     {
         return [
             'branch_id'                 => filled($filters['branch_id'] ?? null) ? (int) $filters['branch_id'] : null,
+            'therapist_id'              => filled($filters['therapist_id'] ?? null) ? (int) $filters['therapist_id'] : null,
+            'service_id'                => filled($filters['service_id'] ?? null) ? (int) $filters['service_id'] : null,
             'payment_method'            => filled($filters['payment_method'] ?? null) ? (string) $filters['payment_method'] : null,
             'date_from'                 => filled($filters['date_from'] ?? null) ? (string) $filters['date_from'] : null,
             'date_to'                   => filled($filters['date_to'] ?? null) ? (string) $filters['date_to'] : null,
@@ -197,7 +197,7 @@ class ReportRepository implements ReportRepositoryInterface
             'verification_status'       => filled($filters['verification_status'] ?? null)
                 ? (string) $filters['verification_status'] : null,
             'child_search'              => isset($filters['child_search']) ? trim((string) $filters['child_search']) : '',
-            'receipt_number'            => isset($filters['receipt_number']) ? trim((string) $filters['receipt_number']) : '',
+            'gr_number'                 => isset($filters['gr_number']) ? trim((string) $filters['gr_number']) : '',
         ];
     }
 }

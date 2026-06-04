@@ -5,9 +5,13 @@
     $initialServiceId = $initialServiceId ?? null;
     $therapistIdInit = $isEdit && isset($enrollment) ? $enrollment->therapist_id : null;
     $therapistNameInit = $therapistNameInit ?? ($isEdit && isset($enrollment) ? $enrollment->therapist?->full_name : null);
+    $branchCityMap = $enrollmentPricing['branch_city_map'] ?? [];
+    $citySessionPrices = $enrollmentPricing['city_session_prices'] ?? [];
 @endphp
 <script>
 window.FRC_HIGH_DISCOUNT_THRESHOLD = {{ (float) ($frc['high_discount_threshold'] ?? 50) }};
+const branchCityMap = @json($branchCityMap);
+const citySessionPrices = @json($citySessionPrices);
 let rowIndex = 0;
 let availableDays = [];
 let availableSlots = [];
@@ -33,6 +37,7 @@ async function loadTherapists(branchId, opts = {}) {
     const reset = opts.resetSchedules !== false;
     const sel = document.getElementById('therapistSelect');
     const svcSel = document.getElementById('serviceSelect');
+    applySessionPriceForBranch();
     sel.innerHTML = '<option value="">Loading...</option>';
     if (!branchId) {
         sel.innerHTML = '<option value="">Select Branch First</option>';
@@ -98,6 +103,42 @@ function selectOptionIfMissing(selectEl, value, label) {
         selectEl.appendChild(opt);
     }
     selectEl.value = v;
+}
+
+function sessionPriceForBranch(branchId) {
+    if (!branchId) return null;
+    const city = branchCityMap[branchId] ?? branchCityMap[String(branchId)];
+    if (!city) return null;
+    let price = citySessionPrices[city];
+    if (price == null) {
+        const key = Object.keys(citySessionPrices).find(k => k.toLowerCase() === String(city).toLowerCase());
+        if (key) price = citySessionPrices[key];
+    }
+    return price != null ? Number(price) : null;
+}
+
+function applySessionPriceForBranch() {
+    const b = document.getElementById('branchSelect');
+    const priceEl = document.getElementById('pricePerSession');
+    const hint = document.getElementById('sessionPriceHint');
+    if (!b || !priceEl) return;
+    const price = sessionPriceForBranch(b.value);
+    const city = branchCityMap[b.value] ?? branchCityMap[String(b.value)];
+    if (price == null) {
+        priceEl.value = 0;
+        if (hint) {
+            hint.textContent = city
+                ? `No session price configured for ${city} in System Settings — set it under System Settings → City session pricing.`
+                : 'Select a branch to load the session price.';
+        }
+        recalculate();
+        return;
+    }
+    priceEl.value = price;
+    if (hint) {
+        hint.textContent = `Set from ${city} city rate (PKR ${price.toLocaleString('en-PK')} per session). Change via System Settings.`;
+    }
+    recalculate();
 }
 
 function onEnrollmentServiceChange() {
@@ -591,6 +632,12 @@ async function applyInitialSchedulesFromEdit() {
 document.addEventListener('DOMContentLoaded', async function() {
     const b = document.getElementById('branchSelect');
     const svc = document.getElementById('serviceSelect');
+    if (b) {
+        b.addEventListener('change', () => applySessionPriceForBranch());
+    }
+    if (b?.value) {
+        applySessionPriceForBranch();
+    }
     const form = document.getElementById('enrollForm');
     const startDate = document.getElementById('scheduleStartDate');
     if (startDate) {

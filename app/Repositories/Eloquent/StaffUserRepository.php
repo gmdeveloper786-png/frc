@@ -24,7 +24,7 @@ class StaffUserRepository
 
         /** @var LengthAwarePaginatorConcrete $paginator */
         $paginator = User::query()
-            ->with('role')
+            ->with(['role', 'branch'])
             ->whereHas('role', fn($q) => $q->whereIn('name', self::STAFF_ROLE_NAMES))
             ->when($search !== '', function ($q) use ($search) {
                 $like = '%' . $search . '%';

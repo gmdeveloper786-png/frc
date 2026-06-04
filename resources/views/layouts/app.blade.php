@@ -88,8 +88,9 @@
         {{-- Notifications (inbox: user_notifications) --}}
         @php
             $inboxSvc = app(\App\Services\UserNotificationService::class);
-            $bellUnread = $inboxSvc->getUnreadCount((int) auth()->id());
-            $bellLatest = $inboxSvc->getLatestNotifications((int) auth()->id(), 5);
+            $bellUser = auth()->user();
+            $bellUnread = $bellUser ? $inboxSvc->getUnreadCount($bellUser) : 0;
+            $bellLatest = $bellUser ? $inboxSvc->getLatestNotifications($bellUser, 5) : collect();
         @endphp
         <div class="dropdown frc-notif-dropdown">
             <button type="button" class="notif-bell dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open notifications">

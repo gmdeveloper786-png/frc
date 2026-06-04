@@ -53,11 +53,18 @@
     <div class="row g-3">
         <div class="col-md-6">
             <label>Branch <span style="color:var(--danger)">*</span></label>
-            <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror">
-                @foreach($branches as $branch)
-                    <option value="{{ $branch->id }}" {{ old('branch_id', $therapist->therapistProfile?->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                @endforeach
-            </select>
+            @if($branches->count() === 1)
+                @php $onlyBranch = $branches->first(); @endphp
+                <input type="hidden" name="branch_id" value="{{ $onlyBranch->id }}">
+                <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
+            @else
+                <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror" required>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ (string) old('branch_id', $therapist->therapistProfile?->branch_id) === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
+                    @endforeach
+                </select>
+            @endif
+            @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
                 <div class="col-md-6">
             <label>Qualification</label>

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStaffUserRequest;
 use App\Http\Requests\UpdateStaffUserRequest;
+use App\Models\Branch;
 use App\Models\User;
 use App\Services\StaffUserService;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +31,9 @@ class StaffUserController extends Controller
     {
         abort_unless($request->user()?->isSuperAdmin(), 403);
 
-        return view('super-admin.staff-users.create');
+        $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
+
+        return view('super-admin.staff-users.create', compact('branches'));
     }
 
     public function store(StoreStaffUserRequest $request): RedirectResponse
@@ -44,9 +47,10 @@ class StaffUserController extends Controller
     {
         abort_unless($request->user()?->isSuperAdmin(), 403);
         $this->staffUsers->ensureStaffUser($user);
-        $user->load('role');
+        $user->load(['role', 'branch']);
+        $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
 
-        return view('super-admin.staff-users.edit', compact('user'));
+        return view('super-admin.staff-users.edit', compact('user', 'branches'));
     }
 
     public function update(UpdateStaffUserRequest $request, User $user): RedirectResponse

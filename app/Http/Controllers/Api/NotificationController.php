@@ -27,14 +27,14 @@ class NotificationController extends Controller
             'date_to'    => $request->query('date_to'),
         ];
 
-        $paginator = $this->inbox->getUserNotifications((int) $request->user()->id, $filters, (int) $request->query('per_page', 20));
+        $paginator = $this->inbox->getUserNotifications($request->user(), $filters, (int) $request->query('per_page', 20));
 
         return response()->json($paginator);
     }
 
     public function latest(Request $request): JsonResponse
     {
-        $items = $this->inbox->getLatestNotifications((int) $request->user()->id, 5);
+        $items = $this->inbox->getLatestNotifications($request->user(), 5);
 
         return response()->json($items);
     }
@@ -42,34 +42,34 @@ class NotificationController extends Controller
     public function unreadCount(Request $request): JsonResponse
     {
         return response()->json([
-            'count' => $this->inbox->getUnreadCount((int) $request->user()->id),
+            'count' => $this->inbox->getUnreadCount($request->user()),
         ]);
     }
 
     public function markRead(Request $request, int $id): JsonResponse
     {
-        $n = $this->inbox->markAsRead($id, (int) $request->user()->id);
+        $n = $this->inbox->markAsRead($id, $request->user());
 
         return response()->json($n);
     }
 
     public function markUnread(Request $request, int $id): JsonResponse
     {
-        $n = $this->inbox->markAsUnread($id, (int) $request->user()->id);
+        $n = $this->inbox->markAsUnread($id, $request->user());
 
         return response()->json($n);
     }
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $this->inbox->deleteNotification($id, (int) $request->user()->id);
+        $this->inbox->deleteNotification($id, $request->user());
 
         return response()->json(['ok' => true]);
     }
 
     public function markAllRead(Request $request): JsonResponse
     {
-        $count = $this->inbox->markAllAsRead((int) $request->user()->id);
+        $count = $this->inbox->markAllAsRead($request->user());
 
         return response()->json(['updated' => $count]);
     }
@@ -77,7 +77,7 @@ class NotificationController extends Controller
     public function bulkMarkRead(Request $request): JsonResponse
     {
         $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], $request->user());
 
         return response()->json(['updated' => $updated]);
     }
@@ -85,7 +85,7 @@ class NotificationController extends Controller
     public function bulkMarkUnread(Request $request): JsonResponse
     {
         $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], $request->user());
 
         return response()->json(['updated' => $updated]);
     }
@@ -93,14 +93,14 @@ class NotificationController extends Controller
     public function bulkDelete(Request $request): JsonResponse
     {
         $ids = $request->input('ids', []);
-        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], $request->user());
 
         return response()->json(['deleted' => $deleted]);
     }
 
     public function deleteRead(Request $request): JsonResponse
     {
-        $deleted = $this->inbox->deleteReadNotifications((int) $request->user()->id);
+        $deleted = $this->inbox->deleteReadNotifications($request->user());
 
         return response()->json(['deleted' => $deleted]);
     }

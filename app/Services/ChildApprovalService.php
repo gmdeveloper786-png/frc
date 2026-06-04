@@ -24,6 +24,12 @@ class ChildApprovalService
             throw ValidationException::withMessages(['user' => ['User is not a child.']]);
         }
 
+        if (! $approvedBy->canApproveChild($child)) {
+            throw ValidationException::withMessages([
+                'user' => ['You are not authorized to approve this child registration.'],
+            ]);
+        }
+
         if (in_array($child->status, ['approved', 'active'], true)) {
             throw ValidationException::withMessages([
                 'status' => ['This child account is already approved.'],
@@ -60,7 +66,7 @@ class ChildApprovalService
                 try {
                     Mail::to($child->email)->send(new ChildApprovedMail($child));
                     $emailSent = true;
-                    $this->notificationService->notifyChildApprovalEmailSent($child);
+                    $this->notificationService->notifyChildApprovalEmailSent($child, $approvedBy);
                 } catch (\Throwable $e) {
                     Log::error('Child approval email failed.', [
                         'child_id'  => $child->id,
@@ -68,7 +74,7 @@ class ChildApprovalService
                         'exception' => $e->getMessage(),
                     ]);
                     report($e);
-                    $this->notificationService->notifyChildApprovalEmailFailed($child, $e->getMessage());
+                    $this->notificationService->notifyChildApprovalEmailFailed($child, $e->getMessage(), $approvedBy);
                 }
             }
         }
@@ -80,6 +86,12 @@ class ChildApprovalService
     {
         if (! $child->isChild()) {
             throw ValidationException::withMessages(['user' => ['User is not a child.']]);
+        }
+
+        if (! $rejectedBy->canApproveChild($child)) {
+            throw ValidationException::withMessages([
+                'user' => ['You are not authorized to reject this child registration.'],
+            ]);
         }
 
         $this->userRepository->update($child, [

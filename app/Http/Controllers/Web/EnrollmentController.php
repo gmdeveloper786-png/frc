@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Http\Requests\UpdateEnrollmentRequest;
-use App\Models\Branch;
 use App\Models\Enrollment;
+use App\Services\SettingService;
+use App\Support\CitySessionPricing;
+use App\Support\StaffBranchScope;
 use App\Models\EnrollmentSchedule;
 use App\Models\Service;
 use App\Repositories\Interfaces\UserRepositoryInterface;
@@ -28,7 +30,7 @@ class EnrollmentController extends Controller
 
     public function index(Request $request): View
     {
-        $enrollments = $this->service->getAll($request->only([
+        $filters = $request->only([
             'status',
             'branch_id',
             'service_id',
@@ -37,31 +39,42 @@ class EnrollmentController extends Controller
             'search',
             'date_from',
             'date_to',
-        ]));
-        $branches = Branch::published()->get();
-        $services = Service::published()->orderBy('name')->get();
+        ]);
+        if ($lockedBranch = StaffBranchScope::lockedBranchId($request->user())) {
+            $filters['branch_id'] = $lockedBranch;
+        }
+
+        $enrollments = $this->service->getAll($filters);
+        $branches    = StaffBranchScope::publishedBranchesFor($request->user());
+        $services    = Service::published()->orderBy('name')->get();
 
         return view('enrollments.index', compact('enrollments', 'branches', 'services'));
     }
 
-    public function pendingHighDiscount(): View
+    public function pendingHighDiscount(Request $request): View
     {
-        $enrollments = $this->service->getPendingHighDiscount(15);
+        $branchId    = StaffBranchScope::lockedBranchId($request->user());
+        $enrollments = $this->service->getPendingHighDiscount(15, $branchId);
 
         return view('enrollments.high-discount', compact('enrollments'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        $branches = Branch::published()->orderBy('name')->get();
+        $branches = StaffBranchScope::publishedBranchesFor($request->user());
         $services = Service::published()->orderBy('name')->get();
         $childIds = array_map('intval', (array) old('child_ids', []));
         if ($childIds === [] && request()->filled('child_id')) {
             $childIds = [(int) request()->query('child_id')];
         }
-        $initialChildren = $this->userRepository->getApprovedChildrenByIds(array_filter($childIds));
+        $initialChildren = $this->userRepository->getApprovedChildrenByIds(
+            array_filter($childIds),
+            $request->user(),
+        );
 
-        return view('enrollments.create', compact('branches', 'services', 'initialChildren'));
+        $enrollmentPricing = $this->enrollmentPricingContext($branches);
+
+        return view('enrollments.create', compact('branches', 'services', 'initialChildren', 'enrollmentPricing'));
     }
 
     public function store(StoreEnrollmentRequest $request): RedirectResponse
@@ -81,18 +94,22 @@ class EnrollmentController extends Controller
             ->with('success', 'Group enrollment created for ' . count($enrollments) . ' children.');
     }
 
-    public function edit(int $id): View
+    public function edit(Request $request, int $id): View
     {
         $enrollment = $this->service->findById($id);
-        $branches   = Branch::published()->orderBy('name')->get();
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $branches   = StaffBranchScope::publishedBranchesFor($request->user());
         $services   = Service::published()->orderBy('name')->get();
 
-        return view('enrollments.edit', compact('enrollment', 'branches', 'services'));
+        $enrollmentPricing = $this->enrollmentPricingContext($branches);
+
+        return view('enrollments.edit', compact('enrollment', 'branches', 'services', 'enrollmentPricing'));
     }
 
     public function update(UpdateEnrollmentRequest $request, int $id): RedirectResponse
     {
         $enrollment = $this->service->findById($id);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
         $this->service->update(
             $enrollment,
             $request->validated(),
@@ -104,9 +121,10 @@ class EnrollmentController extends Controller
             ->with('success', 'Enrollment updated successfully.');
     }
 
-    public function show(int $id): View
+    public function show(Request $request, int $id): View
     {
         $enrollment = $this->service->findById($id);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
 
         return view('enrollments.show', compact('enrollment'));
     }
@@ -117,6 +135,7 @@ class EnrollmentController extends Controller
     public function fullSchedule(Request $request, Enrollment $enrollment): View
     {
         $this->authorize('viewFullSchedule', $enrollment);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
 
         $enrollment->loadMissing(['child', 'branch', 'service', 'therapist']);
 
@@ -157,6 +176,7 @@ class EnrollmentController extends Controller
     public function approve(Request $request, int $id): RedirectResponse
     {
         $enrollment = $this->service->findById($id);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
 
         if ($enrollment->status === 'pending_super_admin_approval' && ! $request->user()->hasPermission('approve_high_discount')) {
             return back()->withErrors(['error' => 'You do not have permission to approve high discount enrollments.']);
@@ -172,16 +192,32 @@ class EnrollmentController extends Controller
         $request->validate(['rejection_reason' => 'required|string|max:1000']);
 
         $enrollment = $this->service->findById($id);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
         $this->service->reject($enrollment, $request->user(), $request->rejection_reason);
 
         return redirect()->back()->with('success', 'Enrollment rejected.');
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Request $request, int $id): RedirectResponse
     {
         $enrollment = $this->service->findById($id);
+        StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
         $this->service->delete($enrollment);
 
         return redirect()->route('enrollments.index')->with('success', 'Enrollment deleted.');
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Branch>|\Illuminate\Database\Eloquent\Collection  $branches
+     * @return array{branch_city_map: array<int, string>, city_session_prices: array<string, float>}
+     */
+    private function enrollmentPricingContext($branches): array
+    {
+        $pricing = app(CitySessionPricing::class);
+
+        return [
+            'branch_city_map'     => $pricing->branchCityMap($branches),
+            'city_session_prices' => app(SettingService::class)->citySessionPrices(),
+        ];
     }
 }

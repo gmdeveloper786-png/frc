@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
+use App\Models\Branch;
 use App\Services\SettingService;
+use App\Support\SettingKeys;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,7 +23,25 @@ class SettingController extends Controller
 
         $groups = $this->settings->groupedForForm();
 
-        return view('settings.edit', compact('groups'));
+        $pricingCities = Branch::query()
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city')
+            ->map(fn ($c) => (string) $c)
+            ->values()
+            ->all();
+
+        $citySessionPrices = $this->settings->citySessionPrices();
+        foreach (array_keys($citySessionPrices) as $city) {
+            if (! in_array($city, $pricingCities, true)) {
+                $pricingCities[] = $city;
+            }
+        }
+        sort($pricingCities, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return view('settings.edit', compact('groups', 'pricingCities', 'citySessionPrices'));
     }
 
     public function update(UpdateSettingsRequest $request): RedirectResponse

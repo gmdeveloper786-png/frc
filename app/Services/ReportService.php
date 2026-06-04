@@ -84,6 +84,8 @@ class ReportService
                 ? Str::title(str_replace('_', ' ', (string) ($payment->child ?? $enrollment->child)->status))
                 : '—',
             'branch'             => (string) ($enrollment?->branch?->name ?? '—'),
+            'therapist'          => (string) ($enrollment?->therapist?->full_name ?? '—'),
+            'service'            => (string) ($enrollment?->service?->name ?? '—'),
             'enrollment_total'   => $enrollment ? frc_money($enrollment->final_total) : '—',
             'enrollment_paid'    => $enrollment ? frc_money($enrollment->paid_amount) : '—',
             'enrollment_remaining' => $enrollment ? frc_money($enrollment->remaining_amount) : '—',

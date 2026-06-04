@@ -23,6 +23,7 @@ class User extends Authenticatable
         'gr_number',
         'password',
         'role_id',
+        'branch_id',
         'age',
         'gender',
         'date_of_birth',
@@ -69,6 +70,12 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /** Branch assignment for branch-scoped admin accounts. */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function therapistProfile(): HasOne
@@ -244,6 +251,24 @@ class User extends Authenticatable
         return $this->status === 'pending';
     }
 
+    /** Whether this staff user may approve/reject a child for their registered branch. */
+    public function canApproveChild(User $child): bool
+    {
+        if (! $this->hasPermission('approve_children')) {
+            return false;
+        }
+
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->isAdmin() && $child->branch_id !== null && (int) $this->branch_id === (int) $child->branch_id) {
+            return true;
+        }
+
+        return false;
+    }
+
     // ─── Scopes ──────────────────────────────────────────────────────────────
 
     public function scopeChildren($query)
@@ -264,5 +289,23 @@ class User extends Authenticatable
     public function scopeByRole($query, string $role)
     {
         return $query->whereHas('role', fn ($q) => $q->where('name', $role));
+    }
+
+    /** Limit child lists to the branch assigned to a branch admin; super admin sees all. */
+    public function scopeVisibleToStaff($query, User $staff)
+    {
+        if ($staff->isSuperAdmin()) {
+            return $query;
+        }
+
+        if ($staff->isAdmin() && $staff->branch_id) {
+            return $query->where('branch_id', $staff->branch_id);
+        }
+
+        if ($staff->isAdmin()) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query;
     }
 }

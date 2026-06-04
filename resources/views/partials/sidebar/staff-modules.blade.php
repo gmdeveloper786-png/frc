@@ -29,7 +29,13 @@
     @if($canApproveChildren)
         <a href="{{ route('children.pending') }}" class="nav-link {{ request()->routeIs('children.pending') ? 'active' : '' }}">
             <i class="fa-solid fa-user-clock"></i><span>Pending Approvals</span>
-            @php $pendingCount = \App\Models\User::children()->pending()->count(); @endphp
+            @php
+                $pendingCountQuery = \App\Models\User::children()->pending();
+                if ($user->isAdmin() && ! $user->isSuperAdmin()) {
+                    $pendingCountQuery = $pendingCountQuery->visibleToStaff($user);
+                }
+                $pendingCount = $pendingCountQuery->count();
+            @endphp
             @if($pendingCount > 0)
                 <span class="nav-link-badge badge-status badge-pending" data-short="{{ $pendingCount > 99 ? '99+' : $pendingCount }}">{{ $pendingCount }}</span>
             @endif
@@ -109,7 +115,7 @@
     @if($canVerifyPayments)
         <a href="{{ route('payments.pending') }}" class="nav-link {{ request()->routeIs('payments.pending') ? 'active' : '' }}">
             <i class="fa-solid fa-clock-rotate-left"></i><span>Verify Payments</span>
-            @php $pvCount = \App\Models\Payment::where('status', 'pending_verification')->count(); @endphp
+            @php $pvCount = \App\Support\StaffBranchScope::pendingPaymentVerificationCount($user); @endphp
             @if($pvCount > 0)
                 <span class="nav-link-badge badge-status badge-pending" data-short="{{ $pvCount > 99 ? '99+' : $pvCount }}">{{ $pvCount }}</span>
             @endif

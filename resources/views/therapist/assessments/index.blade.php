@@ -35,7 +35,7 @@
                     <select id="filter_branch_id" name="branch_id" class="form-select form-select-sm w-100">
                         <option value="">All branches</option>
                         @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected((int) request('branch_id') === (int) $branch->id)>{{ $branch->name }}</option>
+                            <option value="{{ $branch->id }}" @selected((int) request('branch_id') === (int) $branch->id)>{{ $branch->displayLabel() }}</option>
                         @endforeach
                     </select>
                 </div>

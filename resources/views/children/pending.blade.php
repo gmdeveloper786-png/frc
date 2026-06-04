@@ -80,6 +80,7 @@
                     <tr>
                         <th>GR No.</th>
                         <th>Child Name</th>
+                        <th>Branch</th>
                         <th>Father's Name</th>
                         <th>Email</th>
                         <th>Phone</th>
@@ -95,14 +96,15 @@
                             <td>
                                 <a href="{{ route('children.show', $child->id) }}" style="font-weight:600;color:var(--navy);">{{ $child->full_name }}</a>
                             </td>
+                            <td>{{ $child->branch?->name ?? '—' }}</td>
                             <td>{{ $child->father_name ?? '—' }}</td>
                             <td style="font-size:13px;">{{ $child->email }}</td>
                             <td style="font-size:13px;">{{ $child->phone_number ?? '—' }}</td>
                             <td style="font-size:13px;">{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td style="font-size:13px;color:var(--text-muted);">{{ $child->created_at->diffForHumans() }}</td>
                             <td>
+                                @if(auth()->user()->canApproveChild($child))
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                                    {{-- Approve --}}
                                     <form action="{{ route('children.approve', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn-teal" style="padding:5px 12px;font-size:12px;"
@@ -110,14 +112,12 @@
                                             <i class="fa-solid fa-check"></i> Approve
                                         </button>
                                     </form>
-                                    {{-- Reject --}}
                                     <button class="btn-outline-teal" style="padding:5px 12px;font-size:12px;color:var(--danger);border-color:var(--danger);"
                                         data-bs-toggle="modal" data-bs-target="#rejectModal{{ $child->id }}">
                                         <i class="fa-solid fa-xmark"></i> Reject
                                     </button>
                                 </div>
 
-                                {{-- Reject Modal --}}
                                 <div class="modal fade" id="rejectModal{{ $child->id }}" tabindex="-1">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content" style="border-radius:16px;border:1px solid var(--border-soft);">
@@ -140,6 +140,9 @@
                                         </div>
                                     </div>
                                 </div>
+                                @else
+                                    <a href="{{ route('children.show', $child->id) }}" class="btn-outline-teal" style="padding:5px 12px;font-size:12px;">View</a>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

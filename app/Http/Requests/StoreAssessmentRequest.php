@@ -6,6 +6,7 @@ use App\Models\Assessment;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\TherapistService;
+use App\Support\StaffBranchScope;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,11 @@ class StoreAssessmentRequest extends FormRequest
         if ($this->input('child_ids') === null) {
             $this->merge(['child_ids' => []]);
         }
+
+        $user = $this->user();
+        if ($user && ($locked = StaffBranchScope::lockedBranchId($user))) {
+            $this->merge(['branch_id' => $locked]);
+        }
     }
 
     public function rules(): array
@@ -38,7 +44,11 @@ class StoreAssessmentRequest extends FormRequest
         return [
             'date'          => ['required', 'date', $this->notPastAssessmentDateRule()],
             'time'          => ['required', 'date_format:H:i,H:i:s,h:i A,g:i A'],
-            'branch_id'     => ['required', 'exists:branches,id'],
+            'branch_id'     => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')->where(fn ($q) => $q->where('status', 'publish')),
+            ],
             'therapist_id'  => [
                 Rule::requiredIf(fn () => $this->input('status') === 'publish'),
                 'nullable',
@@ -105,6 +115,24 @@ class StoreAssessmentRequest extends FormRequest
                 $childIds = array_filter(array_map('intval', (array) $this->input('child_ids', [])));
                 if ($childIds === []) {
                     $validator->errors()->add('child_ids', 'At least one approved child is required when publishing.');
+                }
+            }
+
+            $branchId = (int) $this->input('branch_id', 0);
+            $user     = $this->user();
+            if ($user && $branchId > 0) {
+                StaffBranchScope::assertBranchAssignable($user, $branchId);
+            }
+
+            $childIds = array_filter(array_map('intval', (array) $this->input('child_ids', [])));
+            if ($childIds !== [] && $branchId > 0) {
+                $allowedCount = User::children()
+                    ->approved()
+                    ->whereIn('id', $childIds)
+                    ->where('branch_id', $branchId)
+                    ->count();
+                if ($allowedCount !== count($childIds)) {
+                    $validator->errors()->add('child_ids', 'One or more selected children do not belong to this branch.');
                 }
             }
 

@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\SettingService;
+use App\Support\CitySessionPricing;
+use App\Support\StaffBranchScope;
 use App\Services\TherapistService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,6 +34,19 @@ class StoreEnrollmentRequest extends FormRequest
                 $this->merge(['child_ids' => [(int) $legacy]]);
             }
         }
+
+        $user = $this->user();
+        if ($user && ($locked = StaffBranchScope::lockedBranchId($user))) {
+            $this->merge(['branch_id' => $locked]);
+        }
+
+        $branchId = (int) $this->input('branch_id', 0);
+        if ($branchId > 0) {
+            $auto = app(CitySessionPricing::class)->priceForBranchId($branchId);
+            if ($auto !== null) {
+                $this->merge(['price_per_session' => $auto]);
+            }
+        }
     }
 
     public function rules(): array
@@ -52,7 +67,11 @@ class StoreEnrollmentRequest extends FormRequest
                         );
                 }),
             ],
-            'branch_id'          => ['required', 'exists:branches,id'],
+            'branch_id'          => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')->where(fn ($q) => $q->where('status', 'publish')),
+            ],
             'service_id'         => ['required', 'integer', Rule::exists('services', 'id')->where('status', 'publish')],
             'therapist_id'       => ['required', 'exists:users,id'],
             'price_per_session'  => ['required', 'numeric', 'min:0'],
@@ -94,6 +113,34 @@ class StoreEnrollmentRequest extends FormRequest
                     return;
                 }
                 $seen[$key] = true;
+            }
+
+            $branchId = (int) $this->input('branch_id', 0);
+            $user     = $this->user();
+            if ($user && $branchId > 0) {
+                StaffBranchScope::assertBranchAssignable($user, $branchId);
+            }
+
+            if ($branchId > 0) {
+                $cityPrice = app(CitySessionPricing::class)->priceForBranchId($branchId);
+                if ($cityPrice === null) {
+                    $validator->errors()->add(
+                        'branch_id',
+                        'No session price is configured for this branch\'s city. Set it under System Settings → City session pricing.',
+                    );
+                }
+            }
+
+            $childIds = array_filter(array_map('intval', (array) $this->input('child_ids', [])));
+            if ($childIds !== [] && $branchId > 0) {
+                $allowedCount = User::children()
+                    ->approved()
+                    ->whereIn('id', $childIds)
+                    ->where('branch_id', $branchId)
+                    ->count();
+                if ($allowedCount !== count($childIds)) {
+                    $validator->errors()->add('child_ids', 'One or more selected children do not belong to this branch.');
+                }
             }
 
             $therapistId = (int) $this->input('therapist_id', 0);

@@ -33,8 +33,11 @@ class AuthService
             'phone_number'   => $data['phone_number'] ?? null,
             'whatsapp_number' => $data['whatsapp_number'] ?? null,
             'parent_notes'   => $data['parent_notes'] ?? null,
+            'branch_id'      => $data['branch_id'],
             'status'         => 'pending',
         ]);
+
+        $user->load('branch');
 
         if (! empty($data['disability_ids'])) {
             $user->disabilities()->sync($data['disability_ids']);

@@ -10,7 +10,7 @@
 <div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-calendar-week me-2" style="color:var(--teal);"></i>Enrollment Schedule</h6>
-        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+        @if(auth()->user()->hasAnyRole(['super_admin', 'admin', 'finance']))
             <a href="{{ route('enrollments.show', $enrollment->id) }}" class="btn-outline-teal d-inline-flex align-items-center gap-1" style="font-size:13px;padding:6px 14px;">
                 <i class="fa-solid fa-arrow-left"></i> Enrollment detail
             </a>
@@ -22,11 +22,12 @@
             <a href="{{ route('therapist.sessions.index') }}" class="btn-outline-teal d-inline-flex align-items-center gap-1" style="font-size:13px;padding:6px 14px;">
                 <i class="fa-solid fa-arrow-left"></i> My Session Scheduled
             </a>
-        @elseif(auth()->user()->role?->name === 'finance')
+        @endif
+        {{-- @elseif(auth()->user()->role?->name === 'finance')
             <a href="{{ route('dashboard.finance') }}" class="btn-outline-teal d-inline-flex align-items-center gap-1" style="font-size:13px;padding:6px 14px;">
                 <i class="fa-solid fa-arrow-left"></i> Dashboard
             </a>
-        @endif
+        @endif --}}
     </div>
     <div class="p-3 p-md-4">
         <div class="mb-4 p-3" style="background:var(--bg-light);border-radius:12px;border:1px solid var(--border-soft);">
@@ -89,7 +90,7 @@
                                 <option value="cancelled" {{ $statusFilter==='cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
             </div>
-            <div class="col-6 col-lg">
+            {{-- <div class="col-6 col-lg">
                 <label class="small text-muted mb-1">Service</label>
                 <select name="service_id" class="form-control form-control-sm">
                     <option value="">All services</option>
@@ -106,7 +107,7 @@
                         <option value="{{ $th['id'] }}" {{ (string) request('therapist_id') === (string) $th['id'] ? 'selected' : '' }}>{{ $th['name'] }}</option>
                     @endforeach
                 </select>
-            </div>
+            </div> --}}
             <div class="col-12 col-lg-auto d-flex flex-wrap gap-2">
                 <button type="submit" class="btn-teal" style="font-size:13px;padding:8px 16px;">Apply</button>
                 <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal" style="font-size:13px;padding:8px 16px;">Reset</a>

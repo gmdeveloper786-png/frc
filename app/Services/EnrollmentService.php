@@ -34,10 +34,10 @@ class EnrollmentService
         return $this->repository->getForChild($childId);
     }
 
-    public function getPendingHighDiscount(int $perPage = 15): LengthAwarePaginator
+    public function getPendingHighDiscount(int $perPage = 15, ?int $branchId = null): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
-        $paginator = $this->repository->getPendingHighDiscount($perPage);
+        $paginator = $this->repository->getPendingHighDiscount($perPage, $branchId);
         return $paginator->withQueryString();
     }
 

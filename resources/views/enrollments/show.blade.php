@@ -162,13 +162,13 @@
                                 <tr>
                                     <td class="text-nowrap">{{ $s->day }}</td>
                                     <td class="text-nowrap">{{ $s->time_slot }}</td>
-                                    <td class="text-nowrap">
-                                        @if($therapist)
+                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                        <td class="text-nowrap">
                                             <a href="{{ route('therapists.show', $therapist->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $therapist->full_name }}</a>
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
+                                        </td>
+                                    @else
+                                        <td class="text-nowrap">{{ $therapist?->full_name }}</td>
+                                    @endif
                                     <td class="text-nowrap">{{ $enrollment->service?->name ?? '—' }}</td>
                                 </tr>
                             @endforeach

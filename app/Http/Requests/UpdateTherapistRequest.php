@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\StaffBranchScope;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,6 +18,11 @@ class UpdateTherapistRequest extends FormRequest
         $raw = $this->input('service_ids');
         if ($raw !== null && ! is_array($raw)) {
             $this->merge(['service_ids' => [$raw]]);
+        }
+
+        $user = $this->user();
+        if ($user && ($locked = StaffBranchScope::lockedBranchId($user))) {
+            $this->merge(['branch_id' => $locked]);
         }
     }
 
@@ -42,13 +48,17 @@ class UpdateTherapistRequest extends FormRequest
             'father_name'      => ['nullable', 'string', 'max:255'],
             'email'            => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
             'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
-            'branch_id'        => ['required', 'exists:branches,id'],
+            'branch_id'        => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')->where(fn ($q) => $q->where('status', 'publish')),
+            ],
             'service_ids'      => ['required', 'array', 'min:1'],
             'service_ids.*'    => ['integer', $publishedService],
             'phone_number'     => ['nullable', 'string', 'max:20'],
             'whatsapp_number'  => ['nullable', 'string', 'max:20'],
             'gender'           => ['nullable', 'in:male,female,other'],
-            'date_of_birth'    => ['nullable', 'date'],
+            'date_of_birth'    => ['nullable', 'date', 'before:today'],
             'cnic_number'      => ['nullable', 'string', 'max:20'],
             'address'          => ['nullable', 'string', 'max:1000'],
             'qualification'    => ['nullable', 'string', 'max:255'],

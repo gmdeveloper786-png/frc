@@ -29,20 +29,18 @@ class RolePermissionSeeder extends Seeder
         $adminPermissions = Permission::whereIn('name', [
             'manage_children',
             'approve_children',
-            'manage_disabilities',
-            'manage_services',
-            'manage_branches',
             'manage_therapists',
             'manage_assessments',
             'manage_enrollments',
             'manage_payments',
             'verify_payments',
-            'view_finance_reports',
         ])->pluck('id')->toArray();
         $admin->permissions()->sync($adminPermissions);
 
         // Finance permissions
         $financePermissions = Permission::whereIn('name', [
+            'manage_children',
+            'manage_enrollments',
             'manage_payments',
             'verify_payments',
             'view_finance_reports',

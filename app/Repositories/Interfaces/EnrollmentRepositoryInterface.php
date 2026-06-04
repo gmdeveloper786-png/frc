@@ -13,8 +13,8 @@ interface EnrollmentRepositoryInterface
     public function getForChild(int $childId): Collection;
 
     /** Active enrollments with remaining balance (uses synced columns; no per-row payment queries). */
-    public function getEligibleForManualPayment(int $limit = 500): Collection;
-    public function getPendingHighDiscount(int $perPage = 15): LengthAwarePaginator;
+    public function getEligibleForManualPayment(int $limit = 500, ?int $branchId = null): Collection;
+    public function getPendingHighDiscount(int $perPage = 15, ?int $branchId = null): LengthAwarePaginator;
     public function create(array $data, array $schedules): Enrollment;
     public function update(Enrollment $enrollment, array $data): Enrollment;
 

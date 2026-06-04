@@ -88,9 +88,11 @@
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
         <h6 class="card-title-frc"><i class="fa-solid fa-children me-2" style="color:var(--teal);"></i>All Children ({{ $children->total() }})</h6>
-        <a href="{{ route('children.pending') }}" class="btn-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
+        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+            <a href="{{ route('children.pending') }}" class="btn-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
             <i class="fa-solid fa-user-clock"></i> Pending Approvals
         </a>
+        @endif
     </div>
 
     @if($children->isEmpty())
@@ -104,7 +106,7 @@
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
-                        <th>GR No.</th><th>Name</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th><th>Registered</th><th>Actions</th>
+                        <th>GR No.</th><th>Name</th><th>Branch</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th><th>Registered</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,6 +116,7 @@
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">
                                 {{ $child->full_name ?? '—' }}
                             </td>
+                            <td style="font-size:13px; white-space:nowrap;">{{ $child->branch?->name ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->email ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->phone_number ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->age ? $child->age.'y' : '—' }}</td>
@@ -123,12 +126,16 @@
                             <td style="white-space:nowrap;">
                                 <div style="display:flex;gap:6px;">
                                     <a href="{{ route('children.show', $child->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;" title="View"><i class="fa-solid fa-eye"></i></a>
-                                    <a href="{{ route('children.edit', $child->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;" title="Edit"><i class="fa-solid fa-pen"></i></a>
-                                    <form action="{{ route('children.destroy', $child->id) }}" method="POST" style="display:inline;">
+                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                        <a href="{{ route('children.edit', $child->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                                    @endif
+                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                        <form action="{{ route('children.destroy', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Delete" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
                                             onclick="return confirm('Delete {{ $child->full_name }}? This archives the account.')"><i class="fa-solid fa-trash"></i></button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

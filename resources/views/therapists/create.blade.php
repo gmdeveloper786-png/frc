@@ -35,7 +35,10 @@
         </div>
         <div class="col-md-4">
             <label>Date of Birth</label>
-            <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="form-control">
+            <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                class="form-control @error('date_of_birth') is-invalid @enderror"
+                max="{{ now()->format('Y-m-d') }}">
+            @error('date_of_birth') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-4">
             <label>Phone Number</label>
@@ -94,12 +97,18 @@
         </div>
         <div class="col-md-6">
             <label>Branch <span style="color:var(--danger)">*</span></label>
-            <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror">
-                <option value="">Select Branch</option>
-                @foreach($branches as $branch)
-                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                @endforeach
-            </select>
+            @if($branches->count() === 1)
+                @php $onlyBranch = $branches->first(); @endphp
+                <input type="hidden" name="branch_id" value="{{ $onlyBranch->id }}">
+                <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
+            @else
+                <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror" required>
+                    <option value="">Select Branch</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
+                    @endforeach
+                </select>
+            @endif
             @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
     </div>

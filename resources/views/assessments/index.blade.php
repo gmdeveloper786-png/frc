@@ -64,16 +64,21 @@
         <a href="{{ route('assessments.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;"><i class="fa-solid fa-plus"></i> Schedule Assessment</a>
     </div>
     <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+        @if($branches->count() === 1)
+            <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
+        @endif
         <div class="row g-2 align-items-end form-frc">
+            @if($branches->count() > 1)
             <div class="col-12 col-md-3">
                 <label class="form-label small text-muted mb-1">Branch</label>
                 <select name="branch_id" class="form-control">
                     <option value="">All Branches</option>
                     @foreach($branches as $b)
-                        <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->displayLabel() }}</option>
                     @endforeach
                 </select>
             </div>
+            @endif
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Status</label>
                 <select name="status" class="form-control">

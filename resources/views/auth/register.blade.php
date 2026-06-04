@@ -119,9 +119,24 @@
             {{-- Step 2: Contact Info --}}
             <div class="step-panel" id="panel-2">
                 <h5 class="step-title">
-                    <i class="fa-solid fa-address-card"></i> Parent / Contact Information
+                    <i class="fa-solid fa-address-card"></i> Branch & Contact Information
                 </h5>
                 <div class="form-grid">
+                    <div class="col-full">
+                        <label>FRC Branch <span style="color:var(--danger)">*</span></label>
+                        <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror" required>
+                            <option value="">Select the branch where therapy will take place</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->displayLabel() }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:6px;">
+                            Your registration will be sent to the admin of this branch for approval.
+                        </small>
+                    </div>
                     <div>
                         <label>Phone Number</label>
                         <input type="text" name="phone_number" value="{{ old('phone_number') }}"
@@ -369,8 +384,21 @@ function validateStep3() {
     return true;
 }
 
+function validateStep2() {
+    clearStepErrors(2);
+    const branch = registerForm.querySelector('[name="branch_id"]');
+    if (!branch.value) {
+        setFieldError(branch, 'Please select a branch.');
+        showStepErrorSummary(2, 'Please select the branch where you want to register.');
+        branch.focus();
+        return false;
+    }
+    return true;
+}
+
 function validateStep(step) {
     if (step === 1) return validateStep1();
+    if (step === 2) return validateStep2();
     if (step === 3) return validateStep3();
     return true;
 }

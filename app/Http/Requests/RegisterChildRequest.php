@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterChildRequest extends FormRequest
 {
@@ -25,6 +26,11 @@ class RegisterChildRequest extends FormRequest
             'phone_number'   => ['nullable', 'string', 'max:20'],
             'whatsapp_number' => ['nullable', 'string', 'max:20'],
             'parent_notes'   => ['nullable', 'string', 'max:2000'],
+            'branch_id'      => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')->where(fn ($q) => $q->where('status', 'publish')),
+            ],
             'disability_ids'   => ['nullable', 'array'],
             'disability_ids.*' => ['integer', 'exists:disabilities,id'],
             'other_disability' => ['nullable', 'string', 'max:500'],

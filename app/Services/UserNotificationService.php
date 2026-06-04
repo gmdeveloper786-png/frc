@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Support\StaffBranchScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -79,10 +80,9 @@ class UserNotificationService
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function getUserNotifications(int $userId, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    public function getUserNotifications(User $user, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $q = UserNotification::query()->where('user_id', $userId);
-
+        $q = $this->scopedInboxQuery($user);
         $this->applyFilters($q, $filters);
 
         /** @var LengthAwarePaginatorConcrete $paginator */
@@ -94,42 +94,38 @@ class UserNotificationService
      * @param  array<string, mixed>  $filters
      * @return Collection<int, UserNotification>
      */
-    public function getLatestNotifications(int $userId, int $limit = 5, array $filters = []): Collection
+    public function getLatestNotifications(User $user, int $limit = 5, array $filters = []): Collection
     {
-        $q = UserNotification::query()->where('user_id', $userId);
+        $q = $this->scopedInboxQuery($user);
         $this->applyFilters($q, $filters);
 
         return $q->orderByRaw('is_read ASC, created_at DESC')->limit($limit)->get();
     }
 
-    public function getUnreadCount(int $userId): int
+    public function getUnreadCount(User $user): int
     {
-        return UserNotification::query()
-            ->where('user_id', $userId)
-            ->unread()
-            ->count();
+        return $this->scopedInboxQuery($user)->unread()->count();
     }
 
-    public function markAsRead(int $notificationId, int $userId): UserNotification
+    public function markAsRead(int $notificationId, User $user): UserNotification
     {
-        $n = $this->findOwnedOrFail($notificationId, $userId);
+        $n = $this->findOwnedOrFail($notificationId, $user);
         $n->markRead();
 
         return $n->fresh();
     }
 
-    public function markAsUnread(int $notificationId, int $userId): UserNotification
+    public function markAsUnread(int $notificationId, User $user): UserNotification
     {
-        $n = $this->findOwnedOrFail($notificationId, $userId);
+        $n = $this->findOwnedOrFail($notificationId, $user);
         $n->markUnread();
 
         return $n->fresh();
     }
 
-    public function markAllAsRead(int $userId): int
+    public function markAllAsRead(User $user): int
     {
-        return UserNotification::query()
-            ->where('user_id', $userId)
+        return $this->scopedInboxQuery($user)
             ->unread()
             ->update([
                 'is_read' => true,
@@ -140,12 +136,11 @@ class UserNotificationService
     /**
      * @param  array<int>  $ids
      */
-    public function bulkMarkAsRead(array $ids, int $userId): int
+    public function bulkMarkAsRead(array $ids, User $user): int
     {
         $ids = $this->normalizeIds($ids);
 
-        return UserNotification::query()
-            ->where('user_id', $userId)
+        return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
             ->update([
                 'is_read' => true,
@@ -156,12 +151,11 @@ class UserNotificationService
     /**
      * @param  array<int>  $ids
      */
-    public function bulkMarkAsUnread(array $ids, int $userId): int
+    public function bulkMarkAsUnread(array $ids, User $user): int
     {
         $ids = $this->normalizeIds($ids);
 
-        return UserNotification::query()
-            ->where('user_id', $userId)
+        return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
             ->update([
                 'is_read' => false,
@@ -169,41 +163,47 @@ class UserNotificationService
             ]);
     }
 
-    public function deleteNotification(int $notificationId, int $userId): void
+    public function deleteNotification(int $notificationId, User $user): void
     {
-        $this->findOwnedOrFail($notificationId, $userId)->delete();
+        $this->findOwnedOrFail($notificationId, $user)->delete();
     }
 
     /**
      * @param  array<int>  $ids
      */
-    public function bulkDelete(array $ids, int $userId): int
+    public function bulkDelete(array $ids, User $user): int
     {
         $ids = $this->normalizeIds($ids);
         if ($ids === []) {
             return 0;
         }
 
-        return UserNotification::query()
-            ->where('user_id', $userId)
+        return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
             ->delete();
     }
 
-    public function deleteReadNotifications(int $userId): int
+    public function deleteReadNotifications(User $user): int
     {
-        return UserNotification::query()
-            ->where('user_id', $userId)
+        return $this->scopedInboxQuery($user)
             ->read()
             ->delete();
     }
 
-    public function findOwnedOrFail(int $notificationId, int $userId): UserNotification
+    public function findOwnedOrFail(int $notificationId, User $user): UserNotification
     {
-        return UserNotification::query()
+        return $this->scopedInboxQuery($user)
             ->whereKey($notificationId)
-            ->where('user_id', $userId)
             ->firstOrFail();
+    }
+
+    /** @return Builder<UserNotification> */
+    private function scopedInboxQuery(User $user): Builder
+    {
+        $q = UserNotification::query()->where('user_id', $user->id);
+        StaffBranchScope::applyNotificationInboxScope($q, $user);
+
+        return $q;
     }
 
     /**

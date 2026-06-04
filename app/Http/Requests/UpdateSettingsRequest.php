@@ -33,6 +33,8 @@ class UpdateSettingsRequest extends FormRequest
             'payment_instructions'     => ['nullable', 'string', 'max:5000'],
             'child_registration_enabled' => ['nullable', 'boolean'],
             'registration_success_message' => ['nullable', 'string', 'max:1000'],
+            'city_session_prices'          => ['nullable', 'array'],
+            'city_session_prices.*'        => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -41,6 +43,12 @@ class UpdateSettingsRequest extends FormRequest
     {
         $data = $this->validated();
         $data[SettingKeys::CHILD_REGISTRATION_ENABLED] = $this->boolean('child_registration_enabled');
+
+        if ($this->has('city_session_prices') && is_array($this->input('city_session_prices'))) {
+            $data[SettingKeys::CITY_SESSION_PRICES] = \App\Support\CitySessionPricing::encodeFromForm(
+                $this->input('city_session_prices'),
+            );
+        }
 
         return $data;
     }

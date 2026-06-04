@@ -29,14 +29,14 @@ class ChildController extends Controller
 
     public function index(Request $request): View
     {
-        $children = $this->userRepository->getChildren($request->only(['status', 'search']), 15);
+        $children = $this->userRepository->getChildren($request->only(['status', 'search']), 15, $request->user());
 
         return view('children.index', compact('children'));
     }
 
     public function pendingApprovals(Request $request): View
     {
-        $children = $this->userRepository->getPendingChildren(15);
+        $children = $this->userRepository->getPendingChildren(15, $request->user());
 
         return view('children.pending', compact('children'));
     }
@@ -45,7 +45,7 @@ class ChildController extends Controller
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
-        $child->load(['disabilities', 'enrollments.branch', 'assessments.branch']);
+        $child->load(['disabilities', 'branch', 'enrollments.branch', 'assessments.branch']);
 
         return view('children.show', compact('child'));
     }

@@ -1,6 +1,8 @@
 @php
     $isEdit = isset($user);
     $u = $user ?? null;
+    $selectedRole = old('role', $u?->role?->name);
+    $showBranchField = $selectedRole === 'admin';
 @endphp
 
 <div class="row g-3">
@@ -50,7 +52,11 @@
     </div>
     <div class="col-md-6">
         <label class="form-label">Date of birth</label>
-        <input type="date" name="date_of_birth" class="form-control" value="{{ old('date_of_birth', $u?->date_of_birth?->format('Y-m-d')) }}">
+        <input type="date" name="date_of_birth"
+            class="form-control @error('date_of_birth') is-invalid @enderror"
+            value="{{ old('date_of_birth', $u?->date_of_birth?->format('Y-m-d')) }}"
+            max="{{ now()->format('Y-m-d') }}">
+        @error('date_of_birth') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-12">
@@ -59,11 +65,45 @@
     </div>
     <div class="col-12">
         <label class="form-label">Role <span class="text-danger">*</span></label>
-        <select name="role" class="form-select" required>
+        <select name="role" id="staffRoleSelect" class="form-select" required>
             <option value="">Select role</option>
-            <option value="admin" @selected(old('role', $u?->role?->name) === 'admin')>Admin</option>
-            <option value="finance" @selected(old('role', $u?->role?->name) === 'finance')>Finance</option>
+            <option value="admin" @selected($selectedRole === 'admin')>Admin</option>
+            <option value="finance" @selected($selectedRole === 'finance')>Finance</option>
         </select>
-        <div class="form-text">Only Admin or Finance can be assigned from this form.</div>
+        <div class="form-text">Admin is linked to a branch (multiple admins per branch allowed). Finance is organization-wide (no branch).</div>
+    </div>
+    <div class="col-12" id="staffBranchField" @if(!$showBranchField) style="display:none;" @endif>
+        <label class="form-label">Branch <span class="text-danger">*</span></label>
+        <select name="branch_id" id="staffBranchSelect" class="form-select @error('branch_id') is-invalid @enderror" @if($showBranchField) required @endif>
+            <option value="">Select branch</option>
+            @foreach($branches ?? [] as $branch)
+                <option value="{{ $branch->id }}" @selected((string) old('branch_id', $u?->branch_id) === (string) $branch->id)>{{ $branch->displayLabel() }}</option>
+            @endforeach
+        </select>
+        @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <div class="form-text">Select which branch this admin will manage.</div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    const roleSel = document.getElementById('staffRoleSelect');
+    const branchWrap = document.getElementById('staffBranchField');
+    const branchSel = document.getElementById('staffBranchSelect');
+    if (!roleSel || !branchWrap || !branchSel) return;
+
+    function syncStaffBranchField() {
+        const isAdmin = roleSel.value === 'admin';
+        branchWrap.style.display = isAdmin ? '' : 'none';
+        branchSel.required = isAdmin;
+        if (!isAdmin) {
+            branchSel.value = '';
+        }
+    }
+
+    roleSel.addEventListener('change', syncStaffBranchField);
+    syncStaffBranchField();
+})();
+</script>
+@endpush

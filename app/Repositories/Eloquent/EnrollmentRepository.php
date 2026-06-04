@@ -47,18 +47,20 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
         return $paginator->withQueryString();
     }
 
-    public function getEligibleForManualPayment(int $limit = 500): Collection
+    public function getEligibleForManualPayment(int $limit = 500, ?int $branchId = null): Collection
     {
         return Enrollment::query()
             ->select([
                 'id',
                 'child_id',
+                'branch_id',
                 'final_total',
                 'paid_amount',
                 'remaining_amount',
             ])
             ->with(['child:id,full_name'])
             ->active()
+            ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
             ->where('remaining_amount', '>', 0)
             ->orderByDesc('id')
             ->limit(max(1, $limit))
@@ -79,10 +81,11 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
             ->get();
     }
 
-    public function getPendingHighDiscount(int $perPage = 15): LengthAwarePaginator
+    public function getPendingHighDiscount(int $perPage = 15, ?int $branchId = null): LengthAwarePaginator
     {
         return Enrollment::with(['child', 'branch', 'therapist', 'createdBy'])
             ->pendingHighDiscount()
+            ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
             ->latest()
             ->paginate($perPage)
             ->withQueryString();

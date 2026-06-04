@@ -122,6 +122,8 @@
                 <th>Child</th>
                 <th>Status</th>
                 <th>Branch</th>
+                <th>Therapist</th>
+                <th>Service</th>
                 <th>Total Fee</th>
                 <th>Paid</th>
                 <th>Remaining</th>
@@ -156,6 +158,8 @@
                         @endif
                     </td>
                     <td>{{ $r['branch'] }}</td>
+                    <td>{{ $r['therapist'] }}</td>
+                    <td>{{ $r['service'] }}</td>
                     <td style="font-weight:600;color:var(--teal);">{{ $r['enrollment_total'] !== '—' ? 'PKR '.$r['enrollment_total'] : '—' }}</td>
                     <td style="font-weight:600;color:var(--success);">{{ $r['enrollment_paid'] !== '—' ? 'PKR '.$r['enrollment_paid'] : '—' }}</td>
                     <td style="font-weight:600;color:var(--danger);">{{ $r['enrollment_remaining'] !== '—' ? 'PKR '.$r['enrollment_remaining'] : '—' }}</td>

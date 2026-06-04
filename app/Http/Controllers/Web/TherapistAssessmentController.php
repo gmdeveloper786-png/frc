@@ -45,7 +45,7 @@ class TherapistAssessmentController extends Controller
         ], fn($value) => $value !== null && $value !== '');
 
         $assessments = $this->assessmentService->getTherapistAssessmentsPaginated((int) $user->id, $filters, 15);
-        $branches = Branch::published()->orderBy('name')->get(['id', 'name']);
+        $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
         $filterChildren = $this->portal->childrenForSessionFilter((int) $user->id);
 
         $hasActiveFilters = $request->hasAny(['status', 'branch_id', 'start_date', 'end_date', 'child_id']);

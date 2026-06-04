@@ -22,7 +22,7 @@ class ChildController extends Controller
     {
         $this->authorize_permission($request, 'manage_children');
 
-        $children = $this->userRepository->getChildren($request->only(['status', 'search']));
+        $children = $this->userRepository->getChildren($request->only(['status', 'search']), 15, $request->user());
 
         return response()->json(['data' => UserResource::collection($children)]);
     }

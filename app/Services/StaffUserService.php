@@ -37,6 +37,9 @@ class StaffUserService
     {
         $role = $this->resolveStaffRole((string) $data['role']);
         $password = (string) $data['password'];
+        $branchId = $role->name === Role::ADMIN && filled($data['branch_id'] ?? null)
+            ? (int) $data['branch_id']
+            : null;
 
         $user = $this->repository->create([
             'full_name'       => $data['full_name'],
@@ -44,6 +47,7 @@ class StaffUserService
             'email'           => $data['email'],
             'password'        => Hash::make($password),
             'role_id'         => $role->id,
+            'branch_id'       => $branchId,
             'gender'          => $data['gender'] ?? null,
             'date_of_birth'   => $data['date_of_birth'] ?? null,
             'address'         => $data['address'] ?? null,
@@ -69,7 +73,7 @@ class StaffUserService
             $profileUrl,
         );
 
-        return $user->fresh(['role']);
+        return $user->fresh(['role', 'branch']);
     }
 
     /**
@@ -80,6 +84,10 @@ class StaffUserService
         $this->assertStaffUser($user);
 
         $role = $this->resolveStaffRole((string) $data['role']);
+
+        $branchId = $role->name === Role::ADMIN && filled($data['branch_id'] ?? null)
+            ? (int) $data['branch_id']
+            : null;
 
         $payload = [
             'full_name'       => $data['full_name'],
@@ -92,6 +100,7 @@ class StaffUserService
             'whatsapp_number' => $data['whatsapp_number'] ?? null,
             'status'          => $data['status'],
             'role_id'         => $role->id,
+            'branch_id'       => $branchId,
             'updated_by'      => $actor->id,
         ];
 
@@ -99,7 +108,7 @@ class StaffUserService
             $payload['password'] = Hash::make((string) $data['password']);
         }
 
-        return $this->repository->update($user, $payload);
+        return $this->repository->update($user, $payload)->load(['role', 'branch']);
     }
 
     public function toggleUserStatus(User $user, User $actor): User

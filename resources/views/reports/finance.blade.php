@@ -83,7 +83,23 @@
             <select name="branch_id" class="form-control">
                 <option value="">All Branches</option>
                 @foreach($branches ?? [] as $b)
-                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                    <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->displayLabel() }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Therapist</label>
+            <select name="therapist_id" class="form-control">
+                <option value="">All Therapists</option>
+                @foreach($therapists ?? [] as $th)
+                    <option value="{{ $th->id }}" {{ (string) request('therapist_id') === (string) $th->id ? 'selected' : '' }}>{{ $th->full_name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Service</label>
+            <select name="service_id" class="form-control">
+                <option value="">All Services</option>
+                @foreach($services ?? [] as $svc)
+                    <option value="{{ $svc->id }}" {{ (string) request('service_id') === (string) $svc->id ? 'selected' : '' }}>{{ $svc->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -114,8 +130,8 @@
         <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Child Name</label>
             <input type="text" name="child_search" value="{{ request('child_search') }}" class="form-control" placeholder="Search child...">
         </div>
-        <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Receipt Number</label>
-            <input type="text" name="receipt_number" value="{{ request('receipt_number') }}" class="form-control" placeholder="FRC-…">
+        <div class="col-lg-2 col-md-4"><label style="font-size:12px;">GR Number</label>
+            <input type="text" name="gr_number" value="{{ request('gr_number') }}" class="form-control" placeholder="FRC-CH-000002">
         </div>
         <div class="col-lg-2 col-md-4"><label style="font-size:12px;">From</label><input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control"></div>
         <div class="col-lg-2 col-md-4"><label style="font-size:12px;">To</label><input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control"></div>
@@ -127,7 +143,7 @@
             </select>
         </div>
         <div class="col-auto"><button type="submit" class="btn-teal">Filter</button></div>
-        @if(request()->hasAny(['branch_id','payment_method','date_from','date_to','enrollment_payment_status','verification_status','child_search','receipt_number','per_page']))
+        @if(request()->hasAny(['branch_id','therapist_id','service_id','payment_method','date_from','date_to','enrollment_payment_status','verification_status','child_search','gr_number','per_page']))
             <div class="col-auto"><a href="{{ auth()->user()->isFinance() ? route('finance.reports') : route('reports.finance') }}" class="btn-outline-teal">Clear</a></div>
         @endif
     </form>
@@ -188,7 +204,7 @@
             <table class="table-frc finance-report-table">
                 <thead><tr>
                     <th>#</th>
-                    <th>Receipt</th><th>GR No</th><th>Enroll#</th><th>Child</th><th>Status</th><th>Branch</th>
+                    <th>Receipt</th><th>GR No</th><th>Enroll#</th><th>Child</th><th>Status</th><th>Branch</th><th>Therapist</th><th>Service</th>
                     <th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th>
                     <th>Amount</th><th>Verification</th><th>Method</th><th>Date</th><th>Actions</th>
                 </tr></thead>
@@ -205,15 +221,12 @@
                             <td style="font-size:12px;color:var(--navy); white-space:nowrap;"> <a href="{{ route('enrollments.show', $enrollment?->id) }}" style="color:var(--navy);text-decoration:underline;">#{{ $enrollment?->id ?? '—' }}</a></td>
                             <td style="font-weight:500; white-space:nowrap;">
                                 @if($child)
-                                    @if($staffClinical)
-                                        <a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $child->full_name }}</a>
-                                    @else
-                                        {{ $child->full_name }}
-                                    @endif
+                                    <a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $child->full_name }}</a>
                                 @else
                                     —
                                 @endif
                             </td>
+                       
                             <td style="white-space:nowrap;">
                                 @if($child)
                                     <span class="badge-status badge-{{ $child->status }}">{{ \Illuminate\Support\Str::title(str_replace('_',' ', $child->status)) }}</span>
@@ -222,6 +235,14 @@
                                 @endif
                             </td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $enrollment?->branch?->name ?? '—' }}</td>
+                            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                <td style="font-size:13px; white-space:nowrap;">
+                                    <a href="{{ route('therapists.show', $enrollment?->therapist?->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $enrollment?->therapist?->full_name ?? '—' }}</a>
+                                </td>
+                            @else
+                                <td style="font-size:13px; white-space:nowrap;">{{ $enrollment?->therapist?->full_name ?? '—' }}</td>
+                            @endif
+                            <td style="font-size:13px; white-space:nowrap;">{{ $enrollment?->service?->name ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->final_total) : '—' }}</td>
                             <td style="color:var(--success); white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->paid_amount) : '—' }}</td>
                             <td style="color:var(--danger); white-space:nowrap;">{{ $enrollment ? frc_pkr($enrollment->remaining_amount) : '—' }}</td>

@@ -6,9 +6,17 @@
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
         <h6 class="card-title-frc"><i class="fa-solid fa-file-contract me-2" style="color:var(--teal);"></i>Enrollments ({{ $enrollments->total() }})</h6>
-        <a href="{{ route('enrollments.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;"><i class="fa-solid fa-plus"></i> New Enrollment</a>
+        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+            <a href="{{ route('enrollments.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;">
+                <i class="fa-solid fa-plus"></i> New Enrollment
+            </a>
+        @endif
+   
     </div>
     <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+        @if($branches->count() === 1)
+            <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
+        @endif
         <div class="row g-2 align-items-end form-frc">
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Search</label>
@@ -32,15 +40,17 @@
                     @endforeach
                 </select>
             </div>
+            @if($branches->count() > 1)
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Branch</label>
                 <select name="branch_id" class="form-control">
                     <option value="">All Branches</option>
                     @foreach($branches as $b)
-                        <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>{{ $b->displayLabel() }}</option>
                     @endforeach
                 </select>
             </div>
+            @endif
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Service</label>
                 <select name="service_id" class="form-control">
@@ -86,7 +96,18 @@
                                 @endif
                             </td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $e->branch?->name }}</td>
-                            <td style="font-size:13px; white-space:nowrap;"><a href="{{ route('therapists.show', $e->therapist->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $e->therapist?->full_name }}</a></td>
+                            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                <td style="font-size:13px; white-space:nowrap;">
+                                    <a href="{{ route('therapists.show', $e->therapist->id) }}" style="color:var(--navy);text-decoration:underline;">
+                                        {{ $e->therapist?->full_name }}
+                                    </a>
+                                </td>
+                            @else
+                                <td style="font-size:13px; white-space:nowrap;">
+                                    {{ $e->therapist?->full_name }}
+                                </td>
+                            @endif
+                       
                             <td style="font-size:13px; white-space:nowrap;">{{ $e->service?->name ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ frc_pkr($e->final_total ?? 0) }}</td>
                             <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($e->paid_amount ?? 0) }}</td>
@@ -97,11 +118,15 @@
                             <td>
                                 <div style="display:flex;gap:6px;">
                                     <a href="{{ route('enrollments.show', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-eye"></i></a>
-                                    <a href="{{ route('enrollments.edit', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>
-                                    <form action="{{ route('enrollments.destroy', $e->id) }}" method="POST" style="display:inline;">
+                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                        <a href="{{ route('enrollments.edit', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>
+                                    @endif
+                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                        <form action="{{ route('enrollments.destroy', $e->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Delete this enrollment?')"><i class="fa-solid fa-trash"></i></button>
                                     </form>
+                                    @endif
                                     @if(in_array($e->status, ['draft','pending_super_admin_approval']))
                                         <form action="{{ route('enrollments.approve', $e->id) }}" method="POST">@csrf
                                             <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Approve?')"><i class="fa-solid fa-check"></i></button>

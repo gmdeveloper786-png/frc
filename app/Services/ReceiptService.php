@@ -8,7 +8,7 @@ class ReceiptService
 {
     public function getReceiptData(Payment $payment): array
     {
-        $payment->load(['child', 'enrollment.branch', 'enrollment.therapist', 'receivedBy', 'verifiedBy']);
+        $payment->load(['child', 'enrollment.branch', 'enrollment.service', 'enrollment.therapist', 'receivedBy', 'verifiedBy']);
 
         return [
             'receipt_number'    => $payment->receipt_number,
@@ -21,6 +21,7 @@ class ReceiptService
             'enrollment_id'     => (int) $payment->enrollment_id,
             'branch'            => $payment->enrollment->branch?->name,
             'therapist'         => $payment->enrollment->therapist?->full_name,
+            'service'           => $payment->enrollment->service?->name,
             'amount'            => $payment->amount,
             'payment_method'    => Payment::labelForPaymentMethod($payment->payment_method),
             'transaction_ref'   => $payment->transaction_reference,

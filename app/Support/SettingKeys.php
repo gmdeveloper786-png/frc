@@ -16,6 +16,9 @@ final class SettingKeys
 
     public const HIGH_DISCOUNT_THRESHOLD = 'high_discount_threshold';
 
+    /** JSON map: city name => PKR price per session (e.g. {"Karachi":1000,"Faisalabad":1500}). */
+    public const CITY_SESSION_PRICES = 'city_session_prices';
+
     public const BANK_ACCOUNT_TITLE   = 'bank_account_title';
     public const BANK_ACCOUNT_NUMBER  = 'bank_account_number';
     public const BANK_NAME            = 'bank_name';
@@ -66,6 +69,11 @@ final class SettingKeys
             self::HIGH_DISCOUNT_THRESHOLD => [
                 'value' => '50',
                 'type'  => 'number',
+                'group' => 'enrollment',
+            ],
+            self::CITY_SESSION_PRICES => [
+                'value' => '{"Karachi":1000,"Faisalabad":1500}',
+                'type'  => 'json',
                 'group' => 'enrollment',
             ],
             self::BANK_ACCOUNT_TITLE => [

@@ -23,11 +23,18 @@ class NotificationService
 
     public function notifyAdminsOfNewChild(User $child): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
+        $child->loadMissing('branch');
+        $branchLabel = $child->branch?->name ?? 'your branch';
+        $ids         = $this->staffIdsForChildRegistration($child);
+
+        if ($ids === []) {
+            return;
+        }
+
         $this->inbox->createForUsers(
             $ids,
             'New Child Registration',
-            "{$child->full_name} has registered and is awaiting approval.",
+            "{$child->full_name} registered at {$branchLabel} and is awaiting approval.",
             UserNotification::TYPE_CHILD_REGISTERED,
             'children',
             $child->id,
@@ -311,7 +318,8 @@ class NotificationService
 
     public function notifyHighDiscountApproved(Enrollment $enrollment): void
     {
-        $ids = $this->staffIdsByRoles([Role::ADMIN]);
+        $enrollment->loadMissing('child');
+        $ids = $this->staffIdsForEnrollmentBranch($enrollment);
         $child = $enrollment->child;
         if ($child !== null) {
             $ids[] = (int) $child->id;
@@ -330,7 +338,8 @@ class NotificationService
 
     public function notifyHighDiscountRejected(Enrollment $enrollment, string $reason): void
     {
-        $ids = $this->staffIdsByRoles([Role::ADMIN]);
+        $enrollment->loadMissing('child');
+        $ids = $this->staffIdsForEnrollmentBranch($enrollment);
         $this->inbox->createForUsers(
             $ids,
             'High Discount Rejected',
@@ -344,9 +353,15 @@ class NotificationService
 
     public function notifyPaymentSlipUploaded(Payment $payment): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE]);
+        $payment->loadMissing(['child', 'enrollment']);
+        $ids   = $this->staffIdsForPaymentSlipVerification($payment);
         $child = $payment->child;
         $amount = frc_pkr($payment->amount);
+
+        if ($ids === []) {
+            return;
+        }
+
         $this->inbox->createForUsers(
             $ids,
             'Payment Slip Uploaded',
@@ -354,7 +369,7 @@ class NotificationService
             UserNotification::TYPE_PAYMENT_SLIP_UPLOADED,
             'payments',
             $payment->id,
-            url(route('finance.payments.pending')),
+            url(route('payments.pending')),
         );
     }
 
@@ -411,7 +426,8 @@ class NotificationService
 
     public function notifyFeeFullyPaid(Enrollment $enrollment): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCE]);
+        $enrollment->loadMissing('child');
+        $ids = $this->staffIdsForEnrollmentBranch($enrollment, includeFinance: true);
         $child = $enrollment->child;
         if ($child !== null) {
             $ids[] = (int) $child->id;
@@ -484,7 +500,7 @@ class NotificationService
 
     public function notifyAssessmentCompleted(Assessment $assessment): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
+        $ids = $this->staffIdsForAssessmentBranch($assessment);
         $this->inbox->createForUsers(
             $ids,
             'Assessment Completed',
@@ -555,7 +571,12 @@ class NotificationService
             url(route('child.schedule.index')),
         );
 
-        $staffIds = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
+        $schedule->loadMissing('enrollment');
+        $enrollment = $schedule->enrollment;
+        if ($enrollment === null) {
+            return;
+        }
+        $staffIds = $this->staffIdsForEnrollmentBranch($enrollment);
         $this->inbox->createForUsers(
             $staffIds,
             'Session Cancelled',
@@ -569,8 +590,13 @@ class NotificationService
 
     public function notifySessionStarted(EnrollmentSchedule $schedule, User $child): void
     {
+        $schedule->loadMissing('enrollment');
+        $enrollment = $schedule->enrollment;
+        if ($enrollment === null) {
+            return;
+        }
         $this->inbox->createForUsers(
-            $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]),
+            $this->staffIdsForEnrollmentBranch($enrollment),
             'Session Started',
             'Session for ' . $child->full_name . ' was started.',
             UserNotification::TYPE_SESSION_STARTED,
@@ -582,8 +608,13 @@ class NotificationService
 
     public function notifySessionCompleted(EnrollmentSchedule $schedule, User $child): void
     {
+        $schedule->loadMissing('enrollment');
+        $enrollment = $schedule->enrollment;
+        if ($enrollment === null) {
+            return;
+        }
         $this->inbox->createForUsers(
-            $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]),
+            $this->staffIdsForEnrollmentBranch($enrollment),
             'Session Completed',
             'Session for ' . $child->full_name . ' was marked completed.',
             UserNotification::TYPE_SESSION_COMPLETED,
@@ -593,11 +624,10 @@ class NotificationService
         );
     }
 
-    public function notifyChildApprovalEmailSent(User $child): void
+    public function notifyChildApprovalEmailSent(User $child, User $approvedBy): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
         $this->inbox->createForUsers(
-            $ids,
+            [(int) $approvedBy->id],
             'Child approval email sent',
             'Approval email was sent to ' . $child->full_name . ' (' . $child->email . ').',
             UserNotification::TYPE_CHILD_APPROVAL_EMAIL_SENT,
@@ -607,11 +637,10 @@ class NotificationService
         );
     }
 
-    public function notifyChildApprovalEmailFailed(User $child, string $error): void
+    public function notifyChildApprovalEmailFailed(User $child, string $error, User $approvedBy): void
     {
-        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN, Role::ADMIN]);
         $this->inbox->createForUsers(
-            $ids,
+            [(int) $approvedBy->id],
             'Child approval email failed',
             'Approval email could not be sent for ' . $child->full_name . '. ' . mb_substr($error, 0, 200),
             UserNotification::TYPE_CHILD_APPROVAL_EMAIL_FAILED,
@@ -619,6 +648,90 @@ class NotificationService
             $child->id,
             url(route('children.show', $child->id)),
         );
+    }
+
+    /**
+     * Super admin, finance, plus branch admins for the payment's enrollment branch.
+     *
+     * @return array<int>
+     */
+    private function staffIdsForPaymentSlipVerification(Payment $payment): array
+    {
+        $payment->loadMissing(['enrollment', 'child']);
+        $branchId = (int) ($payment->enrollment?->branch_id ?? $payment->child?->branch_id ?? 0);
+
+        return $this->staffIdsForBranch($branchId, includeFinance: true);
+    }
+
+    /**
+     * Super admin, optional finance, plus branch admins for the enrollment's branch.
+     *
+     * @return array<int>
+     */
+    private function staffIdsForEnrollmentBranch(Enrollment $enrollment, bool $includeFinance = false): array
+    {
+        $enrollment->loadMissing('child');
+        $branchId = (int) ($enrollment->branch_id ?? $enrollment->child?->branch_id ?? 0);
+
+        return $this->staffIdsForBranch($branchId, $includeFinance);
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function staffIdsForAssessmentBranch(Assessment $assessment): array
+    {
+        return $this->staffIdsForBranch((int) ($assessment->branch_id ?? 0), false);
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function staffIdsForBranch(int $branchId, bool $includeFinance = false): array
+    {
+        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN]);
+
+        if ($includeFinance) {
+            $ids = array_merge($ids, $this->staffIdsByRoles([Role::FINANCE]));
+        }
+
+        if ($branchId > 0) {
+            $branchAdminIds = User::query()
+                ->whereHas('role', fn ($q) => $q->where('name', Role::ADMIN))
+                ->where('branch_id', $branchId)
+                ->whereIn('status', ['active', 'approved'])
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $ids = array_merge($ids, $branchAdminIds);
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Super admins (all branches) plus branch admins for the child's selected branch.
+     *
+     * @return array<int>
+     */
+    private function staffIdsForChildRegistration(User $child): array
+    {
+        $ids = $this->staffIdsByRoles([Role::SUPER_ADMIN]);
+
+        if ($child->branch_id) {
+            $branchAdminIds = User::query()
+                ->whereHas('role', fn ($q) => $q->where('name', Role::ADMIN))
+                ->where('branch_id', $child->branch_id)
+                ->whereIn('status', ['active', 'approved'])
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $ids = array_merge($ids, $branchAdminIds);
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

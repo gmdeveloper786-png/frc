@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Enrollment;
+use App\Support\StaffBranchScope;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,12 +27,36 @@ class StoreManualPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'enrollment_id'  => ['required', 'exists:enrollments,id'],
+            'enrollment_id'  => ['required', 'exists:enrollments,id', $this->enrollmentInStaffBranch()],
             'amount'         => ['required', 'integer', 'min:1', $this->amountWithinRemaining()],
             'payment_method' => ['required', 'in:cash'],
             'payment_date'   => ['required', 'date'],
             'notes'          => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    private function enrollmentInStaffBranch(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $user = $this->user();
+            if (! $user) {
+                return;
+            }
+
+            $locked = StaffBranchScope::lockedBranchId($user);
+            if ($locked === null) {
+                return;
+            }
+
+            $enrollment = Enrollment::query()->find($value);
+            if (! $enrollment) {
+                return;
+            }
+
+            if ((int) $enrollment->branch_id !== $locked) {
+                $fail('This enrollment belongs to another branch.');
+            }
+        };
     }
 
     private function amountWithinRemaining(): Closure

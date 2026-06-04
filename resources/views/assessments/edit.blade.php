@@ -32,11 +32,17 @@
                 </div>
                 <div class="col-md-6">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
-                    <select name="branch_id" id="assessmentBranchSelect" class="form-control">
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" {{ old('branch_id', $assessment->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
+                    @if($branches->count() === 1)
+                        @php $onlyBranch = $branches->first(); @endphp
+                        <input type="hidden" name="branch_id" id="assessmentBranchSelect" value="{{ $onlyBranch->id }}">
+                        <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
+                    @else
+                        <select name="branch_id" id="assessmentBranchSelect" class="form-control" required>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ (string) old('branch_id', $assessment->branch_id) === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
                 <div class="col-md-6">
                     <label>Status</label>

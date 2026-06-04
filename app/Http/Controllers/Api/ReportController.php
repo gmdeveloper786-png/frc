@@ -17,13 +17,15 @@ class ReportController extends Controller
 
         $data = $this->service->getFinanceSummary($request->only([
             'branch_id',
+            'therapist_id',
+            'service_id',
             'date_from',
             'date_to',
             'payment_method',
             'enrollment_payment_status',
             'verification_status',
             'child_search',
-            'receipt_number',
+            'gr_number',
         ]));
 
         return response()->json(['data' => $data]);

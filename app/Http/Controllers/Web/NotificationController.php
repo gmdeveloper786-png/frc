@@ -28,7 +28,7 @@ class NotificationController extends Controller
         ];
 
         $notifications = $this->inbox->getUserNotifications(
-            (int) $request->user()->id,
+            $request->user(),
             $filters,
             self::INBOX_PER_PAGE,
         );
@@ -48,7 +48,7 @@ class NotificationController extends Controller
     {
         $this->authorize('view', $notification);
 
-        $this->inbox->markAsRead((int) $notification->id, (int) $request->user()->id);
+        $this->inbox->markAsRead((int) $notification->id, $request->user());
 
         return $this->openService->redirectAfterOpen($request, $notification);
     }
@@ -56,7 +56,7 @@ class NotificationController extends Controller
     public function markRead(Request $request, UserNotification $notification): RedirectResponse
     {
         $this->authorize('update', $notification);
-        $this->inbox->markAsRead((int) $notification->id, (int) $request->user()->id);
+        $this->inbox->markAsRead((int) $notification->id, $request->user());
 
         return redirect()->back()->with('success', 'Marked as read.');
     }
@@ -64,7 +64,7 @@ class NotificationController extends Controller
     public function markUnread(Request $request, UserNotification $notification): RedirectResponse
     {
         $this->authorize('update', $notification);
-        $this->inbox->markAsUnread((int) $notification->id, (int) $request->user()->id);
+        $this->inbox->markAsUnread((int) $notification->id, $request->user());
 
         return redirect()->back()->with('success', 'Marked as unread.');
     }
@@ -72,14 +72,14 @@ class NotificationController extends Controller
     public function destroy(Request $request, UserNotification $notification): RedirectResponse
     {
         $this->authorize('delete', $notification);
-        $this->inbox->deleteNotification((int) $notification->id, (int) $request->user()->id);
+        $this->inbox->deleteNotification((int) $notification->id, $request->user());
 
         return redirect()->back()->with('success', 'Notification removed.');
     }
 
     public function markAllRead(Request $request): RedirectResponse
     {
-        $count = $this->inbox->markAllAsRead((int) $request->user()->id);
+        $count = $this->inbox->markAllAsRead($request->user());
 
         return redirect()->back()->with('success', $count > 0 ? "Marked {$count} as read." : 'No unread notifications.');
     }
@@ -87,7 +87,7 @@ class NotificationController extends Controller
     public function bulkMarkRead(Request $request): RedirectResponse
     {
         $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], $request->user());
 
         return redirect()->back()->with('success', $updated > 0 ? "Marked {$updated} as read." : 'Nothing to update.');
     }
@@ -95,7 +95,7 @@ class NotificationController extends Controller
     public function bulkMarkUnread(Request $request): RedirectResponse
     {
         $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], $request->user());
 
         return redirect()->back()->with('success', $updated > 0 ? "Marked {$updated} as unread." : 'Nothing to update.');
     }
@@ -103,14 +103,14 @@ class NotificationController extends Controller
     public function bulkDelete(Request $request): RedirectResponse
     {
         $ids = $request->input('ids', []);
-        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], (int) $request->user()->id);
+        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], $request->user());
 
         return redirect()->back()->with('success', $deleted > 0 ? "Deleted {$deleted} notification(s)." : 'Nothing to delete.');
     }
 
     public function deleteRead(Request $request): RedirectResponse
     {
-        $deleted = $this->inbox->deleteReadNotifications((int) $request->user()->id);
+        $deleted = $this->inbox->deleteReadNotifications($request->user());
 
         return redirect()->back()->with('success', $deleted > 0 ? "Removed {$deleted} read notification(s)." : 'No read notifications to remove.');
     }

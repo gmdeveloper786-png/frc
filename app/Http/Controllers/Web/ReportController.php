@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
 use App\Models\Branch;
+use App\Models\Payment;
+use App\Models\Role;
+use App\Models\Service;
+use App\Models\User;
 use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -24,9 +27,14 @@ class ReportController extends Controller
         $summary  = $this->reportService->getFinanceSummary($filters);
         $perPage  = min(100, max(5, (int) $request->input('per_page', 15)));
         $records  = $this->reportService->getStudentFeeRecords($filters, $perPage);
-        $branches = Branch::published()->get();
+        $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
+        $therapists = User::query()
+            ->byRole(Role::THERAPIST)
+            ->orderBy('full_name')
+            ->get(['id', 'full_name']);
+        $services = Service::published()->orderBy('name')->get(['id', 'name']);
 
-        return view('reports.finance', compact('summary', 'records', 'branches'));
+        return view('reports.finance', compact('summary', 'records', 'branches', 'therapists', 'services'));
     }
 
     public function financeExport(Request $request, string $format): StreamedResponse|\Illuminate\Http\Response|RedirectResponse
@@ -84,13 +92,15 @@ class ReportController extends Controller
     {
         return [
             'branch_id'                   => $request->input('branch_id'),
+            'therapist_id'                => $request->input('therapist_id'),
+            'service_id'                  => $request->input('service_id'),
             'payment_method'              => $request->input('payment_method'),
             'date_from'                   => $request->input('date_from'),
             'date_to'                     => $request->input('date_to'),
             'enrollment_payment_status'   => $request->input('enrollment_payment_status'),
             'verification_status'         => $request->input('verification_status'),
             'child_search'                => $request->input('child_search'),
-            'receipt_number'              => $request->input('receipt_number'),
+            'gr_number'                   => $request->input('gr_number'),
         ];
     }
 
@@ -136,6 +146,8 @@ class ReportController extends Controller
                 'Child Name',
                 'Child Status',
                 'Branch',
+                'Therapist',
+                'Service',
                 'Total Fee',
                 'Paid',
                 'Remaining',
@@ -162,6 +174,8 @@ class ReportController extends Controller
                         $child?->full_name ?? '',
                         $child ? Str::title(str_replace('_', ' ', (string) $child->status)) : '',
                         $enrollment?->branch?->name ?? '',
+                        $enrollment?->therapist?->full_name ?? '',
+                        $enrollment?->service?->name ?? '',
                         $enrollment ? $this->financeCsvAmount((float) $enrollment->final_total) : '',
                         $enrollment ? $this->financeCsvAmount((float) $enrollment->paid_amount) : '',
                         $enrollment ? $this->financeCsvAmount((float) $enrollment->remaining_amount) : '',

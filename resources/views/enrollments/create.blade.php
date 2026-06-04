@@ -35,12 +35,18 @@
                 </div>
                 <div class="col-md-6">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
-                    <select name="branch_id" id="branchSelect" class="form-control @error('branch_id') is-invalid @enderror" onchange="loadTherapists(this.value)">
-                        <option value="">Select Branch</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
+                    @if($branches->count() === 1)
+                        @php $onlyBranch = $branches->first(); @endphp
+                        <input type="hidden" name="branch_id" id="branchSelect" value="{{ $onlyBranch->id }}">
+                        <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
+                    @else
+                        <select name="branch_id" id="branchSelect" class="form-control @error('branch_id') is-invalid @enderror" onchange="loadTherapists(this.value)" required>
+                            <option value="">Select Branch</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                     @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
@@ -147,7 +153,9 @@
             <div class="mb-3">
                 <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>
                 <input type="number" name="price_per_session" id="pricePerSession" value="{{ old('price_per_session', 0) }}"
-                    class="form-control" min="0" step="1" oninput="recalculate()">
+                    class="form-control" min="0" step="1" readonly tabindex="-1"
+                    style="background:var(--bg-light);cursor:not-allowed;">
+                <small id="sessionPriceHint" class="text-muted d-block mt-1" style="font-size:12px;"></small>
             </div>
             <div class="mb-3">
                 <label>Discount % (0–100)</label>
@@ -208,6 +216,7 @@
     'excludeEnrollmentId' => null,
     'initialSchedules' => [],
     'initialServiceId' => null,
+    'enrollmentPricing' => $enrollmentPricing ?? [],
 ])
 @include('partials.approved-child-picker-scripts', [
     'pickerMode' => 'checkboxes',
