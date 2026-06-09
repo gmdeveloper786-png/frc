@@ -31,6 +31,7 @@ class User extends Authenticatable
         'phone_number',
         'whatsapp_number',
         'parent_notes',
+        'other_disability',
         'status',
         'approved_by',
         'approved_at',
@@ -93,6 +94,19 @@ class User extends Authenticatable
     public function disabilities(): BelongsToMany
     {
         return $this->belongsToMany(Disability::class, 'child_disabilities');
+    }
+
+    /** When "Other" is selected, show the custom description instead of the generic label. */
+    public function disabilityLabel(Disability $disability): string
+    {
+        if (strcasecmp((string) $disability->name, 'Other') === 0) {
+            $custom = trim((string) ($this->other_disability ?? ''));
+            if ($custom !== '') {
+                return $custom;
+            }
+        }
+
+        return (string) $disability->name;
     }
 
     /** Assessments where this user is an assigned child (pivot child_id). */

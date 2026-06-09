@@ -41,30 +41,68 @@
                         </div>
 
                         <div class="child-profile-field">
+                            <label for="child-profile-father-name">Father's name</label>
+                            <input id="child-profile-father-name" type="text" name="father_name" value="{{ old('father_name', $user->father_name) }}" class="form-control @error('father_name') is-invalid @enderror" placeholder="Father's name" autocomplete="off">
+                            @error('father_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="child-profile-field">
                             <label for="child-profile-phone">Phone</label>
                             <input id="child-profile-phone" type="text" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="form-control @error('phone_number') is-invalid @enderror" placeholder="e.g. 03121234567" autocomplete="tel">
                             @error('phone_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        <div class="child-profile-field child-profile-field--readonly">
-                            <label>Email</label>
-                            <input type="email" value="{{ $user->email }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
-                            <p class="child-profile-hint">Email cannot be changed. Contact administration if you need to update it.</p>
+                        <div class="child-profile-field">
+                            <label for="child-profile-whatsapp">WhatsApp</label>
+                            <input id="child-profile-whatsapp" type="text" name="whatsapp_number" value="{{ old('whatsapp_number', $user->whatsapp_number) }}" class="form-control @error('whatsapp_number') is-invalid @enderror" placeholder="e.g. 03121234567" autocomplete="tel">
+                            @error('whatsapp_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="child-profile-field child-profile-field--readonly">
+                            <label>Email</label>
+                            <input type="email" value="{{ $user->email }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--readonly">
+                            <label>Gender</label>
+                            <input type="text" value="{{ $user->gender ? ucfirst($user->gender) : '—' }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--readonly">
+                            <label>Date of birth</label>
+                            <input type="text" value="{{ $user->date_of_birth?->format('d M Y') ?? '—' }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--readonly">
+                            <label>Age</label>
+                            <input type="text" value="{{ $user->age !== null ? $user->age . ' years' : '—' }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--readonly">
+                            <label>Branch</label>
+                            <input type="text" value="{{ $user->branch?->displayLabel() ?? '—' }}" class="form-control child-profile-input--readonly" readonly tabindex="-1" aria-readonly="true">
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--full">
+                            <label for="child-profile-address">Address</label>
+                            <textarea id="child-profile-address" name="address" class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Home address">{{ old('address', $user->address) }}</textarea>
+                            @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="child-profile-field child-profile-field--readonly child-profile-field--full">
                             <label>Disabilities</label>
                             @if($user->disabilities->isEmpty())
                                 <p class="child-profile-readonly-value text-muted mb-0">—</p>
                             @else
                                 <div class="child-show-tag-list child-profile-tag-list">
                                     @foreach($user->disabilities as $disability)
-                                        <span class="child-show-tag">{{ $disability->name }}</span>
+                                        <span class="child-show-tag">{{ $user->disabilityLabel($disability) }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            {{-- <p class="child-profile-hint mb-0">Assigned by your care team and cannot be edited here.</p> --}}
                         </div>
+
+                        <p class="child-profile-hint child-profile-field--full mb-0">Fields marked as read-only can only be updated by administration.</p>
                     </div>
 
                     <div class="child-profile-form-actions">

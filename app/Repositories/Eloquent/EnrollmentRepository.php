@@ -38,7 +38,19 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
             ->when(!empty($filters['service_id']),     fn($q) => $q->where('service_id', $filters['service_id']))
             ->when(!empty($filters['child_id']),       fn($q) => $q->where('child_id', $filters['child_id']))
             ->when(!empty($filters['payment_status']), fn($q) => $q->where('payment_status', $filters['payment_status']))
-            ->when(!empty($filters['search']),         fn($q) => $q->whereHas('child', fn($c) => $c->where('full_name', 'like', '%' . $filters['search'] . '%')))
+            ->when(! empty($filters['search']), function ($q) use ($filters): void {
+                $term = trim((string) $filters['search']);
+                $like = '%' . $term . '%';
+                $q->whereHas('child', function ($c) use ($like, $term): void {
+                    $c->where(function ($inner) use ($like, $term): void {
+                        $inner->where('full_name', 'like', $like)
+                            ->orWhere('gr_number', 'like', $like);
+                        if (ctype_digit($term)) {
+                            $inner->orWhere('users.id', (int) $term);
+                        }
+                    });
+                });
+            })
             ->when(!empty($filters['date_from']),       fn($q) => $q->whereRaw('DATE(COALESCE(schedule_start_date, created_at)) >= ?', [$filters['date_from']]))
             ->when(!empty($filters['date_to']),         fn($q) => $q->whereRaw('DATE(COALESCE(schedule_start_date, created_at)) <= ?', [$filters['date_to']]))
             ->latest()

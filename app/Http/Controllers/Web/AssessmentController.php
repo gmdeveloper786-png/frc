@@ -26,7 +26,7 @@ class AssessmentController extends Controller
 
     public function index(\Illuminate\Http\Request $request): View
     {
-        $filters = $request->only(['status', 'branch_id', 'date_from', 'date_to']);
+        $filters = $request->only(['status', 'branch_id', 'date_from', 'date_to', 'child_id', 'search']);
         if ($lockedBranch = StaffBranchScope::lockedBranchId($request->user())) {
             $filters['branch_id'] = $lockedBranch;
         }

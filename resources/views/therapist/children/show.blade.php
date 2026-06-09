@@ -89,7 +89,7 @@
                 <div class="child-show-section-title">Disabilities</div>
                 <div class="child-show-tag-list">
                     @foreach($child->disabilities as $disability)
-                        <span class="child-show-tag">{{ $disability->name }}</span>
+                        <span class="child-show-tag">{{ $child->disabilityLabel($disability) }}</span>
                     @endforeach
                 </div>
             @endif

@@ -22,7 +22,7 @@
             <div class="row g-3 mb-4">
                 <div class="col-sm-6">
                     <div class="text-muted small mb-1">Branch</div>
-                    <div style="font-weight:600;color:var(--navy);">{{ $assessment->branch?->name ?? '—' }}</div>
+                    <div style="font-weight:600;color:var(--navy);">{{ $assessment->branch?->displayLabel() ?? '—' }}</div>
                 </div>
                 <div class="col-sm-6">
                     <div class="text-muted small mb-1">Therapist</div>
@@ -41,7 +41,7 @@
                 <ul class="mb-0 ps-3" style="font-size:13px;color:var(--text-muted);">
                     <li class="mb-1">Arrive a few minutes early for your child’s assessment.</li>
                     <li class="mb-1">Bring any recent reports or documents if your therapist has requested them.</li>
-                    <li class="mb-1">If you need to reschedule, please contact <strong>{{ $assessment->branch?->name ?? 'the centre' }}</strong>@if($assessment->branch?->phone) <strong>Branch</strong> at <strong>{{ $assessment->branch->phone }}</strong>@endif.</li>
+                    <li class="mb-1">If you need to reschedule, please contact <strong>{{ $assessment->branch?->displayLabel() ?? 'the centre' }}</strong>@if($assessment->branch?->phone) at <strong>{{ $assessment->branch->phone }}</strong>@endif.</li>
                 </ul>
             </div>
             @endif

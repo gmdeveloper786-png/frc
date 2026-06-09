@@ -39,11 +39,22 @@ class UpdateChildRequest extends FormRequest
             'status'           => ['required', 'in:pending,approved,rejected,active,inactive'],
             'disability_ids'   => ['nullable', 'array'],
             'disability_ids.*' => ['integer', 'exists:disabilities,id'],
+            'other_disability' => ['nullable', 'string', 'max:500'],
         ];
     }
 
     public function withValidator($validator): void
     {
+        $validator->after(function ($validator): void {
+            $ids = array_map('intval', (array) $this->input('disability_ids', []));
+            $otherId = \App\Models\Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+            $hasOther = $otherId !== null && in_array((int) $otherId, $ids, true);
+
+            if ($hasOther && ! filled(trim((string) $this->input('other_disability', '')))) {
+                $validator->errors()->add('other_disability', 'Please describe the disability when "Other" is selected.');
+            }
+        });
+
         $validator->after(function ($validator) {
             $id = (int) $this->route('id');
             $child = User::query()->children()->find($id);

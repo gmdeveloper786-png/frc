@@ -76,6 +76,7 @@ class StoreAssessmentRequest extends FormRequest
     {
         return [
             'date' => 'Assessment date cannot be in the past.',
+            'time' => 'For today\'s date, assessment time cannot be in the past.',
         ];
     }
 
@@ -106,6 +107,22 @@ class StoreAssessmentRequest extends FormRequest
         };
     }
 
+    private function parseAssessmentDateTime(string $date, string $time): ?Carbon
+    {
+        foreach (['H:i', 'H:i:s', 'g:i A', 'h:i A'] as $format) {
+            try {
+                return Carbon::createFromFormat('Y-m-d ' . $format, $date . ' ' . $time);
+            } catch (\Throwable) {
+            }
+        }
+
+        try {
+            return Carbon::parse($date . ' ' . $time);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
@@ -133,6 +150,18 @@ class StoreAssessmentRequest extends FormRequest
                     ->count();
                 if ($allowedCount !== count($childIds)) {
                     $validator->errors()->add('child_ids', 'One or more selected children do not belong to this branch.');
+                }
+            }
+
+            $dateStr = $this->input('date');
+            $timeStr = $this->input('time');
+            if (is_string($dateStr) && $dateStr !== '' && is_string($timeStr) && trim($timeStr) !== '') {
+                $selectedDay = Carbon::parse($dateStr)->startOfDay();
+                if ($selectedDay->equalTo(now()->startOfDay())) {
+                    $scheduled = $this->parseAssessmentDateTime($dateStr, trim($timeStr));
+                    if ($scheduled !== null && $scheduled->lt(now())) {
+                        $validator->errors()->add('time', 'For today\'s date, assessment time cannot be in the past.');
+                    }
                 }
             }
 

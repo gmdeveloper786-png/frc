@@ -8,7 +8,9 @@ class CancelAssessmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasPermission('manage_assessments') ?? false;
+        $user = $this->user();
+
+        return $user?->isSuperAdmin() && $user->hasPermission('manage_assessments');
     }
 
     public function rules(): array

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Disability;
 use App\Models\Role;
 use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
@@ -19,6 +20,7 @@ class AuthService
     public function registerChild(array $data): User
     {
         $childRole = Role::where('name', Role::CHILD)->firstOrFail();
+        $disabilityIds = array_map('intval', $data['disability_ids'] ?? []);
 
         $user = $this->userRepository->create([
             'full_name'      => $data['full_name'],
@@ -33,14 +35,17 @@ class AuthService
             'phone_number'   => $data['phone_number'] ?? null,
             'whatsapp_number' => $data['whatsapp_number'] ?? null,
             'parent_notes'   => $data['parent_notes'] ?? null,
+            'other_disability' => $this->includesOtherDisability($disabilityIds) && filled($data['other_disability'] ?? null)
+                ? trim((string) $data['other_disability'])
+                : null,
             'branch_id'      => $data['branch_id'],
             'status'         => 'pending',
         ]);
 
         $user->load('branch');
 
-        if (! empty($data['disability_ids'])) {
-            $user->disabilities()->sync($data['disability_ids']);
+        if ($disabilityIds !== []) {
+            $user->disabilities()->sync($disabilityIds);
         }
 
         $this->notificationService->notifyAdminsOfNewChild($user);
@@ -90,5 +95,17 @@ class AuthService
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
+    }
+
+    /** @param  array<int>  $disabilityIds */
+    private function includesOtherDisability(array $disabilityIds): bool
+    {
+        if ($disabilityIds === []) {
+            return false;
+        }
+
+        $otherId = Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+
+        return $otherId !== null && in_array((int) $otherId, $disabilityIds, true);
     }
 }

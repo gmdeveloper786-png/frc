@@ -50,7 +50,7 @@
                                     <td style="font-weight:500;font-family:monospace;">{{ $child->gr_number ?? '—' }}</td>
                                     <td style="font-weight:500;"><a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);">{{ $child->full_name }}</a></td>
                                     <td>{{ $child->age ? $child->age . 'y' : '—' }}</td>
-                                    <td style="font-size:12px;color:var(--text-muted);">{{ $child->disabilities->pluck('name')->join(', ') ?: '—' }}</td>
+                                    <td style="font-size:12px;color:var(--text-muted);">{{ $child->disabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ') ?: '—' }}</td>
                                     <td><span class="badge-status badge-{{ $child->status }}">{{ ucfirst($child->status) }}</span></td>
                                 </tr>
                             @endforeach
@@ -99,7 +99,7 @@
     </div>
 </div>
 
-@if(! in_array($assessment->status, ['completed','cancelled'], true))
+@if(auth()->user()->isSuperAdmin() && ! in_array($assessment->status, ['completed','cancelled'], true))
 <div class="modal fade" id="cancelAssessmentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="border-radius:12px;">

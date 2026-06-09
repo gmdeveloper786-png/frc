@@ -14,7 +14,7 @@
                     <label>Date <span style="color:var(--danger)">*</span></label>
                     <input type="date" name="date" id="assessDate" value="{{ old('date') }}"
                         min="{{ now()->format('Y-m-d') }}"
-                        class="form-control @error('date') is-invalid @enderror" onchange="updateDay(this.value)">
+                        class="form-control @error('date') is-invalid @enderror">
                     @error('date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-4">
@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-4">
                     <label>Time <span style="color:var(--danger)">*</span></label>
-                    <input type="time" name="time" value="{{ old('time') }}" class="form-control @error('time') is-invalid @enderror">
+                    <input type="time" name="time" id="assessTime" value="{{ old('time') }}" class="form-control @error('time') is-invalid @enderror">
                     @error('time') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
@@ -87,12 +87,6 @@
 @push('scripts')
 <script>
 const assessmentTherapistOld = @json(old('therapist_id'));
-const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-function updateDay(dateStr) {
-    if (!dateStr) return;
-    const d = new Date(dateStr + 'T12:00:00');
-    document.getElementById('dayDisplay').value = days[d.getDay()];
-}
 function therapistOptionLabel(t) {
     return t.full_name || '';
 }
@@ -163,9 +157,8 @@ document.addEventListener('DOMContentLoaded', function() {
     reloadAssessmentTherapists();
 });
 
-const dateVal = document.getElementById('assessDate').value;
-if (dateVal) updateDay(dateVal);
 </script>
+@include('assessments.partials.assessment-datetime-scripts')
 @include('partials.approved-child-picker-scripts', [
     'pickerMode' => 'checkboxes',
     'initialChildren' => $initialChildren,

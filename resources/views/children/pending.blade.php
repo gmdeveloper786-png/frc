@@ -96,7 +96,7 @@
                             <td>
                                 <a href="{{ route('children.show', $child->id) }}" style="font-weight:600;color:var(--navy);">{{ $child->full_name }}</a>
                             </td>
-                            <td>{{ $child->branch?->name ?? '—' }}</td>
+                            <td>{{ $child->branch?->displayLabel() ?? '—' }}</td>
                             <td>{{ $child->father_name ?? '—' }}</td>
                             <td style="font-size:13px;">{{ $child->email }}</td>
                             <td style="font-size:13px;">{{ $child->phone_number ?? '—' }}</td>

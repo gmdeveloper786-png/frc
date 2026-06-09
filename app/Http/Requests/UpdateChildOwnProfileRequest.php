@@ -14,8 +14,11 @@ class UpdateChildOwnProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name'    => ['required', 'string', 'max:255'],
-            'phone_number' => ['nullable', 'string', 'max:20'],
+            'full_name'       => ['required', 'string', 'max:255'],
+            'father_name'     => ['nullable', 'string', 'max:255'],
+            'phone_number'    => ['nullable', 'string', 'max:20'],
+            'whatsapp_number' => ['nullable', 'string', 'max:20'],
+            'address'         => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

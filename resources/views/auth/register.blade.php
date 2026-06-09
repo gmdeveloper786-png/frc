@@ -88,13 +88,13 @@
                     </div>
                     <div>
                         <label>Date of Birth</label>
-                        <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                        <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth') }}"
                             class="form-control" max="{{ date('Y-m-d') }}">
                     </div>
                     <div>
                         <label>Age</label>
-                        <input type="number" name="age" value="{{ old('age') }}"
-                            class="form-control" placeholder="Age in years" min="0" max="120">
+                        <input type="number" name="age" id="age" value="{{ old('age') }}"
+                            class="form-control" placeholder="Age in years" min="0" max="120" readonly>
                     </div>
                     <div>
                         <label>Password <span style="color:var(--danger)">*</span></label>
@@ -184,7 +184,7 @@
 
                 <div id="otherDisabilityField" style="display:none;margin-top:20px;">
                     <label>Please describe the disability</label>
-                    <textarea name="other_disability" class="form-control" rows="2" placeholder="Describe the disability..."></textarea>
+                    <textarea name="other_disability" class="form-control" rows="2" placeholder="Describe the disability...">{{ old('other_disability') }}</textarea>
                 </div>
 
                 <div class="step-actions">
@@ -244,6 +244,30 @@ const registerForm = document.getElementById('registerForm');
 @if($errors->any())
 currentStep = {{ old('_step', 1) }};
 @endif
+
+function syncAgeFromDateOfBirth() {
+    const dobInput = registerForm.querySelector('[name="date_of_birth"]');
+    const ageInput = registerForm.querySelector('[name="age"]');
+    if (!dobInput || !ageInput) return;
+
+    const dateStr = dobInput.value;
+    if (!dateStr) {
+        ageInput.value = '';
+        return;
+    }
+
+    const dob = new Date(dateStr + 'T12:00:00');
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+
+    let years = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        years--;
+    }
+
+    ageInput.value = years >= 0 && years <= 120 ? years : '';
+}
 
 function setFieldError(input, message) {
     if (!input) return;
@@ -487,6 +511,13 @@ registerForm.querySelectorAll('input, select, textarea').forEach(el => {
     el.addEventListener('input', () => clearFieldError(el));
     el.addEventListener('change', () => clearFieldError(el));
 });
+
+const dateOfBirthInput = registerForm.querySelector('[name="date_of_birth"]');
+if (dateOfBirthInput) {
+    dateOfBirthInput.addEventListener('change', syncAgeFromDateOfBirth);
+    dateOfBirthInput.addEventListener('input', syncAgeFromDateOfBirth);
+    syncAgeFromDateOfBirth();
+}
 
 @if($errors->any())
 document.addEventListener('DOMContentLoaded', () => nextStep(currentStep, true));

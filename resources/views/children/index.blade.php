@@ -106,7 +106,11 @@
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
-                        <th>GR No.</th><th>Name</th><th>Branch</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th><th>Registered</th><th>Actions</th>
+                        <th>GR No.</th><th>Name</th><th>Branch</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th>
+                        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                            <th class="text-center">Assessments</th><th class="text-center">Enrollments</th>
+                        @endif
+                        <th>Registered</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,12 +120,30 @@
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">
                                 {{ $child->full_name ?? '—' }}
                             </td>
-                            <td style="font-size:13px; white-space:nowrap;">{{ $child->branch?->name ?? '—' }}</td>
+                            <td style="font-size:13px; white-space:nowrap;">{{ $child->branch?->displayLabel() ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->email ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->phone_number ?? '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ ucfirst($child->gender ?? '—') }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $child->status }}">{{ ucfirst(str_replace('_',' ', $child->status)) }}</span></td>
+                            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                <td class="text-center" style="font-size:13px;">
+                                    @php $assessmentCount = (int) ($child->child_assessments_count ?? 0); @endphp
+                                    @if($assessmentCount > 0)
+                                        <a href="{{ route('assessments.index', ['child_id' => $child->id]) }}" class="text-decoration-none" style="color:var(--navy);font-weight:600;" title="View assessments">{{ $assessmentCount }}</a>
+                                    @else
+                                        <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+                                <td class="text-center" style="font-size:13px;">
+                                    @php $enrollmentCount = (int) ($child->enrollments_count ?? 0); @endphp
+                                    @if($enrollmentCount > 0)
+                                        <a href="{{ route('enrollments.index', ['child_id' => $child->id]) }}" class="text-decoration-none" style="color:var(--navy);font-weight:600;" title="View enrollments">{{ $enrollmentCount }}</a>
+                                    @else
+                                        <span class="text-muted">0</span>
+                                    @endif
+                                </td>
+                            @endif
                             <td style="font-size:13px;color:var(--text-muted); white-space:nowrap;">{{ $child->created_at?->format('d M Y') ?? '—' }}</td>
                             <td style="white-space:nowrap;">
                                 <div style="display:flex;gap:6px;">

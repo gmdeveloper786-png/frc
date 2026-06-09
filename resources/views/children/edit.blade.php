@@ -120,6 +120,11 @@
         @endforeach
     </div>
     @error('disability_ids') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+    <div id="editOtherDisabilityField" class="mt-3" style="display:none;">
+        <label>Please describe the disability</label>
+        <textarea name="other_disability" class="form-control @error('other_disability') is-invalid @enderror" rows="2" placeholder="Describe the disability...">{{ old('other_disability', $child->other_disability) }}</textarea>
+        @error('other_disability') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+    </div>
 </div>
 
 <div class="form-section">
@@ -142,4 +147,23 @@
     <a href="{{ route('children.show', $child->id) }}" class="btn-outline-teal">Cancel</a>
 </div>
 </form>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const otherField = document.getElementById('editOtherDisabilityField');
+    const boxes = document.querySelectorAll('input[name="disability_ids[]"]');
+    if (!otherField || !boxes.length) return;
+
+    function syncOtherField() {
+        const otherChecked = Array.from(boxes).some(cb =>
+            cb.checked && cb.closest('label')?.querySelector('span')?.textContent.trim() === 'Other'
+        );
+        otherField.style.display = otherChecked ? 'block' : 'none';
+    }
+
+    boxes.forEach(cb => cb.addEventListener('change', syncOtherField));
+    syncOtherField();
+});
+</script>
+@endpush
 @endsection

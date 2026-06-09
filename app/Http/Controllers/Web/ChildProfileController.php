@@ -18,7 +18,7 @@ class ChildProfileController extends Controller
 
     public function edit(): View
     {
-        $user = auth()->user()->load('disabilities');
+        $user = auth()->user()->load(['disabilities', 'branch']);
 
         return view('child.profile', compact('user'));
     }

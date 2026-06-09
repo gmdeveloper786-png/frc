@@ -36,4 +36,17 @@ class RegisterChildRequest extends FormRequest
             'other_disability' => ['nullable', 'string', 'max:500'],
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $ids = array_map('intval', (array) $this->input('disability_ids', []));
+            $otherId = \App\Models\Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+            $hasOther = $otherId !== null && in_array((int) $otherId, $ids, true);
+
+            if ($hasOther && ! filled(trim((string) $this->input('other_disability', '')))) {
+                $validator->errors()->add('other_disability', 'Please describe the disability when "Other" is selected.');
+            }
+        });
+    }
 }

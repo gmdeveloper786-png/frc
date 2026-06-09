@@ -67,7 +67,14 @@
         @if($branches->count() === 1)
             <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
         @endif
+        @if(request()->filled('child_id'))
+            <input type="hidden" name="child_id" value="{{ request('child_id') }}">
+        @endif
         <div class="row g-2 align-items-end form-frc">
+            <div class="col-12 col-md-3">
+                <label class="form-label small text-muted mb-1">Search child</label>
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Child name or GR number">
+            </div>
             @if($branches->count() > 1)
             <div class="col-12 col-md-3">
                 <label class="form-label small text-muted mb-1">Branch</label>
@@ -98,7 +105,7 @@
             </div>
             <div class="col-12 col-md-2 filter-actions">
                 <button type="submit" class="btn-teal">Filter</button>
-                @if(request()->hasAny(['branch_id','status','date_from','date_to']))
+                @if(request()->hasAny(['branch_id','status','date_from','date_to','search','child_id']))
                     <a href="{{ route('assessments.index') }}" class="btn-outline-teal" style="justify-content:center;">Clear</a>
                 @endif
             </div>
@@ -113,7 +120,10 @@
                 <tbody>
                     @foreach($assessments as $item)
                         @php
-                            $childNames = $item->children->pluck('full_name')->filter()->join(', ');
+                            $childrenList = $item->children->filter(fn ($c) => filled($c->full_name));
+                            $firstChild = $childrenList->first();
+                            $extraChildCount = max(0, $childrenList->count() - 1);
+                            $childNames = $childrenList->pluck('full_name')->join(', ');
                         @endphp
                         <tr>
                             <td style="color:var(--text-muted);">{{ $assessments->firstItem() + $loop->index }}</td>
@@ -130,9 +140,12 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td style="font-size:13px;" @if($childNames !== '') title="{{ $childNames }}" @endif>
-                                @if($item->children->count() > 0)
-                                    <span style="background:var(--navy-light);color:var(--navy);padding:2px 10px;border-radius:6px;">{{ $item->children->count() }}</span>
+                            <td style="font-size:13px; white-space:nowrap;" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                                @if($firstChild)
+                                    <a href="{{ route('children.show', $firstChild->id) }}" style="color:var(--navy);font-weight:500;">{{ $firstChild->full_name }}</a>
+                                    @if($extraChildCount > 0)
+                                        <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                    @endif
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
@@ -144,12 +157,12 @@
                                     @if(in_array($item->status, ['draft','publish'], true))
                                         <a href="{{ route('assessments.edit', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>
                                     @endif
-                                    @if($item->status === 'publish')
+                                    @if(auth()->user()->isSuperAdmin() && $item->status === 'publish')
                                         <form action="{{ route('assessments.complete', $item) }}" method="POST">@csrf
                                             <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Mark as completed?')"><i class="fa-solid fa-check"></i></button>
                                         </form>
                                     @endif
-                                    @if(! in_array($item->status, ['completed','cancelled'], true))
+                                    @if(auth()->user()->isSuperAdmin() && ! in_array($item->status, ['completed','cancelled'], true))
                                         <button type="button" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
                                             data-bs-toggle="modal" data-bs-target="#cancelModal{{ $item->id }}"><i class="fa-solid fa-ban"></i></button>
                                     @endif
@@ -158,7 +171,7 @@
                                         <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Delete?')"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
-                                @if(! in_array($item->status, ['completed','cancelled'], true))
+                                @if(auth()->user()->isSuperAdmin() && ! in_array($item->status, ['completed','cancelled'], true))
                                     <div class="modal fade" id="cancelModal{{ $item->id }}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content" style="border-radius:12px;">

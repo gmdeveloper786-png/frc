@@ -16,7 +16,7 @@ class CompleteAssessmentRequest extends FormRequest
             return false;
         }
 
-        if ($user->hasPermission('manage_assessments')) {
+        if ($user->isSuperAdmin() && $user->hasPermission('manage_assessments')) {
             return true;
         }
 

@@ -20,7 +20,7 @@
         <div class="row g-2 align-items-end form-frc">
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Search</label>
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search child name...">
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Child name or GR number">
             </div>
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Enrollment Status</label>
@@ -91,6 +91,9 @@
                                 }}</td>
                             <td style="font-weight:500; white-space:nowrap;">
                                 <a href="{{ route('children.show', $e->child_id) }}" style="color:var(--navy);">{{ $e->child?->full_name }}</a>
+                                @if($e->child?->gr_number)
+                                    <span style="display:block;font-size:12px;color:var(--text-muted);font-family:monospace;">{{ $e->child->gr_number }}</span>
+                                @endif
                                 @if($e->isGroupEnrollment())
                                     <span class="badge-status badge-draft" style="font-size:10px;margin-left:4px;" title="Group therapy">Group ({{ $e->groupSize() }})</span>
                                 @endif

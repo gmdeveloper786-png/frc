@@ -22,7 +22,7 @@
             <hr class="child-show-divider">
             <table class="enrollment-detail-kv child-show-detail-kv">
                 <tr><td>GR Number</td><td class="fw-medium" style="font-family:monospace;letter-spacing:0.02em;">{{ $child->gr_number ?? '—' }}</td></tr>
-                <tr><td>Branch</td><td class="fw-medium">{{ $child->branch?->name ?? '—' }}</td></tr>
+                <tr><td>Branch</td><td class="fw-medium">{{ $child->branch?->displayLabel() ?? '—' }}</td></tr>
                 <tr><td>Father</td><td class="fw-medium">{{ $child->father_name ?? '—' }}</td></tr>
                 <tr><td>Email</td><td class="child-show-break-all">{{ $child->email ?? '—' }}</td></tr>
                 <tr><td>Phone</td><td>{{ $child->phone_number ?? '—' }}</td></tr>
@@ -37,7 +37,7 @@
                 <div class="child-show-section-title">Disabilities</div>
                 <div class="child-show-tag-list">
                     @foreach($child->disabilities as $d)
-                        <span class="child-show-tag">{{ $d->name ?? '—' }}</span>
+                        <span class="child-show-tag">{{ $child->disabilityLabel($d) }}</span>
                     @endforeach
                 </div>
             @endif

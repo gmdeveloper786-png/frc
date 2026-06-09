@@ -45,7 +45,7 @@
                             </td>
                             <td>{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td>{{ $child->gender ? ucfirst($child->gender) : '—' }}</td>
-                            <td class="small" style="white-space:nowrap;">{{ $child->disabilities->pluck('name')->join(', ') ?: '—' }}</td>
+                            <td class="small" style="white-space:nowrap;">{{ $child->disabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ') ?: '—' }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $row['branch_name'] }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $lastAssess?->date?->format('d M Y') ?? '—' }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $row['last_session_date'] ? \Carbon\Carbon::parse($row['last_session_date'])->format('d M Y') : '—' }}</td>

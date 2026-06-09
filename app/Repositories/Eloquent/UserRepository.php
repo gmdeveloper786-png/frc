@@ -41,6 +41,7 @@ class UserRepository implements UserRepositoryInterface
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
         $paginator = User::with(['role', 'disabilities', 'branch'])
+            ->withCount(['enrollments', 'childAssessments'])
             ->children()
             ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))

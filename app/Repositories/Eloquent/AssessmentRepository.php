@@ -38,6 +38,22 @@ class AssessmentRepository implements AssessmentRepositoryInterface
         ])
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['branch_id']), fn($q) => $q->where('branch_id', $filters['branch_id']))
+            ->when(! empty($filters['child_id']), function ($q) use ($filters): void {
+                $q->whereHas('children', fn($c) => $c->where('users.id', (int) $filters['child_id']));
+            })
+            ->when(! empty($filters['search']), function ($q) use ($filters): void {
+                $term = trim((string) $filters['search']);
+                $like = '%' . $term . '%';
+                $q->whereHas('children', function ($c) use ($like, $term): void {
+                    $c->where(function ($inner) use ($like, $term): void {
+                        $inner->where('full_name', 'like', $like)
+                            ->orWhere('gr_number', 'like', $like);
+                        if (ctype_digit($term)) {
+                            $inner->orWhere('users.id', (int) $term);
+                        }
+                    });
+                });
+            })
             ->when(isset($filters['date_from']), fn($q) => $q->where('date', '>=', $filters['date_from']))
             ->when(isset($filters['date_to']), fn($q) => $q->where('date', '<=', $filters['date_to']))
             ->latest('date')

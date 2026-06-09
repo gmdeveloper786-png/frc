@@ -66,8 +66,14 @@ class ChildController extends Controller
         abort_if(! $child || ! $child->isChild(), 404);
 
         $data           = $request->validated();
-        $disabilityIds  = $data['disability_ids'] ?? [];
-        unset($data['disability_ids']);
+        $disabilityIds  = array_map('intval', $data['disability_ids'] ?? []);
+        unset($data['disability_ids'], $data['other_disability']);
+
+        $otherId = Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+        $hasOther = $otherId !== null && in_array((int) $otherId, $disabilityIds, true);
+        $data['other_disability'] = $hasOther && filled($request->input('other_disability'))
+            ? trim((string) $request->input('other_disability'))
+            : null;
 
         if (empty($data['password'])) {
             unset($data['password']);
