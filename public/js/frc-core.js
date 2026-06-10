@@ -65,4 +65,62 @@
             return nativeFetch(input, init);
         };
     }
+
+    function stripEmptyDateParams(form) {
+        form.querySelectorAll('input[type="date"]').forEach(function (input) {
+            if (!input.value) {
+                input.removeAttribute('name');
+            }
+        });
+    }
+
+    function submitGetFilterForm(form) {
+        if (!form || String(form.method || 'get').toLowerCase() !== 'get') {
+            return;
+        }
+        stripEmptyDateParams(form);
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+            return;
+        }
+        form.submit();
+    }
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form || form.tagName !== 'FORM') {
+            return;
+        }
+        if (String(form.method || 'get').toLowerCase() !== 'get') {
+            return;
+        }
+        stripEmptyDateParams(form);
+    }, true);
+
+    document.addEventListener('change', function (event) {
+        var target = event.target;
+        if (!target) {
+            return;
+        }
+
+        var formId = target.getAttribute('data-auto-submit-form');
+        if (formId) {
+            var linkedForm = document.getElementById(formId);
+            if (linkedForm && (target.tagName === 'SELECT' || target.type === 'date')) {
+                submitGetFilterForm(linkedForm);
+            }
+            return;
+        }
+
+        if (!target.hasAttribute('data-auto-submit')) {
+            return;
+        }
+
+        var form = target.closest('form');
+        if (!form || (target.tagName !== 'SELECT' && target.type !== 'date')) {
+            return;
+        }
+
+        submitGetFilterForm(form);
+    });
 })();

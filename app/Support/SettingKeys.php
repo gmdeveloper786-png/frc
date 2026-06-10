@@ -72,7 +72,7 @@ final class SettingKeys
                 'group' => 'enrollment',
             ],
             self::CITY_SESSION_PRICES => [
-                'value' => '{"Karachi":1000,"Faisalabad":1500}',
+                'value' => '{"Karachi":1000,"Faisalabad":1000,"Lahore":1000,"Sialkot":1000}',
                 'type'  => 'json',
                 'group' => 'enrollment',
             ],

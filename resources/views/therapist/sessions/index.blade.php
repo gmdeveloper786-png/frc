@@ -498,17 +498,6 @@ window.FRC_SESSION_FEEDBACK_RATINGS = @json(\App\Support\SessionFeedbackRating::
         });
     }
 
-    var filterForm = document.getElementById('therapistSessionsFilterForm');
-    if (filterForm) {
-        filterForm.addEventListener('submit', function () {
-            filterForm.querySelectorAll('input[type="date"]').forEach(function (input) {
-                if (!input.value) {
-                    input.removeAttribute('name');
-                }
-            });
-        });
-    }
-
     var cancelModal = document.getElementById('frcTherapistCancelModal');
     if (cancelModal) {
         cancelModal.addEventListener('show.bs.modal', function (event) {
