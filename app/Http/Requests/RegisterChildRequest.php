@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterChildRequest extends FormRequest
 {
@@ -18,7 +19,7 @@ class RegisterChildRequest extends FormRequest
             'full_name'      => ['required', 'string', 'max:255'],
             'father_name'    => ['nullable', 'string', 'max:255'],
             'email'          => ['required', 'email', 'unique:users,email'],
-            'password'       => ['required', 'string', 'min:8', 'confirmed'],
+            'password'       => ['required', 'string', 'confirmed', Password::defaults()],
             'age'            => ['nullable', 'integer', 'min:0', 'max:120'],
             'gender'         => ['nullable', 'in:male,female,other'],
             'date_of_birth'  => ['nullable', 'date', 'before:today'],
@@ -41,7 +42,7 @@ class RegisterChildRequest extends FormRequest
     {
         $validator->after(function ($validator): void {
             $ids = array_map('intval', (array) $this->input('disability_ids', []));
-            $otherId = \App\Models\Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+            $otherId = \App\Models\Disability::otherId();
             $hasOther = $otherId !== null && in_array((int) $otherId, $ids, true);
 
             if ($hasOther && ! filled(trim((string) $this->input('other_disability', '')))) {

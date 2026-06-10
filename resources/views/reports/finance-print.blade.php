@@ -100,8 +100,8 @@
 <body>
 <div class="print-sheet">
     <div class="no-print print-actions">
-        <button type="button" onclick="window.print()" class="btn-teal">Print</button>
-        <button type="button" onclick="window.close()" class="btn-outline-teal">Close</button>
+        <button type="button" data-window-print class="btn-teal">Print</button>
+        <button type="button" data-window-close class="btn-outline-teal">Close</button>
     </div>
     <h5>Finance Report — {{ frc_datetime() }} ({{ count($rows) }} records)</h5>
     <div class="mini-sum">
@@ -196,8 +196,9 @@
         </tbody>
     </table>
 </div>
+<script src="{{ asset('js/frc-core.js') }}" nonce="{{ $cspNonce }}"></script>
 @if(request('autoprint'))
-<script>
+<script nonce="{{ $cspNonce }}">
 window.addEventListener('load', function() {
     setTimeout(function() { window.print(); }, 400);
 });

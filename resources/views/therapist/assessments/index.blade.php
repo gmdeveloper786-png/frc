@@ -132,7 +132,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     var form = document.getElementById('therapistAssessmentsFilterForm');
     if (!form) return;

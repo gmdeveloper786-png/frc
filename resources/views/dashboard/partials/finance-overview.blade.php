@@ -7,7 +7,7 @@
                 <label for="chart_year" class="dashboard-chart-filter-label">Year</label>
                 <div class="dashboard-year-picker dashboard-year-picker--header">
                     <i class="fa-regular fa-calendar-days dashboard-year-picker-icon" aria-hidden="true"></i>
-                    <select name="chart_year" id="chart_year" class="dashboard-year-picker-select" onchange="this.form.submit()" aria-label="Filter by year">
+                    <select name="chart_year" id="chart_year" class="dashboard-year-picker-select" data-auto-submit aria-label="Filter by year">
                         @foreach($stats['chart_years'] as $y)
                             <option value="{{ $y }}" @selected($stats['chart_year'] == $y)>{{ $y }}</option>
                         @endforeach

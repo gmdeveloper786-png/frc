@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Support\StaffBranchScope;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class StoreTherapistRequest extends FormRequest
 {
@@ -34,7 +36,7 @@ class StoreTherapistRequest extends FormRequest
             'full_name'        => ['required', 'string', 'max:255'],
             'father_name'      => ['nullable', 'string', 'max:255'],
             'email'            => ['required', 'email', 'unique:users,email'],
-            'password'         => ['required', 'string', 'min:8', 'confirmed'],
+            'password'         => ['required', 'string', 'confirmed', Password::defaults()],
             'branch_id'        => [
                 'required',
                 'integer',
@@ -56,7 +58,7 @@ class StoreTherapistRequest extends FormRequest
             'break_start'      => ['nullable', 'date_format:H:i'],
             'break_end'        => ['nullable', 'date_format:H:i', 'after:break_start'],
             'documents'        => ['nullable', 'array'],
-            'documents.*'      => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:2048'],
+            'documents.*'      => UploadRules::document(required: false),
             'profile_status'   => ['nullable', 'in:active,inactive'],
             'status'           => ['nullable', 'in:active,inactive'],
         ];

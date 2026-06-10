@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Model
 {
-    public const SUPER_ADMIN = 'super_admin';
-    public const ADMIN       = 'admin';
-    public const THERAPIST   = 'therapist';
-    public const FINANCE     = 'finance';
-    public const CHILD       = 'child';
+    public const SUPER_ADMIN       = 'super_admin';
+    public const ADMIN             = 'admin';
+    public const THERAPIST         = 'therapist';
+    public const FINANCE           = 'finance';
+    public const APPROVAL_DISCOUNT = 'approval_discount';
+    public const CHILD             = 'child';
 
     protected $fillable = ['name', 'display_name'];
 

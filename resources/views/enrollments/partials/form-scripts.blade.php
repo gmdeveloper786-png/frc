@@ -8,7 +8,7 @@
     $branchCityMap = $enrollmentPricing['branch_city_map'] ?? [];
     $citySessionPrices = $enrollmentPricing['city_session_prices'] ?? [];
 @endphp
-<script>
+<script nonce="{{ $cspNonce }}">
 window.FRC_HIGH_DISCOUNT_THRESHOLD = {{ (float) ($frc['high_discount_threshold'] ?? 50) }};
 const branchCityMap = @json($branchCityMap);
 const citySessionPrices = @json($citySessionPrices);
@@ -261,6 +261,19 @@ function onScheduleSlotChange(idx) {
     recalculate();
 }
 
+function bindScheduleRow(row, idx) {
+    const daySel = row.querySelector(`#daySelect${idx}`) || row.querySelector('select[name*="[day]"]');
+    const slotSel = row.querySelector(`#slotSelect${idx}`) || row.querySelector('select[name*="[time_slot]"]');
+    const removeBtn = row.querySelector('[data-remove-row]');
+    if (daySel) {
+        daySel.addEventListener('change', () => onScheduleDayChange(idx));
+    }
+    if (slotSel) {
+        slotSel.addEventListener('change', () => onScheduleSlotChange(idx));
+    }
+    removeBtn?.addEventListener('click', () => removeRow(removeBtn));
+}
+
 function addScheduleRow() {
     const idx = rowIndex++;
     const row = document.createElement('div');
@@ -268,22 +281,23 @@ function addScheduleRow() {
     row.innerHTML = `
         <div>
             <label>Day</label>
-            <select name="schedules[${idx}][day]" class="form-control" id="daySelect${idx}" onchange="onScheduleDayChange(${idx})">
+            <select name="schedules[${idx}][day]" class="form-control" id="daySelect${idx}">
                 <option value="">Select Day</option>
                 ${availableDays.map(d => `<option value="${d}">${d}</option>`).join('')}
             </select>
         </div>
         <div>
             <label>Time Slot</label>
-            <select name="schedules[${idx}][time_slot]" class="form-control" id="slotSelect${idx}" onchange="onScheduleSlotChange(${idx})">
+            <select name="schedules[${idx}][time_slot]" class="form-control" id="slotSelect${idx}">
                 <option value="">Select Day First</option>
             </select>
         </div>
         <div>
-            <button type="button" onclick="removeRow(this)" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
+            <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
         </div>
     `;
     document.getElementById('scheduleRows').appendChild(row);
+    bindScheduleRow(row, idx);
     recalculate();
 }
 
@@ -632,9 +646,42 @@ async function applyInitialSchedulesFromEdit() {
 document.addEventListener('DOMContentLoaded', async function() {
     const b = document.getElementById('branchSelect');
     const svc = document.getElementById('serviceSelect');
+    const therapistSel = document.getElementById('therapistSelect');
+    const repeatWeekly = document.getElementById('repeatWeekly');
+
     if (b) {
-        b.addEventListener('change', () => applySessionPriceForBranch());
+        b.addEventListener('change', () => {
+            applySessionPriceForBranch();
+            if (b.tagName === 'SELECT' && b.value) {
+                loadTherapists(b.value);
+            }
+        });
     }
+    svc?.addEventListener('change', onEnrollmentServiceChange);
+    therapistSel?.addEventListener('change', loadScheduleOptions);
+    document.getElementById('addScheduleRowBtn')?.addEventListener('click', addScheduleRow);
+    repeatWeekly?.addEventListener('change', () => {
+        toggleDuration();
+        recalculate();
+    });
+    document.getElementById('durationValue')?.addEventListener('input', recalculate);
+    document.getElementById('durationUnit')?.addEventListener('change', recalculate);
+    document.getElementById('discountPct')?.addEventListener('input', function () {
+        recalculate();
+        checkHighDiscount();
+    });
+    const firstScheduleRow = document.querySelector('#scheduleRows .schedule-row');
+    if (firstScheduleRow) {
+        bindScheduleRow(firstScheduleRow, 0);
+    }
+
+    document.querySelectorAll('[data-child-select-sync]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            if (typeof onChildSelectChange === 'function') {
+                onChildSelectChange();
+            }
+        });
+    });
     if (b?.value) {
         applySessionPriceForBranch();
     }
@@ -657,8 +704,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         await loadScheduleOptions({ resetSchedules: false });
         await applyInitialSchedulesFromEdit();
         checkHighDiscount();
-        const cb = document.getElementById('repeatWeekly');
-        if (cb && cb.checked) toggleDuration();
+        if (repeatWeekly && repeatWeekly.checked) toggleDuration();
         recalculate();
     } else if (b?.value && svc?.value) {
         await loadTherapists(b.value);

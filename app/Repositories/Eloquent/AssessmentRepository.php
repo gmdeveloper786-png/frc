@@ -43,7 +43,7 @@ class AssessmentRepository implements AssessmentRepositoryInterface
             })
             ->when(! empty($filters['search']), function ($q) use ($filters): void {
                 $term = trim((string) $filters['search']);
-                $like = '%' . $term . '%';
+                $like = frc_like_pattern($term);
                 $q->whereHas('children', function ($c) use ($like, $term): void {
                     $c->where(function ($inner) use ($like, $term): void {
                         $inner->where('full_name', 'like', $like)

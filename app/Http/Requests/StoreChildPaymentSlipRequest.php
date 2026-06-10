@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Support\Money;
+use App\Support\UploadRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,7 +40,7 @@ class StoreChildPaymentSlipRequest extends FormRequest
             'payment_method'        => ['required', 'in:bank_transfer,easypaisa,jazzcash,card,other'],
             'transaction_reference' => ['nullable', 'string', 'max:255'],
             'payment_date'          => ['required', 'date', 'before_or_equal:today'],
-            'payment_slip'          => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:2048'],
+            'payment_slip'          => UploadRules::document(),
             'notes'                 => ['nullable', 'string', 'max:1000'],
         ];
     }

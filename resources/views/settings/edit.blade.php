@@ -73,7 +73,7 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                             @if($key === 'high_discount_threshold')
-                                <div class="form-text">Discounts above this % need Super Admin approval (high discount queue).</div>
+                                <div class="form-text">Discounts above this % need approval in the high discount queue. Approval Discount staff users receive email notifications.</div>
                             @endif
                         </div>
                     @endforeach

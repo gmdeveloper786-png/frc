@@ -20,7 +20,7 @@
                 @if($enrollments->isNotEmpty())
                     <input type="search" id="enrollmentSearch" class="form-control mb-2" placeholder="Search by child name or enrollment #…" autocomplete="off" aria-controls="enrollmentSel">
                 @endif
-                <select name="enrollment_id" class="form-control @error('enrollment_id') is-invalid @enderror" id="enrollmentSel" onchange="loadEnrollmentInfo(this.value)" @if($enrollments->isEmpty()) disabled @endif>
+                <select name="enrollment_id" class="form-control @error('enrollment_id') is-invalid @enderror" id="enrollmentSel" @if($enrollments->isEmpty()) disabled @endif>
                     <option value="">Select Enrollment</option>
                     @foreach($enrollments as $e)
                         @php $remaining = (float) $e->getRawOriginal('remaining_amount'); @endphp
@@ -76,7 +76,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 const enrollments = @json($enrollmentLookup);
 
 function filterEnrollmentOptions() {
@@ -116,7 +116,10 @@ if (searchInput) {
 }
 
 const sel = document.getElementById('enrollmentSel');
-if (sel && sel.value) loadEnrollmentInfo(sel.value);
+if (sel) {
+    sel.addEventListener('change', function () { loadEnrollmentInfo(this.value); });
+    if (sel.value) loadEnrollmentInfo(sel.value);
+}
 
 document.querySelector('input[name="amount"]')?.addEventListener('input', function () {
     this.value = String(this.value || '').replace(/\D/g, '');

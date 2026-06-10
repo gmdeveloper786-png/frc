@@ -6,7 +6,7 @@
 @endphp
 <label>Child <span style="color:var(--danger)">*</span></label>
 <input type="search" id="{{ $searchId }}" class="form-control mb-2" placeholder="Search by child name (min 2 letters)…" autocomplete="off" aria-controls="{{ $selectId }}">
-<select name="{{ $fieldName }}" id="{{ $selectId }}" class="form-control @error($fieldName) is-invalid @enderror" onchange="typeof onChildSelectChange === 'function' && onChildSelectChange()">
+<select name="{{ $fieldName }}" id="{{ $selectId }}" class="form-control @error($fieldName) is-invalid @enderror" data-child-select-sync>
     <option value="">Select Child</option>
     @foreach($initialChildren as $child)
         <option value="{{ $child->id }}" @selected($selectedId === $child->id)>{{ $child->full_name }}</option>

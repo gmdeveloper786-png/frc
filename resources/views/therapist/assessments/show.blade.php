@@ -43,7 +43,7 @@
                     @csrf
                     <label style="font-size:13px;color:var(--text-muted);">Completion summary (optional)</label>
                     <textarea name="assessment_notes" class="form-control mb-2" rows="3" placeholder="Brief summary for records">{{ old('assessment_notes') }}</textarea>
-                    <button type="submit" class="btn-teal" onclick="return confirm('Mark this assessment as completed?')"><i class="fa-solid fa-check"></i> Complete</button>
+                    <button type="submit" class="btn-teal" data-confirm="Mark this assessment as completed?"><i class="fa-solid fa-check"></i> Complete</button>
                 </form>
             </div>
         @endif
@@ -164,10 +164,10 @@
                                 </form>
                             </details>
 
-                                <form action="{{ route('therapist.assessments.notes.destroy', [$assessment, $note]) }}" method="POST" class="m-0" onsubmit="return confirm('Delete this structured note permanently?');">
+                                <form action="{{ route('therapist.assessments.notes.destroy', [$assessment, $note]) }}" method="POST" class="m-0">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:13px;padding:6px 14px;border-radius:8px;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:13px;padding:6px 14px;border-radius:8px;" data-confirm="Delete this structured note permanently?">
                                         <i class="fa-regular fa-trash-can me-1" aria-hidden="true"></i> Delete note
                                     </button>
                                 </form>

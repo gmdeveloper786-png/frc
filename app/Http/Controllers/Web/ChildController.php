@@ -41,19 +41,21 @@ class ChildController extends Controller
         return view('children.pending', compact('children'));
     }
 
-    public function show(int $id): View
+    public function show(Request $request, int $id): View
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('viewChild', $child);
         $child->load(['disabilities', 'branch', 'enrollments.branch', 'assessments.branch']);
 
         return view('children.show', compact('child'));
     }
 
-    public function edit(int $id): View
+    public function edit(Request $request, int $id): View
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('updateChild', $child);
         $child->load('disabilities');
         $disabilities = Disability::published()->orderBy('name')->get();
 
@@ -64,12 +66,13 @@ class ChildController extends Controller
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('updateChild', $child);
 
         $data           = $request->validated();
         $disabilityIds  = array_map('intval', $data['disability_ids'] ?? []);
         unset($data['disability_ids'], $data['other_disability']);
 
-        $otherId = Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+        $otherId = Disability::otherId();
         $hasOther = $otherId !== null && in_array((int) $otherId, $disabilityIds, true);
         $data['other_disability'] = $hasOther && filled($request->input('other_disability'))
             ? trim((string) $request->input('other_disability'))
@@ -85,10 +88,11 @@ class ChildController extends Controller
         return redirect()->route('children.show', $child->id)->with('success', 'Child profile updated successfully.');
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Request $request, int $id): RedirectResponse
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('deleteChild', $child);
 
         $name = $child->full_name;
         $this->userRepository->delete($child);
@@ -100,6 +104,7 @@ class ChildController extends Controller
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('approveChild', $child);
 
         $outcome = $this->approvalService->approve($child, $request->user());
 
@@ -110,6 +115,7 @@ class ChildController extends Controller
     {
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404);
+        $this->authorize('approveChild', $child);
 
         $this->approvalService->reject($child, $request->user(), $request->rejection_reason);
 

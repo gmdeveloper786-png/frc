@@ -175,7 +175,7 @@
                                             <a href="{{ route($paymentsReceiptRoute, $p->id) }}" class="btn-outline-teal" target="_blank" style="font-size:12px;padding:4px 10px;">Receipt</a>
                                     @elseif($p->status === 'pending_verification' && auth()->user()->hasPermission('verify_payments'))
                                         <form action="{{ route($paymentsVerifyRoute, $p->id) }}" method="POST" style="display:inline-flex;margin:0;">@csrf
-                                            <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;background:var(--success);color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;line-height:1;" onclick="return confirm('Verify?')" title="Verify">
+                                            <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;background:var(--success);color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;line-height:1;" data-confirm="Verify?" title="Verify">
                                                 <i class="fa-solid fa-check"></i>
                                             </button>
                                         </form>
@@ -246,7 +246,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const modal = document.getElementById('paymentRejectReasonModal');
     if (!modal) return;

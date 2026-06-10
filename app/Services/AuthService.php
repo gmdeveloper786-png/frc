@@ -104,7 +104,7 @@ class AuthService
             return false;
         }
 
-        $otherId = Disability::query()->whereRaw('LOWER(name) = ?', ['other'])->value('id');
+        $otherId = Disability::otherId();
 
         return $otherId !== null && in_array((int) $otherId, $disabilityIds, true);
     }

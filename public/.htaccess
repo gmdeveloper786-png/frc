@@ -3,6 +3,9 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    # Block dotfiles (.env backups, etc.) if they ever land under public/
+    RewriteRule (^|/)\. - [F]
+
     RewriteEngine On
 
     # Uploaded files: route through Laravel when symlink() is disabled (shared hosting)

@@ -30,5 +30,7 @@ class ServiceSeeder extends Seeder
                 ['name' => $name, 'status' => 'publish']
             );
         }
+
+        $this->call(ServiceFeedbackQuestionSeeder::class);
     }
 }

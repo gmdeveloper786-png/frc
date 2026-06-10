@@ -129,5 +129,24 @@
             @endif
         </div>
     </div>
+
+    @if(! empty($performance['charts']))
+        <div class="col-12">
+            <div class="card-frc therapist-child-performance-card">
+                @include('partials.session-performance-chart', [
+                    'chartId' => 'therapistChildPerformance',
+                    'chart' => $performance['charts'][$performance['default_key']] ?? null,
+                    'chartsByKey' => $performance['charts'],
+                    'filterOptions' => $performance['filter_options'],
+                    'defaultKey' => $performance['default_key'],
+                    'showFilter' => $performance['show_filter'],
+                    'wrapperClass' => 'session-performance-chart therapist-child-performance',
+                    'headingId' => 'therapist-child-performance-heading',
+                    'completedNoFeedbackMessage' => 'Performance will appear once you submit feedback for completed sessions.',
+                    'noSessionsMessage' => 'No completed sessions yet for the selected service.',
+                ])
+            </div>
+        </div>
+    @endif
 </div>
 @endsection

@@ -12,6 +12,7 @@ class ServiceManagementService
 {
     public function __construct(
         private readonly ServiceRepositoryInterface $repository,
+        private readonly SessionFeedbackService $sessionFeedback,
     ) {}
 
     public function getAll(array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -33,12 +34,24 @@ class ServiceManagementService
 
     public function create(array $data, int $createdBy): Service
     {
-        return $this->repository->create(array_merge($data, ['created_by' => $createdBy, 'updated_by' => $createdBy]));
+        $questions = $data['feedback_questions'] ?? [];
+        unset($data['feedback_questions']);
+
+        $service = $this->repository->create(array_merge($data, ['created_by' => $createdBy, 'updated_by' => $createdBy]));
+        $this->sessionFeedback->syncServiceQuestions($service, $questions, $createdBy);
+
+        return $service->fresh(['feedbackQuestions']);
     }
 
     public function update(Service $service, array $data, int $updatedBy): Service
     {
-        return $this->repository->update($service, array_merge($data, ['updated_by' => $updatedBy]));
+        $questions = $data['feedback_questions'] ?? [];
+        unset($data['feedback_questions']);
+
+        $service = $this->repository->update($service, array_merge($data, ['updated_by' => $updatedBy]));
+        $this->sessionFeedback->syncServiceQuestions($service, $questions, $updatedBy);
+
+        return $service->fresh(['feedbackQuestions']);
     }
 
     public function delete(Service $service): bool

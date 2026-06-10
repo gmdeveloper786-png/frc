@@ -72,6 +72,8 @@
             @endif
         </section>
 
+        @include('child.partials.enrollment-performance-chart', ['row' => $row])
+
         @if($nextSession)
             <section class="child-enrollment-detail__section child-enrollment-detail__next-session" aria-labelledby="next-session-heading">
                 <div class="child-enrollment-detail__next-head">

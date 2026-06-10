@@ -23,16 +23,16 @@
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_start_date">Start date</label>
                     <input type="date" id="filter_start_date" name="start_date" class="form-control form-control-sm w-100"
-                        value="{{ $startDate ?? '' }}" onchange="this.form.submit()">
+                        value="{{ $startDate ?? '' }}" data-auto-submit>
                 </div>
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_end_date">End date</label>
                     <input type="date" id="filter_end_date" name="end_date" class="form-control form-control-sm w-100"
-                        value="{{ $endDate ?? '' }}" onchange="this.form.submit()">
+                        value="{{ $endDate ?? '' }}" data-auto-submit>
                 </div>
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_status">Status</label>
-                    <select id="filter_status" name="status" class="form-select form-select-sm w-100" onchange="this.form.submit()">
+                    <select id="filter_status" name="status" class="form-select form-select-sm w-100" data-auto-submit>
                     @foreach($statuses as $key => $label)
                         <option value="{{ $key }}" @selected(($status ?? 'all') === $key)>{{ $label }}</option>
                     @endforeach
@@ -40,7 +40,7 @@
                 </div>
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_child_id">Child</label>
-                    <select id="filter_child_id" name="child_id" class="form-select form-select-sm w-100" onchange="this.form.submit()">
+                    <select id="filter_child_id" name="child_id" class="form-select form-select-sm w-100" data-auto-submit>
                     <option value="">All children</option>
                     @foreach($filterChildren ?? [] as $c)
                         <option value="{{ $c->id }}" @selected(($filterChildId ?? null) === (int) $c->id)>{{ $c->full_name }}</option>
@@ -49,7 +49,7 @@
                 </div>
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_service_id">Service</label>
-                    <select id="filter_service_id" name="service_id" class="form-select form-select-sm w-100" onchange="this.form.submit()">
+                    <select id="filter_service_id" name="service_id" class="form-select form-select-sm w-100" data-auto-submit>
                     <option value="">All services</option>
                     @foreach($filterServices ?? [] as $svc)
                         <option value="{{ $svc->id }}" @selected(($filterServiceId ?? null) === (int) $svc->id)>{{ $svc->name }}</option>
@@ -230,6 +230,7 @@
                                                     <button type="button" class="dropdown-item d-flex align-items-center gap-2"
                                                         data-bs-toggle="modal" data-bs-target="#frcTherapistCompleteModal"
                                                         data-complete-url="{{ route('therapist.sessions.group-complete', $sch) }}"
+                                                        data-feedback-url="{{ route('therapist.sessions.feedback-questions', $sch) }}"
                                                         data-session-date="{{ $dateIso }}"
                                                         data-is-group="1">
                                                         <i class="fa-solid fa-check"></i><span>Complete</span>
@@ -293,6 +294,7 @@
                                                 <button type="button" class="dropdown-item d-flex align-items-center gap-2"
                                                     data-bs-toggle="modal" data-bs-target="#frcTherapistCompleteModal"
                                                     data-complete-url="{{ route('therapist.sessions.complete', $sch) }}"
+                                                    data-feedback-url="{{ route('therapist.sessions.feedback-questions', $sch) }}"
                                                     data-session-date="{{ $dateIso }}"
                                                     data-is-group="0">
                                                     <i class="fa-solid fa-check"></i><span>Complete</span>
@@ -349,7 +351,7 @@
 </div>
 
 <div class="modal fade" id="frcTherapistCompleteModal" tabindex="-1" aria-labelledby="frcTherapistCompleteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius:14px;border:1px solid var(--border-soft);overflow:hidden;">
             <div class="modal-header" style="background:var(--bg-light);border-bottom:1px solid var(--border-soft);">
                 <h5 class="modal-title" id="frcTherapistCompleteLabel" style="font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);font-size:17px;">Complete session</h5>
@@ -360,6 +362,7 @@
                 <input type="hidden" name="session_date" value="" autocomplete="off">
                 <div class="modal-body">
                     <p class="small text-muted mb-2" id="frcTherapistCompleteModalBody">Session moves to <strong>completed</strong>. You can add an optional <strong>completion note</strong> (short wrap-up).</p>
+                    <div id="frcSessionFeedbackQuestions" class="mb-3"></div>
                     <label class="form-label small fw-semibold" style="color:var(--navy);">Completion note <span class="text-muted fw-normal">(optional)</span></label>
                     <textarea name="completion_note" class="form-control" rows="4" maxlength="5000" placeholder="Brief summary of how the session ended…"></textarea>
                 </div>
@@ -397,7 +400,10 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
+window.FRC_SESSION_FEEDBACK_RATINGS = @json(\App\Support\SessionFeedbackRating::options());
+</script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     document.querySelectorAll('.frc-sessions-schedule-card .frc-session-actions-btn').forEach(function (toggleEl) {
         var existing = bootstrap.Dropdown.getInstance(toggleEl);
@@ -436,6 +442,7 @@
         completeModal.addEventListener('show.bs.modal', function (event) {
             var btn = event.relatedTarget;
             var url = btn && btn.getAttribute('data-complete-url');
+            var feedbackUrl = btn && btn.getAttribute('data-feedback-url');
             var sessionDate = btn && btn.getAttribute('data-session-date');
             var isGroup = btn && btn.getAttribute('data-is-group') === '1';
             var form = completeModal.querySelector('form');
@@ -447,9 +454,47 @@
             var p = document.getElementById('frcTherapistCompleteModalBody');
             if (p) {
                 p.innerHTML = isGroup
-                    ? 'This marks <strong>every child</strong> in the group slot as <strong>completed</strong>. The optional note below is saved for <strong>all</strong> enrollments.'
-                    : 'Session moves to <strong>completed</strong>. You can add an optional <strong>completion note</strong> (short wrap-up).';
+                    ? 'This marks <strong>every child</strong> in the group slot as <strong>completed</strong>. Rate each feedback question below (required when configured for this service).'
+                    : 'Session moves to <strong>completed</strong>. Rate each feedback question below (required when configured for this service).';
             }
+
+            var feedbackBox = document.getElementById('frcSessionFeedbackQuestions');
+            if (!feedbackBox) return;
+            feedbackBox.innerHTML = '<p class="small text-muted mb-0">Loading feedback questions…</p>';
+
+            if (!feedbackUrl) {
+                feedbackBox.innerHTML = '';
+                return;
+            }
+
+            fetch(feedbackUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (res) { return res.json(); })
+                .then(function (payload) {
+                    var questions = (payload && payload.data) ? payload.data : [];
+                    if (!questions.length) {
+                        feedbackBox.innerHTML = '';
+                        return;
+                    }
+
+                    var html = '<div class="border rounded-3 p-3 mb-2" style="background:var(--bg-light);border-color:var(--border-soft)!important;">'
+                        + '<h6 class="small fw-bold mb-3" style="color:var(--navy);">Session feedback <span class="text-danger">*</span></h6>';
+                    var ratingOptions = window.FRC_SESSION_FEEDBACK_RATINGS || {};
+                    questions.forEach(function (q) {
+                        html += '<div class="mb-3">'
+                            + '<label class="form-label small fw-semibold mb-1" style="color:var(--navy);">' + q.text + '</label>'
+                            + '<select name="ratings[' + q.id + ']" class="form-control form-select" required>'
+                            + '<option value="">Select progress level</option>';
+                        Object.keys(ratingOptions).forEach(function (key) {
+                            html += '<option value="' + key + '">' + key + '. ' + ratingOptions[key] + '</option>';
+                        });
+                        html += '</select></div>';
+                    });
+                    html += '</div>';
+                    feedbackBox.innerHTML = html;
+                })
+                .catch(function () {
+                    feedbackBox.innerHTML = '<p class="small text-danger mb-0">Could not load feedback questions. Please try again.</p>';
+                });
         });
     }
 

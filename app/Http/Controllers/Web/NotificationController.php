@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkNotificationIdsRequest;
 use App\Models\UserNotification;
 use App\Services\NotificationOpenService;
 use App\Services\UserNotificationService;
@@ -19,12 +20,24 @@ class NotificationController extends Controller
     public function __construct(
         private readonly UserNotificationService $inbox,
         private readonly NotificationOpenService $openService,
-    ) {}
+    ) {
+        $this->middleware(function ($request, $next) {
+            if ($request->user()?->isApprovalDiscount()) {
+                abort(403);
+            }
+
+            return $next($request);
+        });
+    }
 
     public function index(Request $request): View
     {
+        $validated = $request->validate([
+            'tab' => ['nullable', 'in:all,unread,read'],
+        ]);
+
         $filters = [
-            'tab' => $request->query('tab', 'all'),
+            'tab' => $validated['tab'] ?? 'all',
         ];
 
         $notifications = $this->inbox->getUserNotifications(
@@ -84,26 +97,23 @@ class NotificationController extends Controller
         return redirect()->back()->with('success', $count > 0 ? "Marked {$count} as read." : 'No unread notifications.');
     }
 
-    public function bulkMarkRead(Request $request): RedirectResponse
+    public function bulkMarkRead(BulkNotificationIdsRequest $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], $request->user());
+        $updated = $this->inbox->bulkMarkAsRead($request->validated('ids'), $request->user());
 
         return redirect()->back()->with('success', $updated > 0 ? "Marked {$updated} as read." : 'Nothing to update.');
     }
 
-    public function bulkMarkUnread(Request $request): RedirectResponse
+    public function bulkMarkUnread(BulkNotificationIdsRequest $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], $request->user());
+        $updated = $this->inbox->bulkMarkAsUnread($request->validated('ids'), $request->user());
 
         return redirect()->back()->with('success', $updated > 0 ? "Marked {$updated} as unread." : 'Nothing to update.');
     }
 
-    public function bulkDelete(Request $request): RedirectResponse
+    public function bulkDelete(BulkNotificationIdsRequest $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
-        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], $request->user());
+        $deleted = $this->inbox->bulkDelete($request->validated('ids'), $request->user());
 
         return redirect()->back()->with('success', $deleted > 0 ? "Deleted {$deleted} notification(s)." : 'Nothing to delete.');
     }

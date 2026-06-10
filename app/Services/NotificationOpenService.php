@@ -288,6 +288,10 @@ final class NotificationOpenService
             return (int) $enrollment->child_id === (int) $user->id ? 'ok' : 'unauthorized';
         }
 
+        if ($user->isApprovalDiscount()) {
+            return $user->hasPermission('view_enrollments') ? 'ok' : 'unauthorized';
+        }
+
         if ($user->isSuperAdmin() || $user->isAdmin()) {
             return 'ok';
         }

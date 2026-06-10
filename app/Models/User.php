@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -54,6 +55,12 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::updating(function (User $user): void {
+            if ($user->isDirty('password')) {
+                $user->remember_token = Str::random(60);
+            }
+        });
+
         static::creating(function (User $user): void {
             if (filled($user->gr_number)) {
                 return;
@@ -227,6 +234,11 @@ class User extends Authenticatable
         return $this->hasRole(Role::FINANCE);
     }
 
+    public function isApprovalDiscount(): bool
+    {
+        return $this->hasRole(Role::APPROVAL_DISCOUNT);
+    }
+
     public function isChild(): bool
     {
         return $this->hasRole(Role::CHILD);
@@ -239,8 +251,9 @@ class User extends Authenticatable
             Role::SUPER_ADMIN => 'dashboard.super-admin',
             Role::ADMIN        => 'dashboard.admin',
             Role::THERAPIST   => 'dashboard.therapist',
-            Role::FINANCE     => 'dashboard.finance',
-            Role::CHILD       => 'dashboard.child',
+            Role::FINANCE           => 'dashboard.finance',
+            Role::APPROVAL_DISCOUNT => 'enrollments.high-discount',
+            Role::CHILD             => 'dashboard.child',
             default           => null,
         };
     }

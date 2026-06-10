@@ -157,7 +157,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const modal = document.getElementById('paymentRejectReasonModal');
     if (!modal) return;

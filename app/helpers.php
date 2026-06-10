@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\Money;
+use App\Support\SearchPattern;
 
 if (! function_exists('frc_money')) {
     function frc_money(float|string|null $amount): string
@@ -44,6 +45,14 @@ if (! function_exists('frc_storage_url')) {
         $path = ltrim(str_replace('\\', '/', $relativePath), '/');
 
         return url('/storage/' . $path);
+    }
+}
+
+if (! function_exists('frc_like_pattern')) {
+    /** Safe partial-match pattern for SQL LIKE (wildcards escaped). */
+    function frc_like_pattern(string $term): string
+    {
+        return SearchPattern::contains($term);
     }
 }
 

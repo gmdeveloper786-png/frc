@@ -116,7 +116,7 @@
                                     <form action="{{ route('disabilities.destroy', $item) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
-                                            onclick="return confirm('Delete {{ $item->name }}?')">
+                                            onclick="return confirm(@json('Delete ' . $item->name . '?'))">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>

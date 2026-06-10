@@ -21,6 +21,7 @@ class ChildPortalService
     public function __construct(
         private readonly AssessmentService $assessmentService,
         private readonly ChildScheduleService $childSchedule,
+        private readonly SessionFeedbackService $sessionFeedback,
         private readonly UserNotificationService $userNotifications,
     ) {}
 
@@ -441,75 +442,43 @@ class ChildPortalService
      */
     public function buildNextSessionCard(?Enrollment $enrollment): ?array
     {
-        if (! $enrollment instanceof Enrollment || $enrollment->schedules->isEmpty()) {
+        if (! $enrollment instanceof Enrollment) {
             return null;
         }
 
         $enrollment->loadMissing(['therapist', 'service']);
+        $today = now()->startOfDay();
 
-        $candidates = [];
-
-        foreach ($enrollment->schedules as $s) {
-            if (! $this->isScheduleUpcomingEligibleStatus($s->status)) {
-                continue;
-            }
-
-            $therapistName = $s->therapist?->full_name ?? $enrollment->therapist?->full_name ?? '—';
-            $serviceName   = $enrollment->service?->name ?? '—';
-
-            if ($s->session_date !== null) {
-                $sortTs = $this->dateTimeTimestamp($s->session_date->copy()->startOfDay(), (string) $s->time_slot);
-                if ($sortTs < now()->timestamp) {
-                    continue;
+        $next = $this->childSchedule
+            ->getExpandedOccurrencesForEnrollmentId((int) $enrollment->id)
+            ->filter(function (array $row) use ($today): bool {
+                if (! $this->isScheduleUpcomingEligibleStatus($row['status'] ?? null)) {
+                    return false;
                 }
 
-                $candidates[] = [
-                    'sort'         => $sortTs,
-                    'date_label'   => $s->session_date->format('d M Y'),
-                    'day_label'    => (string) $s->day,
-                    'time_slot'    => (string) $s->time_slot,
-                    'therapist'    => $therapistName,
-                    'service'      => $serviceName,
-                    'status'       => (string) $s->status,
-                    'badge'        => $this->scheduleStatusBadgeClass($s->status),
-                    'schedule_id'  => (int) $s->id,
-                    'date_iso'     => $s->session_date->toDateString(),
-                ];
+                return $row['session_date']->greaterThanOrEqualTo($today);
+            })
+            ->sortBy(fn (array $row): int => $this->dateTimeTimestamp(
+                $row['session_date'],
+                (string) $row['time_slot'],
+            ))
+            ->first();
 
-                continue;
-            }
-
-            $sortTs = $this->nextTemplateOccurrenceTimestamp($enrollment, (string) $s->day, (string) $s->time_slot);
-            if ($sortTs === null) {
-                continue;
-            }
-
-            $occurrenceDate = Carbon::createFromTimestamp($sortTs)->timezone(config('app.timezone'));
-
-            $candidates[] = [
-                'sort'         => $sortTs,
-                'date_label'   => $occurrenceDate->format('d M Y'),
-                'day_label'    => (string) $s->day,
-                'time_slot'    => (string) $s->time_slot,
-                'therapist'    => $therapistName,
-                'service'      => $serviceName,
-                'status'       => (string) $s->status,
-                'badge'        => $this->scheduleStatusBadgeClass($s->status),
-                'schedule_id'  => (int) $s->id,
-                'date_iso'     => $occurrenceDate->toDateString(),
-            ];
-        }
-
-        if ($candidates === []) {
+        if ($next === null) {
             return null;
         }
 
-        usort($candidates, fn (array $a, array $b): int => $a['sort'] <=> $b['sort']);
-
-        $picked = $candidates[0];
-        unset($picked['sort']);
-
-        return $picked;
+        return [
+            'date_label'  => $next['session_date']->format('d M Y'),
+            'day_label'   => (string) ($next['day_label'] ?? $next['session_date']->format('l')),
+            'time_slot'   => (string) $next['time_slot'],
+            'therapist'   => (string) ($next['therapist_name'] ?? $enrollment->therapist?->full_name ?? '—'),
+            'service'     => (string) ($next['service_name'] ?? $enrollment->service?->name ?? '—'),
+            'status'      => (string) $next['status'],
+            'badge'       => $this->scheduleStatusBadgeClass((string) $next['status']),
+            'schedule_id' => (int) $next['schedule_id'],
+            'date_iso'    => (string) $next['date_iso'],
+        ];
     }
 
     /**
@@ -587,6 +556,7 @@ class ChildPortalService
             'recurring_summary'          => $this->buildRecurringWeeklySummary($enrollment),
             'show_fee_fully_paid_notice' => $this->showEnrollmentFeeFullyPaidNotice($enrollment),
             'show_upload_slip_button'    => $this->showEnrollmentUploadSlipButton($enrollment),
+            'performance_chart'          => $this->sessionFeedback->enrollmentPerformanceChart($enrollment),
         ];
     }
 

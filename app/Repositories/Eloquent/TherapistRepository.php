@@ -28,8 +28,9 @@ class TherapistRepository implements TherapistRepositoryInterface
             ->when(isset($filters['branch_id']), fn($q) => $q->whereHas('therapistProfile', fn($p) => $p->where('branch_id', $filters['branch_id'])))
             ->when(isset($filters['status']), fn($q) => $q->whereHas('therapistProfile', fn($p) => $p->where('status', $filters['status'])))
             ->when(isset($filters['search']), fn($q) => $q->where(function ($q) use ($filters) {
-                $q->where('full_name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['search'] . '%');
+                $like = frc_like_pattern((string) $filters['search']);
+                $q->where('full_name', 'like', $like)
+                    ->orWhere('email', 'like', $like);
             }))
             ->latest()
             ->paginate($perPage);

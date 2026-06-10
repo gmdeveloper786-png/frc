@@ -20,11 +20,13 @@
         </div>
         <div class="col-md-6">
             <label>New Password <span style="color:var(--text-muted);font-weight:400;">(leave blank to keep current)</span></label>
-            <input type="password" name="password" class="form-control">
+            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <div class="form-text">If changing: at least 8 characters, with letters and numbers.</div>
         </div>
         <div class="col-md-6">
             <label>Confirm Password</label>
-            <input type="password" name="password_confirmation" class="form-control">
+            <input type="password" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
         </div>
         <div class="col-md-4">
             <label>Phone</label>
@@ -80,7 +82,7 @@
                     <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px solid {{ in_array($service->id, $selectedServiceIds) ? 'var(--teal)' : 'var(--border-soft)' }};background:{{ in_array($service->id, $selectedServiceIds) ? 'var(--teal-light)' : '' }};border-radius:10px;cursor:pointer;transition:all .2s;" class="tservice-check">
                         <input type="checkbox" name="service_ids[]" value="{{ $service->id }}"
                             {{ in_array($service->id, $selectedServiceIds) ? 'checked' : '' }}
-                            style="accent-color:var(--teal);" onchange="highlightTherapistService(this); syncTherapistServiceBadges();">
+                            style="accent-color:var(--teal);">
                         <span style="font-size:13px;font-weight:500;">{{ $service->name }}</span>
                     </label>
                 @endforeach
@@ -149,7 +151,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function highlightTherapistService(cb) {
     const label = cb.closest('label');
     if (cb.checked) { label.style.borderColor = 'var(--teal)'; label.style.background = 'var(--teal-light)'; }
@@ -169,6 +171,12 @@ function syncTherapistServiceBadges() {
         wrap.appendChild(chip);
     });
 }
+document.querySelectorAll('.tservice-check input').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+        highlightTherapistService(cb);
+        syncTherapistServiceBadges();
+    });
+});
 document.querySelectorAll('.tservice-check input:checked').forEach(highlightTherapistService);
 syncTherapistServiceBadges();
 </script>

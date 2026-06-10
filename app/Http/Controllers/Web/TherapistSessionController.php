@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\EnrollmentSchedule;
+use App\Services\SessionFeedbackService;
 use App\Services\SessionOccurrenceDetailService;
 use App\Services\SessionOccurrenceStateService;
 use App\Services\SessionTimeSlotParser;
@@ -22,6 +23,7 @@ class TherapistSessionController extends Controller
         private readonly TherapistSessionService $sessionService,
         private readonly SessionOccurrenceDetailService $occurrenceDetailService,
         private readonly SessionOccurrenceStateService $occurrenceState,
+        private readonly SessionFeedbackService $sessionFeedback,
     ) {}
 
     public function index(Request $request): View
@@ -211,7 +213,23 @@ class TherapistSessionController extends Controller
             default => 'badge-draft',
         };
 
-        return view('therapist.sessions.show', compact('schedule', 'occurrenceDetail', 'statusBadge'));
+        $sessionFeedback = $this->sessionFeedback->summaryForSchedule($schedule, $sessionDate);
+
+        return view('therapist.sessions.show', compact('schedule', 'occurrenceDetail', 'statusBadge', 'sessionFeedback'));
+    }
+
+    public function feedbackQuestions(EnrollmentSchedule $schedule): JsonResponse
+    {
+        $this->occurrenceDetailService->authorizeAssignedTherapist(auth()->user(), $schedule);
+
+        $questions = $this->sessionFeedback->activeQuestionsForSchedule($schedule)
+            ->map(fn ($q) => [
+                'id'   => $q->id,
+                'text' => $q->question_text,
+            ])
+            ->values();
+
+        return response()->json(['data' => $questions]);
     }
 
     public function startGroup(Request $request, EnrollmentSchedule $schedule): RedirectResponse
@@ -241,6 +259,8 @@ class TherapistSessionController extends Controller
             'session_date'    => ['required', 'date'],
             'completion_note' => ['nullable', 'string', 'max:5000'],
             'session_notes'   => ['nullable', 'string', 'max:5000'],
+            'ratings'         => ['nullable', 'array'],
+            'ratings.*'       => ['nullable', 'integer', 'min:1', 'max:5'],
         ]);
         $trimmed = trim((string) ($data['completion_note'] ?? ''));
         if ($trimmed === '') {
@@ -253,6 +273,7 @@ class TherapistSessionController extends Controller
             $schedule,
             $iso,
             $trimmed !== '' ? $trimmed : null,
+            $data['ratings'] ?? [],
         );
 
         return redirect()->back()->with(
@@ -333,6 +354,8 @@ class TherapistSessionController extends Controller
             'session_date'    => ['required', 'date'],
             'completion_note' => ['nullable', 'string', 'max:5000'],
             'session_notes'   => ['nullable', 'string', 'max:5000'],
+            'ratings'         => ['nullable', 'array'],
+            'ratings.*'       => ['nullable', 'integer', 'min:1', 'max:5'],
         ]);
         $trimmed = trim((string) ($data['completion_note'] ?? ''));
         if ($trimmed === '') {
@@ -340,7 +363,13 @@ class TherapistSessionController extends Controller
         }
 
         $iso = Carbon::parse($data['session_date'])->toDateString();
-        $this->sessionService->completeSession(auth()->user(), $schedule, $iso, $trimmed !== '' ? $trimmed : null);
+        $this->sessionService->completeSession(
+            auth()->user(),
+            $schedule,
+            $iso,
+            $trimmed !== '' ? $trimmed : null,
+            $data['ratings'] ?? [],
+        );
 
         return redirect()->back()->with('success', 'Session marked completed.');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RejectEnrollmentRequest;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Http\Requests\UpdateEnrollmentRequest;
 use App\Models\Enrollment;
@@ -14,6 +15,7 @@ use App\Models\Service;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\ChildScheduleService;
 use App\Services\EnrollmentService;
+use App\Services\SessionFeedbackService;
 use App\Services\SessionOccurrenceDetailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class EnrollmentController extends Controller
         private readonly UserRepositoryInterface $userRepository,
         private readonly ChildScheduleService $scheduleService,
         private readonly SessionOccurrenceDetailService $occurrenceDetailService,
+        private readonly SessionFeedbackService $sessionFeedback,
     ) {}
 
     public function index(Request $request): View
@@ -125,6 +128,7 @@ class EnrollmentController extends Controller
     {
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $this->authorize('view', $enrollment);
 
         return view('enrollments.show', compact('enrollment'));
     }
@@ -169,8 +173,9 @@ class EnrollmentController extends Controller
         $schedule->loadMissing(['startedBy:id,full_name', 'completedBy:id,full_name', 'cancelledBy:id,full_name']);
 
         $occurrenceDetail = $this->occurrenceDetailService->buildTherapistOccurrenceDetail($schedule, $sessionDate);
+        $sessionFeedback = $this->sessionFeedback->summaryForSchedule($schedule, $sessionDate);
 
-        return view('enrollments.schedule-show', compact('enrollment', 'detail', 'occurrenceDetail'));
+        return view('enrollments.schedule-show', compact('enrollment', 'detail', 'occurrenceDetail', 'sessionFeedback'));
     }
 
     public function approve(Request $request, int $id): RedirectResponse
@@ -178,22 +183,19 @@ class EnrollmentController extends Controller
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
 
-        if ($enrollment->status === 'pending_super_admin_approval' && ! $request->user()->hasPermission('approve_high_discount')) {
-            return back()->withErrors(['error' => 'You do not have permission to approve high discount enrollments.']);
-        }
+        $this->authorize('approve', $enrollment);
 
         $this->service->approve($enrollment, $request->user());
 
         return redirect()->back()->with('success', 'Enrollment approved successfully.');
     }
 
-    public function reject(Request $request, int $id): RedirectResponse
+    public function reject(RejectEnrollmentRequest $request, int $id): RedirectResponse
     {
-        $request->validate(['rejection_reason' => 'required|string|max:1000']);
-
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
-        $this->service->reject($enrollment, $request->user(), $request->rejection_reason);
+        $this->authorize('reject', $enrollment);
+        $this->service->reject($enrollment, $request->user(), $request->validated('rejection_reason'));
 
         return redirect()->back()->with('success', 'Enrollment rejected.');
     }

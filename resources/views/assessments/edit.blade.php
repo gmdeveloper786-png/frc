@@ -86,7 +86,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 const assessmentTherapistOld = @json(old('therapist_id', $assessment->therapist_id));
 function therapistOptionLabel(t) {
     return t.full_name || '';

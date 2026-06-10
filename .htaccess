@@ -1,0 +1,18 @@
+# When the vhost document root is the project folder (not public/), route traffic safely.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block direct HTTP access to environment and dependency files.
+    RewriteRule (^|/)\.env - [F,L]
+    RewriteRule (^|/)composer\.(json|lock) - [F,L]
+    RewriteRule (^|/)package(-lock)?\.json - [F,L]
+
+    RewriteRule ^$ public/ [L]
+    RewriteRule (.*) public/$1 [L]
+</IfModule>
+
+<FilesMatch "^\.env">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>

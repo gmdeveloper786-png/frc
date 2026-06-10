@@ -39,7 +39,8 @@ class TherapistController extends Controller
 
     public function store(StoreTherapistRequest $request): RedirectResponse
     {
-        $this->service->create($request->validated());
+        $data = $request->safe()->except(['documents']);
+        $this->service->create($data, $request->file('documents', []));
 
         return redirect()->route('therapists.index')->with('success', 'Therapist created successfully.');
     }
@@ -66,7 +67,8 @@ class TherapistController extends Controller
     {
         $therapist = $this->service->findById($id);
         StaffBranchScope::enforceTherapistBranch($request->user(), $therapist);
-        $this->service->update($therapist, $request->validated());
+        $data = $request->safe()->except(['documents']);
+        $this->service->update($therapist, $data, $request->file('documents', []));
 
         return redirect()->route('therapists.index')->with('success', 'Therapist updated successfully.');
     }

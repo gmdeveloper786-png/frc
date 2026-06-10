@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkNotificationIdsRequest;
+use App\Http\Requests\NotificationIndexFilterRequest;
 use App\Models\UserNotification;
 use App\Services\UserNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -16,18 +18,12 @@ class NotificationController extends Controller
         private readonly UserNotificationService $inbox,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(NotificationIndexFilterRequest $request): JsonResponse
     {
-        $filters = [
-            'tab'        => $request->query('tab', 'all'),
-            'search'     => $request->query('search'),
-            'type'       => $request->query('type'),
-            'module'     => $request->query('module'),
-            'date_from'  => $request->query('date_from'),
-            'date_to'    => $request->query('date_to'),
-        ];
+        $filters = $request->validated();
+        $perPage = (int) ($filters['per_page'] ?? 20);
 
-        $paginator = $this->inbox->getUserNotifications($request->user(), $filters, (int) $request->query('per_page', 20));
+        $paginator = $this->inbox->getUserNotifications($request->user(), $filters, $perPage);
 
         return response()->json($paginator);
     }
@@ -48,6 +44,8 @@ class NotificationController extends Controller
 
     public function markRead(Request $request, int $id): JsonResponse
     {
+        $notification = $this->inbox->findOwnedOrFail($id, $request->user());
+        $this->authorize('update', $notification);
         $n = $this->inbox->markAsRead($id, $request->user());
 
         return response()->json($n);
@@ -55,6 +53,8 @@ class NotificationController extends Controller
 
     public function markUnread(Request $request, int $id): JsonResponse
     {
+        $notification = $this->inbox->findOwnedOrFail($id, $request->user());
+        $this->authorize('update', $notification);
         $n = $this->inbox->markAsUnread($id, $request->user());
 
         return response()->json($n);
@@ -62,6 +62,8 @@ class NotificationController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
+        $notification = $this->inbox->findOwnedOrFail($id, $request->user());
+        $this->authorize('delete', $notification);
         $this->inbox->deleteNotification($id, $request->user());
 
         return response()->json(['ok' => true]);
@@ -74,26 +76,23 @@ class NotificationController extends Controller
         return response()->json(['updated' => $count]);
     }
 
-    public function bulkMarkRead(Request $request): JsonResponse
+    public function bulkMarkRead(BulkNotificationIdsRequest $request): JsonResponse
     {
-        $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsRead(is_array($ids) ? $ids : [], $request->user());
+        $updated = $this->inbox->bulkMarkAsRead($request->validated('ids'), $request->user());
 
         return response()->json(['updated' => $updated]);
     }
 
-    public function bulkMarkUnread(Request $request): JsonResponse
+    public function bulkMarkUnread(BulkNotificationIdsRequest $request): JsonResponse
     {
-        $ids = $request->input('ids', []);
-        $updated = $this->inbox->bulkMarkAsUnread(is_array($ids) ? $ids : [], $request->user());
+        $updated = $this->inbox->bulkMarkAsUnread($request->validated('ids'), $request->user());
 
         return response()->json(['updated' => $updated]);
     }
 
-    public function bulkDelete(Request $request): JsonResponse
+    public function bulkDelete(BulkNotificationIdsRequest $request): JsonResponse
     {
-        $ids = $request->input('ids', []);
-        $deleted = $this->inbox->bulkDelete(is_array($ids) ? $ids : [], $request->user());
+        $deleted = $this->inbox->bulkDelete($request->validated('ids'), $request->user());
 
         return response()->json(['deleted' => $deleted]);
     }

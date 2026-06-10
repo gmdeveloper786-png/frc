@@ -27,11 +27,13 @@
     </div>
     <div class="col-md-6">
         <label class="form-label">Password @if(!$isEdit)<span class="text-danger">*</span>@else<span class="text-muted small">(leave blank to keep)</span>@endif</label>
-        <input type="password" name="password" class="form-control" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Admin@123" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <div class="form-text">At least 8 characters, with letters and numbers.</div>
     </div>
     <div class="col-md-6">
         <label class="form-label">Confirm password @if(!$isEdit)<span class="text-danger">*</span>@endif</label>
-        <input type="password" name="password_confirmation" class="form-control" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+        <input type="password" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
     </div>
     <div class="col-md-6">
         <label class="form-label">Phone number</label>
@@ -69,8 +71,9 @@
             <option value="">Select role</option>
             <option value="admin" @selected($selectedRole === 'admin')>Admin</option>
             <option value="finance" @selected($selectedRole === 'finance')>Finance</option>
+            <option value="approval_discount" @selected($selectedRole === 'approval_discount')>Approval Discount</option>
         </select>
-        <div class="form-text">Admin is linked to a branch (multiple admins per branch allowed). Finance is organization-wide (no branch).</div>
+        <div class="form-text">Admin is linked to a branch. Finance and Approval Discount are organization-wide (no branch). Approval Discount users can only access the High Discount queue.</div>
     </div>
     <div class="col-12" id="staffBranchField" @if(!$showBranchField) style="display:none;" @endif>
         <label class="form-label">Branch <span class="text-danger">*</span></label>
@@ -86,24 +89,5 @@
 </div>
 
 @push('scripts')
-<script>
-(function () {
-    const roleSel = document.getElementById('staffRoleSelect');
-    const branchWrap = document.getElementById('staffBranchField');
-    const branchSel = document.getElementById('staffBranchSelect');
-    if (!roleSel || !branchWrap || !branchSel) return;
-
-    function syncStaffBranchField() {
-        const isAdmin = roleSel.value === 'admin';
-        branchWrap.style.display = isAdmin ? '' : 'none';
-        branchSel.required = isAdmin;
-        if (!isAdmin) {
-            branchSel.value = '';
-        }
-    }
-
-    roleSel.addEventListener('change', syncStaffBranchField);
-    syncStaffBranchField();
-})();
-</script>
+<script src="{{ asset('js/frc-staff-user-form.js') }}" nonce="{{ $cspNonce }}"></script>
 @endpush

@@ -46,10 +46,11 @@ class UserRepository implements UserRepositoryInterface
             ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['search']), fn($q) => $q->where(function ($q) use ($filters) {
-                $q->where('full_name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('phone_number', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('gr_number', 'like', '%' . $filters['search'] . '%');
+                $like = frc_like_pattern((string) $filters['search']);
+                $q->where('full_name', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('phone_number', 'like', $like)
+                    ->orWhere('gr_number', 'like', $like);
             }))
             ->latest()
             ->paginate($perPage);
@@ -90,15 +91,17 @@ class UserRepository implements UserRepositoryInterface
 
         if (ctype_digit($search)) {
             $id = (int) $search;
-            $query->where(function ($q) use ($search, $id): void {
+            $like = frc_like_pattern($search);
+            $query->where(function ($q) use ($like, $id): void {
                 $q->where('id', $id)
-                    ->orWhere('full_name', 'like', '%' . $search . '%')
-                    ->orWhere('gr_number', 'like', '%' . $search . '%');
+                    ->orWhere('full_name', 'like', $like)
+                    ->orWhere('gr_number', 'like', $like);
             });
         } else {
-            $query->where(function ($q) use ($search): void {
-                $q->where('full_name', 'like', '%' . $search . '%')
-                    ->orWhere('gr_number', 'like', '%' . $search . '%');
+            $like = frc_like_pattern($search);
+            $query->where(function ($q) use ($like): void {
+                $q->where('full_name', 'like', $like)
+                    ->orWhere('gr_number', 'like', $like);
             });
         }
 

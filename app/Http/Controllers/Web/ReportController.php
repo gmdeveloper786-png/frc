@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\FinanceReportFilterRequest;
 use App\Models\Branch;
 use App\Models\Payment;
 use App\Models\Role;
@@ -11,7 +12,6 @@ use App\Models\User;
 use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,11 +21,11 @@ class ReportController extends Controller
 {
     public function __construct(private readonly ReportService $reportService) {}
 
-    public function finance(Request $request): View
+    public function finance(FinanceReportFilterRequest $request): View
     {
-        $filters  = $this->financeReportFilters($request);
+        $filters  = $request->validated();
         $summary  = $this->reportService->getFinanceSummary($filters);
-        $perPage  = min(100, max(5, (int) $request->input('per_page', 15)));
+        $perPage  = (int) ($filters['per_page'] ?? 15);
         $records  = $this->reportService->getStudentFeeRecords($filters, $perPage);
         $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
         $therapists = User::query()
@@ -37,12 +37,12 @@ class ReportController extends Controller
         return view('reports.finance', compact('summary', 'records', 'branches', 'therapists', 'services'));
     }
 
-    public function financeExport(Request $request, string $format): StreamedResponse|\Illuminate\Http\Response|RedirectResponse
+    public function financeExport(FinanceReportFilterRequest $request, string $format): StreamedResponse|\Illuminate\Http\Response|RedirectResponse
     {
         $format = strtolower($format);
         abort_unless(in_array($format, ['csv', 'pdf'], true), 404);
 
-        $filters = $this->financeReportFilters($request);
+        $filters = $request->validated();
         $summary = $this->reportService->getFinanceSummary($filters);
         $recordCount = $this->reportService->countFinancePaymentRecords($filters);
 
@@ -65,9 +65,9 @@ class ReportController extends Controller
         };
     }
 
-    public function financePrint(Request $request): View|RedirectResponse
+    public function financePrint(FinanceReportFilterRequest $request): View|RedirectResponse
     {
-        $filters = $this->financeReportFilters($request);
+        $filters = $request->validated();
         $recordCount = $this->reportService->countFinancePaymentRecords($filters);
 
         if ($recordCount > ReportService::MAX_PDF_EXPORT_ROWS) {
@@ -85,23 +85,6 @@ class ReportController extends Controller
         $rows = $this->reportService->financePaymentExportRows($filters);
 
         return view('reports.finance-print', compact('rows', 'summary'));
-    }
-
-    /** @return array<string, mixed> */
-    private function financeReportFilters(Request $request): array
-    {
-        return [
-            'branch_id'                   => $request->input('branch_id'),
-            'therapist_id'                => $request->input('therapist_id'),
-            'service_id'                  => $request->input('service_id'),
-            'payment_method'              => $request->input('payment_method'),
-            'date_from'                   => $request->input('date_from'),
-            'date_to'                     => $request->input('date_to'),
-            'enrollment_payment_status'   => $request->input('enrollment_payment_status'),
-            'verification_status'         => $request->input('verification_status'),
-            'child_search'                => $request->input('child_search'),
-            'gr_number'                   => $request->input('gr_number'),
-        ];
     }
 
     /**

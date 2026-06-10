@@ -87,9 +87,11 @@
             </dl>
         @endif
 
+        @include('sessions.partials.feedback-summary', ['sessionFeedback' => $sessionFeedback ?? ['items' => [], 'overall' => null]])
+
         <div class="mt-4 d-flex flex-wrap gap-2">
             <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal d-inline-flex align-items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Back to enrollment schedule</a>
-            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+            @if(auth()->user()?->hasPermission('manage_enrollments') || auth()->user()?->hasPermission('view_enrollments'))
                 <a href="{{ route('enrollments.show', $enrollment->id) }}" class="btn-teal d-inline-flex align-items-center gap-1"><i class="fa-solid fa-file-contract"></i> Enrollment detail</a>
             @endif
         </div>

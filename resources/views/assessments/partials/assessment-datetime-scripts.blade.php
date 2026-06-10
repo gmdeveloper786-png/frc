@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ $cspNonce }}">
 const assessmentTodayDate = @json(now()->format('Y-m-d'));
 
 function syncAssessmentTimeMin() {

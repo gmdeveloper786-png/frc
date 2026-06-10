@@ -20,7 +20,7 @@ class DisabilityRepository implements DisabilityRepositoryInterface
         /** @var LengthAwarePaginatorConcrete $paginator */
         $paginator = Disability::with('createdBy')
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
-            ->when(isset($filters['search']), fn($q) => $q->where('name', 'like', '%' . $filters['search'] . '%'))
+            ->when(isset($filters['search']), fn ($q) => $q->where('name', 'like', frc_like_pattern((string) $filters['search'])))
             ->latest()
             ->paginate($perPage);
 

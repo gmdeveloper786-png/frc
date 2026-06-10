@@ -7,15 +7,7 @@
 <title>@yield('title', 'FRC Management') | {{ $frc['organisation_name'] ?? 'Faizan Rehabilitation Centre' }}</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/frc.css') }}">
-<script>
-(function () {
-    try {
-        if (localStorage.getItem('frc-sidebar-collapsed') === '1') {
-            document.documentElement.classList.add('sidebar-collapsed');
-        }
-    } catch (e) {}
-})();
-</script>
+<script src="{{ asset('js/frc-sidebar-pref.js') }}" nonce="{{ $cspNonce }}"></script>
 @stack('styles')
 </head>
 <body>
@@ -44,6 +36,8 @@
             @include('partials.sidebar.therapist')
         @elseif($role === 'finance')
             @include('partials.sidebar.finance')
+        @elseif($role === 'approval_discount')
+            @include('partials.sidebar.approval-discount')
         @elseif($role === 'child')
             @include('partials.sidebar.child')
         @endif
@@ -86,6 +80,7 @@
     </div>
     <div class="topbar-right">
         {{-- Notifications (inbox: user_notifications) --}}
+        @unless(auth()->user()?->isApprovalDiscount())
         @php
             $inboxSvc = app(\App\Services\UserNotificationService::class);
             $bellUser = auth()->user();
@@ -152,6 +147,7 @@
                 </div>
             </div>
         </div>
+        @endunless
 
         {{-- User Menu --}}
         <div class="dropdown">
@@ -235,87 +231,9 @@
 </main>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-<script>
-(function () {
-    const sidebar = document.getElementById('frcSidebar');
-    const collapseBtn = document.getElementById('sidebarCollapseBtn');
-    const storageKey = 'frc-sidebar-collapsed';
-
-    document.querySelectorAll('.frc-sidebar .nav-link').forEach(function (link) {
-        const label = link.querySelector('span:not(.badge-status):not(.nav-link-badge)')?.textContent?.trim();
-        if (label) link.setAttribute('title', label);
-    });
-
-    function setCollapsed(collapsed) {
-        document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
-        try {
-            localStorage.setItem(storageKey, collapsed ? '1' : '0');
-        } catch (e) {}
-        if (collapseBtn) {
-            collapseBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-            collapseBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-        }
-    }
-
-    collapseBtn?.addEventListener('click', function () {
-        setCollapsed(!document.documentElement.classList.contains('sidebar-collapsed'));
-    });
-
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-    const mobileMq = window.matchMedia('(max-width: 768px)');
-
-    function isMobileSidebar() {
-        return mobileMq.matches;
-    }
-
-    function setMobileSidebarOpen(open) {
-        if (!isMobileSidebar()) {
-            sidebar?.classList.remove('open');
-            sidebarBackdrop?.classList.remove('show');
-            document.body.classList.remove('sidebar-mobile-open');
-            return;
-        }
-        sidebar?.classList.toggle('open', open);
-        sidebarBackdrop?.classList.toggle('show', open);
-        document.body.classList.toggle('sidebar-mobile-open', open);
-        if (sidebarToggle) {
-            sidebarToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            sidebarToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-        }
-        if (sidebarToggleIcon) {
-            sidebarToggleIcon.classList.toggle('fa-bars', !open);
-            sidebarToggleIcon.classList.toggle('fa-xmark', open);
-        }
-    }
-
-    sidebarToggle?.addEventListener('click', function () {
-        setMobileSidebarOpen(!sidebar?.classList.contains('open'));
-    });
-
-    sidebarBackdrop?.addEventListener('click', function () {
-        setMobileSidebarOpen(false);
-    });
-
-    document.querySelectorAll('.frc-sidebar .nav-link').forEach(function (link) {
-        link.addEventListener('click', function () {
-            if (isMobileSidebar()) setMobileSidebarOpen(false);
-        });
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && sidebar?.classList.contains('open')) {
-            setMobileSidebarOpen(false);
-        }
-    });
-
-    mobileMq.addEventListener('change', function () {
-        if (!isMobileSidebar()) setMobileSidebarOpen(false);
-    });
-})();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js" nonce="{{ $cspNonce }}"></script>
+<script src="{{ asset('js/frc-core.js') }}" nonce="{{ $cspNonce }}"></script>
+<script src="{{ asset('js/frc-layout.js') }}" nonce="{{ $cspNonce }}"></script>
 @stack('scripts')
 </body>
 </html>

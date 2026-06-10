@@ -24,8 +24,8 @@
         'operationalAlerts' => $a['operational_alerts'] ?? [],
     ];
 @endphp
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script>
+<script nonce="{{ $cspNonce }}" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const months = @json($monthLabels);
     const data = @json($chartPayload);

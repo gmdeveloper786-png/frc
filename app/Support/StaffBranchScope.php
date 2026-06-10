@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 final class StaffBranchScope
@@ -27,6 +28,16 @@ final class StaffBranchScope
             ->forDropdown()
             ->orderedForDropdown()
             ->get();
+    }
+
+    public static function enforceChildBranch(User $staff, User $child): void
+    {
+        abort_unless($child->isChild(), 404);
+        abort_unless(
+            Gate::forUser($staff)->allows('viewChild', $child),
+            403,
+            'You are not authorized to access this child.',
+        );
     }
 
     public static function enforceTherapistBranch(User $staff, User $therapist): void
@@ -44,6 +55,17 @@ final class StaffBranchScope
             );
 
             return;
+        }
+    }
+
+    public static function enforceBranchCatalogAccess(User $staff, int $branchId): void
+    {
+        if ($staff->isSuperAdmin()) {
+            return;
+        }
+
+        if ($locked = self::lockedBranchId($staff)) {
+            abort_if($branchId !== $locked, 403, 'This branch is outside your assignment.');
         }
     }
 
@@ -144,7 +166,7 @@ final class StaffBranchScope
     /** Branch admins only see inbox items tied to their branch; super admin, finance, child, therapist see all own rows. */
     public static function applyNotificationInboxScope(Builder $query, User $staff): Builder
     {
-        if ($staff->isSuperAdmin() || $staff->isFinance() || $staff->isChild() || $staff->isTherapist()) {
+        if ($staff->isSuperAdmin() || $staff->isFinance() || $staff->isApprovalDiscount() || $staff->isChild() || $staff->isTherapist()) {
             return $query;
         }
 
@@ -192,7 +214,7 @@ final class StaffBranchScope
 
     public static function notificationVisibleToStaff(UserNotification $notification, User $staff): bool
     {
-        if ($staff->isSuperAdmin() || $staff->isFinance() || $staff->isChild() || $staff->isTherapist()) {
+        if ($staff->isSuperAdmin() || $staff->isFinance() || $staff->isApprovalDiscount() || $staff->isChild() || $staff->isTherapist()) {
             return true;
         }
 

@@ -23,7 +23,7 @@ class UpdateStaffUserRequest extends FormRequest
             return false;
         }
 
-        return in_array($staff->role?->name, [Role::ADMIN, Role::FINANCE], true);
+        return in_array($staff->role?->name, [Role::ADMIN, Role::FINANCE, Role::APPROVAL_DISCOUNT], true);
     }
 
     public function rules(): array
@@ -42,14 +42,14 @@ class UpdateStaffUserRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($staff->id),
             ],
-            'password'         => ['nullable', 'confirmed', Password::min(8)],
+            'password'         => ['nullable', 'confirmed', Password::defaults()],
             'phone_number'     => ['nullable', 'string', 'max:30'],
             'whatsapp_number'  => ['nullable', 'string', 'max:30'],
             'gender'           => ['nullable', 'in:male,female,other'],
             'date_of_birth'    => ['nullable', 'date', 'before:today'],
             'address'          => ['nullable', 'string', 'max:2000'],
             'status'           => ['required', 'in:active,inactive'],
-            'role'             => ['required', 'in:admin,finance'],
+            'role'             => ['required', 'in:admin,finance,approval_discount'],
             'branch_id'        => [
                 Rule::requiredIf(fn (): bool => $this->input('role') === Role::ADMIN),
                 'nullable',
@@ -70,7 +70,7 @@ class UpdateStaffUserRequest extends FormRequest
             'email' => is_string($this->input('email')) ? strtolower(trim($this->input('email'))) : $this->input('email'),
         ];
 
-        if ($this->input('role') === Role::FINANCE) {
+        if (in_array($this->input('role'), [Role::FINANCE, Role::APPROVAL_DISCOUNT], true)) {
             $merge['branch_id'] = null;
         }
 

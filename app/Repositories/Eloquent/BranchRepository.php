@@ -21,8 +21,9 @@ class BranchRepository implements BranchRepositoryInterface
         $paginator = Branch::with('createdBy')
             ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['search']), fn($q) => $q->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('city', 'like', '%' . $filters['search'] . '%');
+                $like = frc_like_pattern((string) $filters['search']);
+                $q->where('name', 'like', $like)
+                    ->orWhere('city', 'like', $like);
             }))
             ->latest()
             ->paginate($perPage);

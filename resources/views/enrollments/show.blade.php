@@ -47,6 +47,9 @@
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Sessions</td><td>{{ $enrollment->total_sessions }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Fee Before Discount / Subtotal</td><td>{{ frc_pkr($enrollment->subtotal) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Discount Amount</td><td>{{ frc_percent($enrollment->discount_percentage) }}% ({{ frc_pkr($enrollment->discount_amount) }})</td></tr>
+                @if($enrollment->zakatEligibilityLabel())
+                <tr><td style="color:var(--text-muted);padding:6px 0;">Zakat eligibility</td><td>{{ $enrollment->zakatEligibilityLabel() }}</td></tr>
+                @endif
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Final Payable Amount</td><td style="font-weight:700;color:var(--navy);">{{ frc_pkr($enrollment->final_total) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Paid</td><td style="color:var(--success);font-weight:600;">{{ frc_pkr($enrollment->paid_amount) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Remaining</td><td style="color:var(--danger);font-weight:600;">{{ frc_pkr($enrollment->remaining_amount) }}</td></tr>
@@ -110,13 +113,13 @@
             </div>
         @endif
 
-        {{-- Actions --}}
-        @if(in_array($enrollment->status, ['draft','pending_super_admin_approval']))
+        {{-- Actions (draft only; high discount approval is on the dedicated queue) --}}
+        @if($enrollment->status === 'draft' && auth()->user()?->hasPermission('manage_enrollments'))
             <div class="card-frc">
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:12px;">Actions</h6>
                 <form action="{{ route('enrollments.approve', $enrollment->id) }}" method="POST" class="mb-2">
                     @csrf
-                    <button type="submit" class="btn-teal" style="width:100%;justify-content:center;" onclick="return confirm('Approve?')">
+                    <button type="submit" class="btn-teal" style="width:100%;justify-content:center;" data-confirm="Approve?">
                         <i class="fa-solid fa-check"></i> Approve Enrollment
                     </button>
                 </form>

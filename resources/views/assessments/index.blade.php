@@ -159,7 +159,7 @@
                                     @endif
                                     @if(auth()->user()->isSuperAdmin() && $item->status === 'publish')
                                         <form action="{{ route('assessments.complete', $item) }}" method="POST">@csrf
-                                            <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Mark as completed?')"><i class="fa-solid fa-check"></i></button>
+                                            <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Mark as completed?"><i class="fa-solid fa-check"></i></button>
                                         </form>
                                     @endif
                                     @if(auth()->user()->isSuperAdmin() && ! in_array($item->status, ['completed','cancelled'], true))
@@ -168,7 +168,7 @@
                                     @endif
                                     <form action="{{ route('assessments.destroy', $item) }}" method="POST">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Delete?')"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Delete?"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
                                 @if(auth()->user()->isSuperAdmin() && ! in_array($item->status, ['completed','cancelled'], true))

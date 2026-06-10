@@ -67,8 +67,14 @@
             @endif
         </div>
         <div class="col-md-4">
+                    <label>Date of Birth</label>
+                    <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth', $child->date_of_birth?->format('Y-m-d')) }}"
+                        class="form-control @error('date_of_birth') is-invalid @enderror" max="{{ date('Y-m-d') }}">
+                    @error('date_of_birth') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+        <div class="col-md-4">
             <label>Age</label>
-            <input type="number" name="age" value="{{ old('age', $child->age) }}" class="form-control @error('age') is-invalid @enderror" min="0" max="120">
+            <input type="number" name="age" id="age" value="{{ old('age', $child->age) }}" class="form-control @error('age') is-invalid @enderror" min="0" max="120" readonly>
             @error('age') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-4">
@@ -79,11 +85,6 @@
                 <option value="female" {{ old('gender', $child->gender) === 'female' ? 'selected' : '' }}>Female</option>
                 <option value="other" {{ old('gender', $child->gender) === 'other' ? 'selected' : '' }}>Other</option>
             </select>
-        </div>
-        <div class="col-md-4">
-            <label>Date of Birth</label>
-            <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $child->date_of_birth?->format('Y-m-d')) }}" class="form-control @error('date_of_birth') is-invalid @enderror">
-            @error('date_of_birth') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-6">
             <label>Phone</label>
@@ -148,8 +149,39 @@
 </div>
 </form>
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 document.addEventListener('DOMContentLoaded', function () {
+    function syncAgeFromDateOfBirth() {
+        const dobInput = document.querySelector('[name="date_of_birth"]');
+        const ageInput = document.querySelector('[name="age"]');
+        if (!dobInput || !ageInput) return;
+
+        const dateStr = dobInput.value;
+        if (!dateStr) {
+            ageInput.value = '';
+            return;
+        }
+
+        const dob = new Date(dateStr + 'T12:00:00');
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+
+        let years = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            years--;
+        }
+
+        ageInput.value = years >= 0 && years <= 120 ? years : '';
+    }
+
+    const dobInput = document.querySelector('[name="date_of_birth"]');
+    if (dobInput) {
+        dobInput.addEventListener('change', syncAgeFromDateOfBirth);
+        dobInput.addEventListener('input', syncAgeFromDateOfBirth);
+        syncAgeFromDateOfBirth();
+    }
+
     const otherField = document.getElementById('editOtherDisabilityField');
     const boxes = document.querySelectorAll('input[name="disability_ids[]"]');
     if (!otherField || !boxes.length) return;

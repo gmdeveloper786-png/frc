@@ -61,6 +61,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, HTTP requests are redirected to HTTPS and generated URLs
+    | use the https scheme. Enabled by default in production.
+    |
+    */
+
+    'force_https' => env('FORCE_HTTPS', env('APP_ENV') === 'production'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

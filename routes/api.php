@@ -44,11 +44,15 @@ Route::middleware(['auth:sanctum', 'active_user', 'approved_child', 'throttle:60
 
     // Children
     Route::prefix('children')->group(function () {
-        Route::get('/',              [ChildController::class, 'index']);
-        Route::get('/{id}',          [ChildController::class, 'show']);
-        Route::put('/{id}',          [ChildController::class, 'update']);
-        Route::post('/{id}/approve', [ChildController::class, 'approve']);
-        Route::post('/{id}/reject',  [ChildController::class, 'reject']);
+        Route::middleware('permission:manage_children')->group(function () {
+            Route::get('/',     [ChildController::class, 'index']);
+            Route::get('/{id}', [ChildController::class, 'show'])->whereNumber('id');
+            Route::put('/{id}', [ChildController::class, 'update'])->whereNumber('id');
+        });
+        Route::middleware('permission:approve_children')->group(function () {
+            Route::post('/{id}/approve', [ChildController::class, 'approve'])->whereNumber('id');
+            Route::post('/{id}/reject',  [ChildController::class, 'reject'])->whereNumber('id');
+        });
     });
 
     // Disabilities
@@ -64,15 +68,17 @@ Route::middleware(['auth:sanctum', 'active_user', 'approved_child', 'throttle:60
     // Therapists
     Route::prefix('therapists')->group(function () {
         Route::get('/',                      [TherapistController::class, 'index']);
-        Route::post('/',                     [TherapistController::class, 'store']);
-        Route::get('/{id}',                  [TherapistController::class, 'show']);
-        Route::put('/{id}',                  [TherapistController::class, 'update']);
-        Route::delete('/{id}',               [TherapistController::class, 'destroy']);
-        Route::get('/{id}/available-days',   [TherapistController::class, 'availableDays']);
-        Route::get('/{id}/available-slots',  [TherapistController::class, 'availableSlots']);
-        Route::get('/{id}/occupied-slots',  [TherapistController::class, 'occupiedSlots']);
+        Route::get('/{id}',                  [TherapistController::class, 'show'])->whereNumber('id');
+        Route::get('/{id}/available-days',   [TherapistController::class, 'availableDays'])->whereNumber('id');
+        Route::get('/{id}/available-slots',  [TherapistController::class, 'availableSlots'])->whereNumber('id');
+        Route::get('/{id}/occupied-slots',   [TherapistController::class, 'occupiedSlots'])->whereNumber('id');
+        Route::middleware('permission:manage_therapists')->group(function () {
+            Route::post('/',       [TherapistController::class, 'store']);
+            Route::put('/{id}',    [TherapistController::class, 'update'])->whereNumber('id');
+            Route::delete('/{id}', [TherapistController::class, 'destroy'])->whereNumber('id');
+        });
     });
-    Route::get('branches/{branch}/therapists', [TherapistController::class, 'byBranch']);
+    Route::get('branches/{branch}/therapists', [TherapistController::class, 'byBranch'])->whereNumber('branch');
 
     // Assessments
     Route::prefix('assessments')->group(function () {
@@ -109,33 +115,41 @@ Route::middleware(['auth:sanctum', 'active_user', 'approved_child', 'throttle:60
 
     // Enrollments
     Route::prefix('enrollments')->group(function () {
-        Route::get('/',               [EnrollmentController::class, 'index']);
-        Route::post('/',              [EnrollmentController::class, 'store']);
-        Route::get('/{enrollment}',   [EnrollmentController::class, 'show']);
-        Route::put('/{enrollment}',   [EnrollmentController::class, 'update']);
-        Route::post('/{enrollment}/approve', [EnrollmentController::class, 'approve']);
-        Route::post('/{enrollment}/reject',  [EnrollmentController::class, 'reject']);
-        Route::get('/{enrollment}/fee-summary', [EnrollmentController::class, 'feeSummary']);
+        Route::middleware('permission:manage_enrollments')->group(function () {
+            Route::get('/',                      [EnrollmentController::class, 'index']);
+            Route::post('/',                     [EnrollmentController::class, 'store']);
+            Route::put('/{enrollment}',          [EnrollmentController::class, 'update']);
+            Route::post('/{enrollment}/approve', [EnrollmentController::class, 'approve']);
+            Route::post('/{enrollment}/reject',  [EnrollmentController::class, 'reject']);
+        });
+        Route::get('/{enrollment}',               [EnrollmentController::class, 'show']);
+        Route::get('/{enrollment}/fee-summary',   [EnrollmentController::class, 'feeSummary']);
     });
     Route::get('child/my-enrollment', [EnrollmentController::class, 'myEnrollment']);
 
     // Payments
     Route::prefix('payments')->group(function () {
-        Route::get('/',                     [PaymentController::class, 'index']);
-        Route::post('/child-slip-upload',   [PaymentController::class, 'childSlipUpload']);
-        Route::post('/manual',              [PaymentController::class, 'manualPayment']);
-        Route::get('/{id}',                 [PaymentController::class, 'show']);
-        Route::post('/{id}/approve',        [PaymentController::class, 'verify']);
-        Route::post('/{id}/reject',         [PaymentController::class, 'reject']);
-        Route::get('/{id}/receipt',         [PaymentController::class, 'receipt']);
+        Route::post('/child-slip-upload', [PaymentController::class, 'childSlipUpload']);
+        Route::middleware('permission:manage_payments')->group(function () {
+            Route::get('/',          [PaymentController::class, 'index']);
+            Route::post('/manual',   [PaymentController::class, 'manualPayment']);
+        });
+        Route::middleware('permission:verify_payments')->group(function () {
+            Route::post('/{id}/approve', [PaymentController::class, 'verify'])->whereNumber('id');
+            Route::post('/{id}/reject',  [PaymentController::class, 'reject'])->whereNumber('id');
+        });
+        Route::get('/{id}',         [PaymentController::class, 'show'])->whereNumber('id');
+        Route::get('/{id}/receipt', [PaymentController::class, 'receipt'])->whereNumber('id');
     });
-    Route::get('children/{child}/payments', [PaymentController::class, 'childPayments']);
-    Route::get('finance/student-fees',      [PaymentController::class, 'studentFees']);
+    Route::middleware('permission:manage_payments')->group(function () {
+        Route::get('children/{child}/payments', [PaymentController::class, 'childPayments'])->whereNumber('child');
+    });
+    Route::middleware('permission:view_finance_reports')->get('finance/student-fees', [PaymentController::class, 'studentFees']);
 
     // Reports
-    Route::prefix('reports')->group(function () {
-        Route::get('/finance',      [ReportController::class, 'finance']);
-        Route::get('/payments',     [ReportController::class, 'payments']);
+    Route::middleware('permission:view_finance_reports')->prefix('reports')->group(function () {
+        Route::get('/finance',  [ReportController::class, 'finance']);
+        Route::get('/payments', [ReportController::class, 'payments']);
     });
 
     Route::middleware('role:super_admin')->prefix('super-admin/staff-users')->group(function () {

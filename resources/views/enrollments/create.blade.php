@@ -40,7 +40,7 @@
                         <input type="hidden" name="branch_id" id="branchSelect" value="{{ $onlyBranch->id }}">
                         <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
                     @else
-                        <select name="branch_id" id="branchSelect" class="form-control @error('branch_id') is-invalid @enderror" onchange="loadTherapists(this.value)" required>
+                        <select name="branch_id" id="branchSelect" class="form-control @error('branch_id') is-invalid @enderror" required>
                             <option value="">Select Branch</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
@@ -51,7 +51,7 @@
                 </div>
                 <div class="col-md-6">
                     <label>Service <span style="color:var(--danger)">*</span></label>
-                    <select name="service_id" id="serviceSelect" class="form-control @error('service_id') is-invalid @enderror" onchange="onEnrollmentServiceChange()">
+                    <select name="service_id" id="serviceSelect" class="form-control @error('service_id') is-invalid @enderror">
                         <option value="">Select Service</option>
                         @foreach($services as $svc)
                             <option value="{{ $svc->id }}" {{ (int) old('service_id') === $svc->id ? 'selected' : '' }}>{{ $svc->name }}</option>
@@ -61,7 +61,7 @@
                 </div>
                 <div class="col-md-6">
                     <label>Therapist <span style="color:var(--danger)">*</span></label>
-                    <select name="therapist_id" id="therapistSelect" class="form-control @error('therapist_id') is-invalid @enderror" onchange="loadScheduleOptions()">
+                    <select name="therapist_id" id="therapistSelect" class="form-control @error('therapist_id') is-invalid @enderror">
                         <option value="">Select branch &amp; service first</option>
                     </select>
                     @error('therapist_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -105,11 +105,11 @@
                         </select>
                     </div>
                     <div style="padding-bottom:2px;">
-                        <button type="button" onclick="removeRow(this)" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
+                        <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn-outline-teal mt-2" onclick="addScheduleRow()">
+            <button type="button" class="btn-outline-teal mt-2" id="addScheduleRowBtn">
                 <i class="fa-solid fa-plus"></i> Add Another Day/Slot
             </button>
         </div>
@@ -122,7 +122,7 @@
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                         <input type="checkbox" name="repeat_weekly" value="1" id="repeatWeekly"
                             {{ old('repeat_weekly') ? 'checked' : '' }}
-                            onchange="toggleDuration(); recalculate();" style="accent-color:var(--teal);">
+                            style="accent-color:var(--teal);">
                         Repeat Weekly (auto-generate sessions)
                     </label>
                 </div>
@@ -130,11 +130,11 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <label>Duration Value</label>
-                            <input type="number" name="duration_value" id="durationValue" value="{{ old('duration_value') }}" class="form-control" min="1" placeholder="e.g. 3" oninput="recalculate()">
+                            <input type="number" name="duration_value" id="durationValue" value="{{ old('duration_value') }}" class="form-control" min="1" placeholder="e.g. 3">
                         </div>
                         <div class="col-6">
                             <label>Duration Unit</label>
-                            <select name="duration_unit" id="durationUnit" class="form-control" onchange="recalculate()">
+                            <select name="duration_unit" id="durationUnit" class="form-control">
                                 <option value="weekly" {{ old('duration_unit', 'weekly') === 'weekly' ? 'selected' : '' }}>Weekly</option>
                                 <option value="monthly" {{ old('duration_unit') === 'monthly' ? 'selected' : '' }}>Monthly</option>
                                 <option value="yearly" {{ old('duration_unit') === 'yearly' ? 'selected' : '' }}>Yearly</option>
@@ -160,8 +160,9 @@
             <div class="mb-3">
                 <label>Discount % (0–100)</label>
                 <input type="number" name="discount_percentage" id="discountPct" value="{{ old('discount_percentage', 0) }}"
-                    class="form-control" min="0" max="100" step="1" oninput="recalculate(); checkHighDiscount()">
+                    class="form-control" min="0" max="100" step="1">
             </div>
+            @include('enrollments.partials.zakat-eligibility-field')
             <div style="background:var(--bg-light);border-radius:12px;padding:16px;margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
                     <span style="color:var(--text-muted);">Sessions (auto):</span>

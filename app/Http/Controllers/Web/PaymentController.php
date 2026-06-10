@@ -10,7 +10,6 @@ use App\Http\Requests\VerifyPaymentRequest;
 use App\Models\Branch;
 use App\Models\Enrollment;
 use App\Models\Payment;
-use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\ChildPortalService;
 use App\Services\PaymentService;
@@ -187,6 +186,7 @@ class PaymentController extends Controller
     public function reject(RejectPaymentRequest $request, int $id): RedirectResponse
     {
         $payment = $this->paymentService->findById($id);
+        StaffBranchScope::enforcePaymentBranch($request->user(), $payment);
         $this->paymentService->reject($payment, $request->user(), $request->rejection_reason);
 
         return redirect()->back()->with('success', 'Payment rejected.');
@@ -221,42 +221,15 @@ class PaymentController extends Controller
         return view('payments.receipt', compact('payment', 'receipt'));
     }
 
-    /** Staff/finance or payment permissions; children only their own enrollment payments. */
     private function authorizePaymentDetailAccess(Payment $payment): void
     {
-        $user = auth()->user();
-        if (! $user instanceof User) {
-            abort(403);
-        }
-
-        if ($user->isChild()) {
-            abort_unless((int) $payment->child_id === (int) $user->id, 403);
-
-            return;
-        }
-
-        abort_unless(
-            $user->hasPermission('manage_payments') || $user->hasPermission('verify_payments'),
-            403,
-        );
-
-        StaffBranchScope::enforcePaymentBranch($user, $payment);
+        $this->authorize('view', $payment);
+        StaffBranchScope::enforcePaymentBranch(auth()->user(), $payment);
     }
 
-    /** Children may view only their own receipts; staff with payment permissions may view any. */
     private function authorizeReceiptAccess(Payment $payment): void
     {
-        $user = auth()->user();
-        if (! $user instanceof User) {
-            abort(403);
-        }
-
-        if ($user->isChild()) {
-            abort_unless((int) $payment->child_id === (int) $user->id, 403);
-
-            return;
-        }
-
-        abort_unless($user->hasPermission('manage_payments'), 403);
+        $this->authorize('viewReceipt', $payment);
+        StaffBranchScope::enforcePaymentBranch(auth()->user(), $payment);
     }
 }

@@ -11,7 +11,7 @@
     })->values();
     $approvedChildSearchUrl = route('ajax.children.approved-search');
 @endphp
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const SEARCH_URL = @json($approvedChildSearchUrl);
     const INITIAL = @json($initialChildrenJson);
@@ -239,5 +239,13 @@
 
         window.highlightChildCheck = function () {};
     }
+
+    document.querySelectorAll('[data-child-select-sync]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            if (typeof onChildSelectChange === 'function') {
+                onChildSelectChange();
+            }
+        });
+    });
 })();
 </script>

@@ -24,7 +24,12 @@ class ServiceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $services = $this->service->getAll($request->only(['status', 'search']));
+        $filters = $request->only(['status', 'search']);
+        if (! $request->user()->hasPermission('manage_services')) {
+            $filters['status'] = 'publish';
+        }
+
+        $services = $this->service->getAll($filters);
 
         return response()->json(['data' => ServiceResource::collection($services)]);
     }
@@ -36,8 +41,12 @@ class ServiceController extends Controller
         return response()->json(['message' => 'Service created.', 'data' => new ServiceResource($service)], 201);
     }
 
-    public function show(Service $service): JsonResponse
+    public function show(Request $request, Service $service): JsonResponse
     {
+        if (! $request->user()->hasPermission('manage_services')) {
+            abort_unless($service->status === 'publish', 404);
+        }
+
         return response()->json(['data' => new ServiceResource($service)]);
     }
 

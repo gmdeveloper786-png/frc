@@ -14,6 +14,12 @@ class Enrollment extends Model
 {
     use SoftDeletes;
 
+    public const ZAKAT_ELIGIBLE = 'eligible_for_zakat';
+
+    public const ZAKAT_NOT_ELIGIBLE = 'not_eligible_for_zakat';
+
+    public const ZAKAT_SYED = 'syed';
+
     protected $fillable = [
         'child_id',
         'enrollment_group_id',
@@ -35,6 +41,7 @@ class Enrollment extends Model
         'duration_unit',
         'discount_reason',
         'discount_file',
+        'zakat_eligibility',
         'status',
         'approved_by',
         'approved_at',
@@ -171,6 +178,26 @@ class Enrollment extends Model
     {
         return app(\App\Services\SettingService::class)
             ->isHighDiscount((float) $this->discount_percentage);
+    }
+
+    /** @return array<string, string> */
+    public static function zakatEligibilityOptions(): array
+    {
+        return [
+            self::ZAKAT_ELIGIBLE     => 'Eligible for zakat',
+            self::ZAKAT_NOT_ELIGIBLE => 'Not eligible for zakat',
+            self::ZAKAT_SYED         => 'Syed',
+        ];
+    }
+
+    public function zakatEligibilityLabel(): ?string
+    {
+        if (! filled($this->zakat_eligibility)) {
+            return null;
+        }
+
+        return self::zakatEligibilityOptions()[$this->zakat_eligibility]
+            ?? ucfirst(str_replace('_', ' ', (string) $this->zakat_eligibility));
     }
 
     public function isVisibleToChild(): bool

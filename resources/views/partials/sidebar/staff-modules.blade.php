@@ -4,25 +4,43 @@
         return;
     }
 
+    $canViewStaffUsers = $user->hasPermission('view_staff_users');
     $canApproveChildren = $user->hasPermission('approve_children');
     $canManageChildren = $user->hasPermission('manage_children');
+    $canViewChildren = $user->hasPermission('view_children');
     $canTherapists = $user->hasPermission('manage_therapists');
     $canDisabilities = $user->hasPermission('manage_disabilities');
     $canServices = $user->hasPermission('manage_services');
     $canBranches = $user->hasPermission('manage_branches');
     $canAssessments = $user->hasPermission('manage_assessments');
     $canEnrollments = $user->hasPermission('manage_enrollments');
+    $canViewEnrollments = $user->hasPermission('view_enrollments');
     $canHighDiscount = $user->hasPermission('approve_high_discount');
     $canManagePayments = $user->hasPermission('manage_payments');
     $canVerifyPayments = $user->hasPermission('verify_payments');
     $canFinanceReports = $user->hasPermission('view_finance_reports');
     $canSettings = $user->hasPermission('manage_settings');
 
-    $showChildren = $canApproveChildren || $canManageChildren;
+    $showUsers = $canViewStaffUsers || $user->isSuperAdmin();
+    $showChildren = $canApproveChildren || $canManageChildren || $canViewChildren;
     $showConfiguration = $canTherapists || $canDisabilities || $canServices || $canBranches;
-    $showClinical = $canAssessments || $canEnrollments || $canHighDiscount;
+    $showClinical = $canAssessments || $canEnrollments || $canViewEnrollments || $canHighDiscount;
     $showFinance = $canManagePayments || $canVerifyPayments || $canFinanceReports;
 @endphp
+
+@if($showUsers)
+    <div class="nav-section-title">Users</div>
+    @if($canViewStaffUsers)
+        <a href="{{ route('super-admin.staff-users.index') }}" class="nav-link {{ request()->routeIs('super-admin.staff-users.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-user-tie"></i><span>Staff Users</span>
+        </a>
+    @endif
+    @if($user->isSuperAdmin())
+        <a href="{{ route('super-admin.roles.index') }}" class="nav-link {{ request()->routeIs('super-admin.roles.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-shield-halved"></i><span>Roles &amp; Permissions</span>
+        </a>
+    @endif
+@endif
 
 @if($showChildren)
     <div class="nav-section-title">Children</div>
@@ -41,7 +59,7 @@
             @endif
         </a>
     @endif
-    @if($canManageChildren)
+    @if($canManageChildren || $canViewChildren)
         <a href="{{ route('children.index') }}" class="nav-link {{ request()->routeIs('children.*') && ! request()->routeIs('children.pending') ? 'active' : '' }}">
             <i class="fa-solid fa-children"></i><span>All Children</span>
         </a>
@@ -79,8 +97,8 @@
             <i class="fa-solid fa-clipboard-list"></i><span>Assessments</span>
         </a>
     @endif
-    @if($canEnrollments)
-        <a href="{{ route('enrollments.index') }}" class="nav-link {{ request()->routeIs('enrollments.index', 'enrollments.create', 'enrollments.show', 'enrollments.edit') ? 'active' : '' }}">
+    @if($canEnrollments || $canViewEnrollments)
+        <a href="{{ route('enrollments.index') }}" class="nav-link {{ request()->routeIs('enrollments.index', 'enrollments.create', 'enrollments.show', 'enrollments.edit', 'enrollments.schedule*') ? 'active' : '' }}">
             <i class="fa-solid fa-file-contract"></i><span>Enrollments</span>
         </a>
     @endif

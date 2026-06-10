@@ -54,7 +54,7 @@
                     <input type="password" id="password" name="password"
                         class="form-control @error('password') is-invalid @enderror"
                         placeholder="Enter your password" autocomplete="current-password">
-                    <button type="button" class="auth-pass-toggle" onclick="togglePass()" aria-label="Show password">
+                    <button type="button" class="auth-pass-toggle" data-pass-toggle="password" data-pass-icon="passIcon" aria-label="Show password">
                         <i class="fa-regular fa-eye" id="passIcon"></i>
                     </button>
                 </div>
@@ -85,18 +85,3 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-function togglePass() {
-    const el = document.getElementById('password');
-    const icon = document.getElementById('passIcon');
-    if (el.type === 'password') {
-        el.type = 'text';
-        icon.className = 'fa-regular fa-eye-slash';
-    } else {
-        el.type = 'password';
-        icon.className = 'fa-regular fa-eye';
-    }
-}
-</script>
-@endpush

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -65,7 +66,7 @@ class Branch extends Model
      */
     public function scopeOrderedForDropdown(Builder $query): Builder
     {
-        $table = $query->getModel()->getTable();
+        $table = DB::connection()->getQueryGrammar()->wrapTable($query->getModel()->getTable());
 
         return $query
             ->orderByRaw("(
@@ -76,7 +77,7 @@ class Branch extends Model
                   AND COALESCE(city_group.city, '') = COALESCE({$table}.city, '')
             ) DESC")
             ->orderByRaw("COALESCE({$table}.city, '') ASC")
-            ->orderBy("{$table}.name");
+            ->orderBy($query->qualifyColumn('name'));
     }
 
     /** Branch admins see only their assigned branch; super admin sees all. */

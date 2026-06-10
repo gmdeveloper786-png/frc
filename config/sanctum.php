@@ -46,7 +46,7 @@ return [
     |
     */
 
-    'expiration' => null,
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', env('APP_ENV') === 'production' ? 1440 : null),
 
     /*
     |--------------------------------------------------------------------------

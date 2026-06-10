@@ -21,9 +21,7 @@ class LoginController extends Controller
 
     public function login(LoginRequest $request): RedirectResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'The provided credentials are incorrect.'])->withInput();
-        }
+        $request->authenticate();
 
         $user = Auth::user();
 

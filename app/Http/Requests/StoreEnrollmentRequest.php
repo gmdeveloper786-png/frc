@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Enrollment;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\UploadRules;
 use App\Services\SettingService;
 use App\Support\CitySessionPricing;
 use App\Support\StaffBranchScope;
@@ -76,6 +78,7 @@ class StoreEnrollmentRequest extends FormRequest
             'therapist_id'       => ['required', 'exists:users,id'],
             'price_per_session'  => ['required', 'numeric', 'min:0'],
             'discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'zakat_eligibility'   => ['required', Rule::in(array_keys(Enrollment::zakatEligibilityOptions()))],
             'repeat_weekly'        => ['nullable', 'boolean'],
             'schedule_start_date'  => ['required', 'date', 'after_or_equal:today'],
             'duration_value'       => ['nullable', 'required_if:repeat_weekly,true', 'integer', 'min:1'],
@@ -84,7 +87,7 @@ class StoreEnrollmentRequest extends FormRequest
             'schedules.*.day'    => ['required', 'string'],
             'schedules.*.time_slot' => ['required', 'string'],
             'discount_reason'    => [$highDiscount ? 'required' : 'nullable', 'string', 'max:2000'],
-            'discount_file'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:2048'],
+            'discount_file'      => UploadRules::document(required: false),
             'status'             => ['nullable', 'in:draft,active'],
         ];
     }
@@ -254,6 +257,8 @@ class StoreEnrollmentRequest extends FormRequest
             'child_ids.min' => 'Select at least one child.',
             'child_ids.*.distinct' => 'Each child can only be selected once.',
             'discount_reason.required' => 'Discount reason is required when discount exceeds the configured high-discount threshold.',
+            'zakat_eligibility.required' => 'Please select a zakat eligibility option.',
+            'zakat_eligibility.in' => 'Please select a valid zakat eligibility option.',
             'schedule_start_date.required' => 'Please choose when the first session should start.',
             'schedule_start_date.after_or_equal' => 'First session date cannot be in the past.',
         ];

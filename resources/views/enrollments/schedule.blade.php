@@ -10,7 +10,7 @@
 <div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-calendar-week me-2" style="color:var(--teal);"></i>Enrollment Schedule</h6>
-        @if(auth()->user()->hasAnyRole(['super_admin', 'admin', 'finance']))
+        @if(auth()->user()?->hasPermission('manage_enrollments') || auth()->user()?->hasPermission('view_enrollments') || auth()->user()->isFinance())
             <a href="{{ route('enrollments.show', $enrollment->id) }}" class="btn-outline-teal d-inline-flex align-items-center gap-1" style="font-size:13px;padding:6px 14px;">
                 <i class="fa-solid fa-arrow-left"></i> Enrollment detail
             </a>

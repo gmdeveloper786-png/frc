@@ -9,7 +9,6 @@ use App\Support\EnrollmentNotificationSnapshot;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
@@ -20,6 +19,7 @@ class EnrollmentService
         private readonly EnrollmentRepositoryInterface $repository,
         private readonly FeeCalculationService $feeCalc,
         private readonly EnrollmentNotificationService $enrollmentNotifications,
+        private readonly SecureFileStorageService $secureFiles,
     ) {}
 
     public function getAll(array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -118,7 +118,7 @@ class EnrollmentService
 
         $discountFilePath = null;
         if ($discountFile) {
-            $discountFilePath = $discountFile->store('enrollments/discount-files', 'public');
+            $discountFilePath = $this->secureFiles->store($discountFile, 'enrollments/discount-files');
         }
 
         $status            = $isHighDiscount ? 'pending_super_admin_approval' : ($data['status'] ?? 'draft');
@@ -152,6 +152,7 @@ class EnrollmentService
             'duration_unit'       => $data['duration_unit'] ?? null,
             'discount_reason'     => $data['discount_reason'] ?? null,
             'discount_file'       => $discountFilePath,
+            'zakat_eligibility'   => $data['zakat_eligibility'],
             'status'              => $status,
             'created_by'          => $createdBy,
             'updated_by'          => $createdBy,
@@ -241,9 +242,9 @@ class EnrollmentService
         $discountFilePath = $enrollment->discount_file;
         if ($discountFile) {
             if ($enrollment->discount_file) {
-                Storage::disk('public')->delete($enrollment->discount_file);
+                $this->secureFiles->delete($enrollment->discount_file);
             }
-            $discountFilePath = $discountFile->store('enrollments/discount-files', 'public');
+            $discountFilePath = $this->secureFiles->store($discountFile, 'enrollments/discount-files');
         }
 
         $status = $isHighDiscount ? 'pending_super_admin_approval' : ($data['status'] ?? $enrollment->status);
@@ -266,6 +267,7 @@ class EnrollmentService
             'duration_unit'        => $data['duration_unit'] ?? null,
             'discount_reason'      => $data['discount_reason'] ?? null,
             'discount_file'        => $discountFilePath,
+            'zakat_eligibility'    => $data['zakat_eligibility'],
             'status'               => $status,
             'updated_by'           => $updatedBy,
         ];

@@ -83,6 +83,8 @@
             <dd class="col-sm-8 mb-2" style="white-space:pre-wrap;">{{ ! empty($occurrenceDetail['cancellation_reason']) ? $occurrenceDetail['cancellation_reason'] : '—' }}</dd>
         </dl>
 
+        @include('sessions.partials.feedback-summary', ['sessionFeedback' => $sessionFeedback ?? ['items' => [], 'overall' => null]])
+
         <div class="mt-4 d-flex flex-wrap gap-2">
             <a href="{{ route('therapist.sessions.index') }}" class="btn-outline-teal d-inline-flex align-items-center gap-1">
                 <i class="fa-solid fa-arrow-left"></i> Back to sessions

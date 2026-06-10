@@ -54,7 +54,7 @@
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:14px;">Approval Actions</h6>
                 <form action="{{ route('children.approve', $child->id) }}" method="POST" class="mb-2">
                     @csrf
-                    <button type="submit" class="btn-teal" style="width:100%;justify-content:center;" onclick="return confirm('Approve this child?')">
+                    <button type="submit" class="btn-teal" style="width:100%;justify-content:center;" data-confirm="Approve this child?">
                         <i class="fa-solid fa-check"></i> Approve Registration
                     </button>
                 </form>

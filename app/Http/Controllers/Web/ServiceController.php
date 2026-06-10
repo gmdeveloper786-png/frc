@@ -35,6 +35,8 @@ class ServiceController extends Controller
 
     public function edit(Service $service): View
     {
+        $service->load(['feedbackQuestions' => fn ($q) => $q->active()->ordered()]);
+
         return view('services.edit', compact('service'));
     }
 

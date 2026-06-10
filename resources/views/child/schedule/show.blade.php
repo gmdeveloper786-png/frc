@@ -46,6 +46,8 @@
             @endif
         </dl>
 
+        @include('sessions.partials.feedback-summary', ['sessionFeedback' => $sessionFeedback ?? ['items' => [], 'overall' => null]])
+
         <div class="mt-4">
             <a href="{{ route('child.schedule.index') }}" class="btn-outline-teal"><i class="fa-solid fa-arrow-left"></i> Back to schedule</a>
         </div>

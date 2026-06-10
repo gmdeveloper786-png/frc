@@ -108,6 +108,7 @@
                     <tr>
                         <th>#</th>
                         <th>Child</th>
+                        <th>Enrollment</th>
                         <th>Branch / Therapist</th>
                         <th>Total Sessions</th>
                         <th>Before Discount / Subtotal</th>
@@ -123,8 +124,15 @@
                         <tr>
                             <td style="color:var(--text-muted);">{{ $enrollments->firstItem() + $loop->index }}</td>
                             <td>
-                                <div style="font-weight:600;">{{ $e->child?->full_name }}</div>
-                                <div style="font-size:12px;color:var(--text-muted);">{{ $e->child?->phone_number }}</div>
+                                <a href="{{ route('children.show', $e->child_id) }}" style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer;">
+                                    {{ $e->child?->full_name }}
+                                </a>
+                                <div style="font-size:12px;color:var(--text-muted);font-family:monospace;">{{ $e->child?->gr_number }}</div>
+                            </td>
+                            <td>
+                                <a href="{{ route('enrollments.show', $e->id) }}" style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer;">
+                                    #{{ $e->id }}
+                                </a>
                             </td>
                             <td style="font-size:13px;">
                                 <div>{{ $e->branch?->name }}</div>
@@ -147,8 +155,11 @@
                             </td>
                             <td style="max-width:200px;">
                                 <p style="font-size:12px;color:var(--text-muted);margin:0;white-space:pre-wrap;">{{ Str::limit($e->discount_reason, 30) }}</p>
-                                @if(strlen($e->discount_reason) > 30)
-                                    <a href="{{ route('enrollments.show', $e->id) }}" style="font-size:12px;color:var(--teal);">See more</a>
+                                @if(strlen((string) $e->discount_reason) > 30)
+                                    <button type="button" class="btn btn-link p-0 border-0 align-baseline" style="font-size:12px;color:var(--teal);text-decoration:none;"
+                                        data-bs-toggle="modal" data-bs-target="#reasonModal{{ $e->id }}">
+                                        See more
+                                    </button>
                                 @endif
                             </td>
                             <td>
@@ -164,7 +175,7 @@
                                 <div class="high-discount-actions">
                                     <form action="{{ route('enrollments.approve', $e->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="hd-action-btn hd-action-btn--approve" onclick="return confirm('Approve this high discount enrollment?')">
+                                        <button type="submit" class="hd-action-btn hd-action-btn--approve" data-confirm="Approve this high discount enrollment?">
                                             <i class="fa-solid fa-check"></i> Approve
                                         </button>
                                     </form>
@@ -186,6 +197,30 @@
         @endif
     @endif
 </div>
+
+{{-- Discount reason modals --}}
+@foreach($enrollments as $e)
+    @if(strlen((string) $e->discount_reason) > 30)
+        <div class="modal fade" id="reasonModal{{ $e->id }}" tabindex="-1" aria-labelledby="reasonModalLabel{{ $e->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:16px;">
+                    <div class="modal-header" style="border-bottom:1px solid var(--border-soft);">
+                        <h6 class="modal-title" id="reasonModalLabel{{ $e->id }}" style="font-family:'Poppins',sans-serif;color:var(--navy);">
+                            Discount reason — {{ $e->child?->full_name }}
+                        </h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0" style="font-size:14px;color:var(--navy);white-space:pre-wrap;line-height:1.6;">{{ $e->discount_reason }}</p>
+                    </div>
+                    <div class="modal-footer" style="border-top:1px solid var(--border-soft);">
+                        <button type="button" class="btn-outline-teal" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+@endforeach
 
 {{-- Reject Modals --}}
 @foreach($enrollments as $e)

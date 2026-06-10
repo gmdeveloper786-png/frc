@@ -16,11 +16,7 @@ class CompleteAssessmentRequest extends FormRequest
             return false;
         }
 
-        if ($user->isSuperAdmin() && $user->hasPermission('manage_assessments')) {
-            return true;
-        }
-
-        return $user->isTherapist() && (int) $assessment->therapist_id === (int) $user->id;
+        return $user->can('complete', $assessment);
     }
 
     public function rules(): array

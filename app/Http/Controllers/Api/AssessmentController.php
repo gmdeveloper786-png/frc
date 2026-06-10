@@ -10,8 +10,8 @@ use App\Http\Requests\StoreAssessmentRequest;
 use App\Http\Requests\UpdateAssessmentRequest;
 use App\Http\Resources\AssessmentResource;
 use App\Models\Assessment;
-use App\Models\User;
 use App\Services\AssessmentService;
+use App\Support\StaffBranchScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,7 +23,12 @@ class AssessmentController extends Controller
     {
         abort_unless($request->user()?->hasPermission('manage_assessments'), 403);
 
-        $assessments = $this->service->getAll($request->only(['status', 'branch_id', 'date_from', 'date_to']));
+        $filters = $request->only(['status', 'branch_id', 'date_from', 'date_to']);
+        if ($lockedBranch = StaffBranchScope::lockedBranchId($request->user())) {
+            $filters['branch_id'] = $lockedBranch;
+        }
+
+        $assessments = $this->service->getAll($filters);
 
         return response()->json(['data' => AssessmentResource::collection($assessments)]);
     }
@@ -37,7 +42,8 @@ class AssessmentController extends Controller
 
     public function show(Request $request, Assessment $assessment): JsonResponse
     {
-        $this->authorizeAssessmentView($request->user(), $assessment);
+        $this->authorize('view', $assessment);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $loads = [
             'branch',
@@ -63,6 +69,7 @@ class AssessmentController extends Controller
     public function update(UpdateAssessmentRequest $request, Assessment $assessment): JsonResponse
     {
         abort_if(in_array($assessment->status, ['completed', 'cancelled'], true), 403);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $updated = $this->service->update($assessment, $request->validated(), $request->user()->id);
 
@@ -72,6 +79,7 @@ class AssessmentController extends Controller
     public function destroy(Request $request, Assessment $assessment): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('manage_assessments'), 403);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $this->service->delete($assessment);
 
@@ -80,6 +88,8 @@ class AssessmentController extends Controller
 
     public function complete(CompleteAssessmentRequest $request, Assessment $assessment): JsonResponse
     {
+        $this->authorize('complete', $assessment);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
         $updated = $this->service->complete($assessment, $request->user(), $request->validated());
 
         return response()->json(['message' => 'Assessment marked as completed.', 'data' => new AssessmentResource($updated)]);
@@ -87,6 +97,7 @@ class AssessmentController extends Controller
 
     public function cancel(CancelAssessmentRequest $request, Assessment $assessment): JsonResponse
     {
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
         $updated = $this->service->cancel($assessment, $request->user(), $request->validated()['cancellation_reason']);
 
         return response()->json(['message' => 'Assessment cancelled.', 'data' => new AssessmentResource($updated)]);
@@ -94,6 +105,8 @@ class AssessmentController extends Controller
 
     public function storeNote(StoreAssessmentNoteRequest $request, Assessment $assessment): JsonResponse
     {
+        $this->authorize('view', $assessment);
+        StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
         $this->service->addAssessmentNote($assessment, $request->validated(), $request->user());
 
         $assessment->load(['assessmentNotes']);
@@ -124,28 +137,4 @@ class AssessmentController extends Controller
         ]);
     }
 
-    private function authorizeAssessmentView(?User $user, Assessment $assessment): void
-    {
-        abort_unless($user instanceof User, 403);
-
-        if ($user->hasPermission('manage_assessments')) {
-            return;
-        }
-
-        if ($user->isTherapist() && (int) $assessment->therapist_id === (int) $user->id) {
-            abort_if($assessment->status === 'draft', 403);
-            abort_if($assessment->status === 'cancelled' && ! $assessment->isVisibleAsCancelledToAssignees(), 403);
-
-            return;
-        }
-
-        if ($user->isChild() && $assessment->children()->where('users.id', $user->id)->exists()) {
-            abort_if($assessment->status === 'draft', 403);
-            abort_if($assessment->status === 'cancelled' && ! $assessment->isVisibleAsCancelledToAssignees(), 403);
-
-            return;
-        }
-
-        abort(403);
-    }
 }

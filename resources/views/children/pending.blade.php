@@ -108,7 +108,7 @@
                                     <form action="{{ route('children.approve', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn-teal" style="padding:5px 12px;font-size:12px;"
-                                            onclick="return confirm('Approve {{ $child->full_name }}?')">
+                                            onclick="return confirm(@json('Approve ' . $child->full_name . '?'))">
                                             <i class="fa-solid fa-check"></i> Approve
                                         </button>
                                     </form>

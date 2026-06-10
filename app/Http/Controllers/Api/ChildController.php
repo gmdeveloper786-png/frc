@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApiUpdateChildRequest;
 use App\Http\Requests\ApproveChildRequest;
+use App\Http\Requests\ChildListFilterRequest;
 use App\Http\Requests\RejectChildRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\Interfaces\UserRepositoryInterface;
@@ -18,11 +20,9 @@ class ChildController extends Controller
         private readonly ChildApprovalService $approvalService,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(ChildListFilterRequest $request): JsonResponse
     {
-        $this->authorize_permission($request, 'manage_children');
-
-        $children = $this->userRepository->getChildren($request->only(['status', 'search']), 15, $request->user());
+        $children = $this->userRepository->getChildren($request->validated(), 15, $request->user());
 
         return response()->json(['data' => UserResource::collection($children)]);
     }
@@ -33,6 +33,7 @@ class ChildController extends Controller
 
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404, 'Child not found.');
+        $this->authorize('viewChild', $child);
 
         return response()->json(['data' => new UserResource($child->load('disabilities'))]);
     }
@@ -60,17 +61,13 @@ class ChildController extends Controller
         return response()->json(['message' => 'Child rejected.', 'data' => new UserResource($updated)]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(ApiUpdateChildRequest $request, int $id): JsonResponse
     {
-        $this->authorize_permission($request, 'manage_children');
-
         $child = $this->userRepository->findById($id);
         abort_if(! $child || ! $child->isChild(), 404, 'Child not found.');
+        $this->authorize('updateChild', $child);
 
-        $updated = $this->userRepository->update($child, $request->only([
-            'full_name', 'father_name', 'age', 'gender', 'date_of_birth',
-            'address', 'phone_number', 'whatsapp_number', 'parent_notes',
-        ]));
+        $updated = $this->userRepository->update($child, $request->validated());
 
         return response()->json(['message' => 'Updated successfully.', 'data' => new UserResource($updated)]);
     }

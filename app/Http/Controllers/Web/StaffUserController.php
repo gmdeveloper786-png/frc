@@ -20,7 +20,10 @@ class StaffUserController extends Controller
 
     public function index(Request $request): View
     {
-        abort_unless($request->user()?->isSuperAdmin(), 403);
+        abort_unless(
+            $request->user()?->isSuperAdmin() || $request->user()?->hasPermission('view_staff_users'),
+            403,
+        );
 
         $users = $this->staffUsers->getStaffUsers($request->only(['search', 'role', 'status']));
 

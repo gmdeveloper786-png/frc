@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\User;
+use App\Services\SessionFeedbackService;
 use App\Services\TherapistPortalService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TherapistChildController extends Controller
 {
-    public function __construct(private readonly TherapistPortalService $portal) {}
+    public function __construct(
+        private readonly TherapistPortalService $portal,
+        private readonly SessionFeedbackService $sessionFeedback,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -52,6 +56,8 @@ class TherapistChildController extends Controller
             ->limit(15)
             ->get();
 
-        return view('therapist.children.show', compact('child', 'assessments', 'sessions'));
+        $performance = $this->sessionFeedback->performanceChartsForEnrollments($child->enrollments);
+
+        return view('therapist.children.show', compact('child', 'assessments', 'sessions', 'performance'));
     }
 }

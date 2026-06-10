@@ -16,7 +16,12 @@ class DisabilityController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $disabilities = $this->service->getAll($request->only(['status', 'search']));
+        $filters = $request->only(['status', 'search']);
+        if (! $request->user()->hasPermission('manage_disabilities')) {
+            $filters['status'] = 'publish';
+        }
+
+        $disabilities = $this->service->getAll($filters);
 
         return response()->json(['data' => DisabilityResource::collection($disabilities)]);
     }
@@ -28,8 +33,12 @@ class DisabilityController extends Controller
         return response()->json(['message' => 'Disability created.', 'data' => new DisabilityResource($disability)], 201);
     }
 
-    public function show(Disability $disability): JsonResponse
+    public function show(Request $request, Disability $disability): JsonResponse
     {
+        if (! $request->user()->hasPermission('manage_disabilities')) {
+            abort_unless($disability->status === 'publish', 404);
+        }
+
         return response()->json(['data' => new DisabilityResource($disability)]);
     }
 

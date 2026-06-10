@@ -40,7 +40,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
             ->when(!empty($filters['payment_status']), fn($q) => $q->where('payment_status', $filters['payment_status']))
             ->when(! empty($filters['search']), function ($q) use ($filters): void {
                 $term = trim((string) $filters['search']);
-                $like = '%' . $term . '%';
+                $like = frc_like_pattern($term);
                 $q->whereHas('child', function ($c) use ($like, $term): void {
                     $c->where(function ($inner) use ($like, $term): void {
                         $inner->where('full_name', 'like', $like)

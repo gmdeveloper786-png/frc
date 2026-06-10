@@ -26,11 +26,10 @@
                     <i class="fa-regular fa-circle-check me-1"></i> Mark all read
                 </button>
             </form>
-            <form action="{{ route('notifications.delete-read') }}" method="post" class="d-inline"
-                  onsubmit="return confirm('Remove all read notifications from your inbox?');">
+            <form action="{{ route('notifications.delete-read') }}" method="post" class="d-inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-sm btn-outline-danger notif-btn">
+                <button type="submit" class="btn btn-sm btn-outline-danger notif-btn" data-confirm="Remove all read notifications from your inbox?">
                     <i class="fa-regular fa-trash-can me-1"></i> Clear read
                 </button>
             </form>
@@ -95,10 +94,10 @@
                                 <button type="submit" class="btn btn-sm btn-outline-secondary notif-btn" title="Mark as unread">Unread</button>
                             </form>
                         @endif
-                        <form action="{{ route('notifications.delete', $n) }}" method="post" class="m-0" onsubmit="return confirm('Remove this notification?');">
+                        <form action="{{ route('notifications.delete', $n) }}" method="post" class="m-0">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger notif-btn" title="Delete">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger notif-btn" title="Delete" data-confirm="Remove this notification?">Delete</button>
                         </form>
                     </div>
                 </li>
@@ -387,7 +386,7 @@
 @endpush
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const boxes = () => Array.from(document.querySelectorAll('.row-select'));
     document.getElementById('selectAllRows')?.addEventListener('change', function () {

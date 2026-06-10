@@ -59,7 +59,7 @@
                     <form method="GET" action="{{ route('child.upload-slip') }}" class="form-frc mb-4" id="enrollmentPickForm">
                         <label class="form-label" style="font-weight:600;color:var(--navy);">Which programme are you paying for? <span class="text-danger">*</span></label>
                         <p class="text-muted small mb-2">Each enrollment has its own fee. Pick the programme for this slip.</p>
-                        <select name="enrollment_id" class="form-control" onchange="document.getElementById('enrollmentPickForm').submit()">
+                        <select name="enrollment_id" class="form-control" data-auto-submit-form="enrollmentPickForm">
                             @foreach($pickerList as $opt)
                                 @php
                                     $optUploadable = $opt->outstandingForSlipUpload();
@@ -189,7 +189,7 @@
     </div>
 </div>
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     function reloadIfBackForward() {
         const nav = performance.getEntriesByType('navigation')[0];

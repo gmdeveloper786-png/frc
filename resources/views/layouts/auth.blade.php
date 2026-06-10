@@ -13,6 +13,7 @@
 <div class="auth-wrapper">
     @yield('content')
 </div>
+<script src="{{ asset('js/frc-core.js') }}" nonce="{{ $cspNonce }}"></script>
 @stack('scripts')
 </body>
 </html>

@@ -17,9 +17,8 @@
             $receiptBackUrl = route('finance.payments');
             $receiptPdfUrl = route('finance.payments.receipt', $payment->id) . '?pdf=1';
         }
-        $receiptPrintUrl = $receiptPdfUrl . '&inline=1';
     @endphp
-    <button type="button" onclick="printReceipt()" class="btn-teal"><i class="fa-solid fa-print"></i> Print</button>
+    <button type="button" data-print-page class="btn-teal"><i class="fa-solid fa-print"></i> Print</button>
     <a href="{{ $receiptPdfUrl }}" class="btn-outline-teal"><i class="fa-solid fa-file-pdf"></i> PDF</a>
     <a href="{{ $receiptBackUrl }}" class="btn-outline-teal"><i class="fa-solid fa-arrow-left"></i> Back</a>
 </div>
@@ -29,28 +28,15 @@
         @include('payments.partials.receipt-content')
     </div>
 </div>
-@push('scripts')
-<script>
-function printReceipt() {
-    var iframe = document.createElement('iframe');
-    iframe.setAttribute('title', 'Receipt print');
-    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;left:-9999px';
-    iframe.src = @json($receiptPrintUrl);
-    document.body.appendChild(iframe);
-    iframe.onload = function () {
-        try {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        } finally {
-            setTimeout(function () { iframe.remove(); }, 2000);
-        }
-    };
-}
 @if(request('autoprint'))
+@push('scripts')
+<script nonce="{{ $cspNonce }}">
 document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(printReceipt, 400);
+    setTimeout(function () {
+        window.print();
+    }, 400);
 });
-@endif
 </script>
 @endpush
+@endif
 @endsection

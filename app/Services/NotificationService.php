@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Mail\HighDiscountApprovalRequiredMail;
 use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\EnrollmentSchedule;
@@ -11,6 +12,8 @@ use App\Models\Payment;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Domain notification dispatcher — persists rows to {@see UserNotification} (per-user inbox).
@@ -82,6 +85,27 @@ class NotificationService
             $enrollment->id,
             route('enrollments.high-discount', [], false),
         );
+
+        $this->sendHighDiscountApprovalEmails($enrollment);
+    }
+
+    private function sendHighDiscountApprovalEmails(Enrollment $enrollment): void
+    {
+        $emails = $this->staffEmailsByRoles([Role::APPROVAL_DISCOUNT]);
+        if ($emails === []) {
+            return;
+        }
+
+        try {
+            Mail::to($emails)->send(new HighDiscountApprovalRequiredMail($enrollment));
+        } catch (\Throwable $e) {
+            Log::error('High discount approval email failed.', [
+                'enrollment_id' => $enrollment->id,
+                'emails'        => $emails,
+                'exception'     => $e->getMessage(),
+            ]);
+            report($e);
+        }
     }
 
     public function notifyChildEnrollmentActive(Enrollment $enrollment, User $child): void
@@ -319,12 +343,9 @@ class NotificationService
     public function notifyHighDiscountApproved(Enrollment $enrollment): void
     {
         $enrollment->loadMissing('child');
-        $ids = $this->staffIdsForEnrollmentBranch($enrollment);
-        $child = $enrollment->child;
-        if ($child !== null) {
-            $ids[] = (int) $child->id;
-        }
-        $ids = array_values(array_unique(array_filter($ids)));
+        $ids = array_values(array_unique(array_filter(
+            $this->staffIdsForEnrollmentBranch($enrollment)
+        )));
         $this->inbox->createForUsers(
             $ids,
             'High Discount Approved',
@@ -744,6 +765,24 @@ class NotificationService
             ->whereHas('role', fn($q) => $q->whereIn('name', $roleNames))
             ->pluck('id')
             ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string>  $roleNames
+     * @return list<string>
+     */
+    private function staffEmailsByRoles(array $roleNames): array
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->whereHas('role', fn ($q) => $q->whereIn('name', $roleNames))
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->map(fn ($email) => strtolower(trim((string) $email)))
+            ->filter(fn (string $email): bool => $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false)
             ->unique()
             ->values()
             ->all();

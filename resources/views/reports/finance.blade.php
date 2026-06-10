@@ -320,7 +320,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const modal = document.getElementById('financeRejectReasonModal');
     if (!modal) return;

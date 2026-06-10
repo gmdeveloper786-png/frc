@@ -122,7 +122,7 @@ class ReportRepository implements ReportRepositoryInterface
             ->when($parsed['service_id'], fn ($q) => $q->where('service_id', $parsed['service_id']))
             ->when($parsed['enrollment_payment_status'], fn ($q) => $q->where('payment_status', $parsed['enrollment_payment_status']))
             ->when($parsed['child_search'] !== '', function ($q) use ($parsed): void {
-                $like = '%' . $parsed['child_search'] . '%';
+                $like = frc_like_pattern($parsed['child_search']);
                 $q->whereHas('child', function ($c) use ($like): void {
                     $c->where('full_name', 'like', $like)
                         ->orWhere('email', 'like', $like)
@@ -131,7 +131,7 @@ class ReportRepository implements ReportRepositoryInterface
             })
             ->when($parsed['gr_number'] !== '', fn ($q) => $q->whereHas(
                 'child',
-                fn ($c) => $c->where('gr_number', 'like', '%' . $parsed['gr_number'] . '%'),
+                fn ($c) => $c->where('gr_number', 'like', frc_like_pattern($parsed['gr_number'])),
             ));
     }
 
@@ -153,7 +153,7 @@ class ReportRepository implements ReportRepositoryInterface
             ))
             ->when($parsed['verification_status'], fn ($q) => $q->where('status', $parsed['verification_status']))
             ->when($parsed['child_search'] !== '', function ($q) use ($parsed): void {
-                $like = '%' . $parsed['child_search'] . '%';
+                $like = frc_like_pattern($parsed['child_search']);
                 $q->whereHas('child', function ($c) use ($like): void {
                     $c->where('full_name', 'like', $like)
                         ->orWhere('email', 'like', $like)
@@ -161,7 +161,7 @@ class ReportRepository implements ReportRepositoryInterface
                 });
             })
             ->when($parsed['gr_number'] !== '', function ($q) use ($parsed): void {
-                $like = '%' . $parsed['gr_number'] . '%';
+                $like = frc_like_pattern($parsed['gr_number']);
                 $q->where(function ($inner) use ($like): void {
                     $inner->whereHas('child', fn ($c) => $c->where('gr_number', 'like', $like))
                         ->orWhereHas('enrollment.child', fn ($c) => $c->where('gr_number', 'like', $like));
@@ -185,17 +185,27 @@ class ReportRepository implements ReportRepositoryInterface
      */
     private function parseFinanceFilters(array $filters): array
     {
+        $paymentMethods = ['cash', 'bank_transfer', 'easypaisa', 'jazzcash', 'card', 'other'];
+        $paymentStatuses = ['unpaid', 'partial_paid', 'fully_paid', 'overdue'];
+        $verificationStatuses = ['pending_verification', 'paid', 'rejected', 'cancelled', 'refunded'];
+
+        $paymentMethod = filled($filters['payment_method'] ?? null) ? (string) $filters['payment_method'] : null;
+        $enrollmentPaymentStatus = filled($filters['enrollment_payment_status'] ?? null)
+            ? (string) $filters['enrollment_payment_status'] : null;
+        $verificationStatus = filled($filters['verification_status'] ?? null)
+            ? (string) $filters['verification_status'] : null;
+
         return [
             'branch_id'                 => filled($filters['branch_id'] ?? null) ? (int) $filters['branch_id'] : null,
             'therapist_id'              => filled($filters['therapist_id'] ?? null) ? (int) $filters['therapist_id'] : null,
             'service_id'                => filled($filters['service_id'] ?? null) ? (int) $filters['service_id'] : null,
-            'payment_method'            => filled($filters['payment_method'] ?? null) ? (string) $filters['payment_method'] : null,
+            'payment_method'            => in_array($paymentMethod, $paymentMethods, true) ? $paymentMethod : null,
             'date_from'                 => filled($filters['date_from'] ?? null) ? (string) $filters['date_from'] : null,
             'date_to'                   => filled($filters['date_to'] ?? null) ? (string) $filters['date_to'] : null,
-            'enrollment_payment_status' => filled($filters['enrollment_payment_status'] ?? null)
-                ? (string) $filters['enrollment_payment_status'] : null,
-            'verification_status'       => filled($filters['verification_status'] ?? null)
-                ? (string) $filters['verification_status'] : null,
+            'enrollment_payment_status' => in_array($enrollmentPaymentStatus, $paymentStatuses, true)
+                ? $enrollmentPaymentStatus : null,
+            'verification_status'       => in_array($verificationStatus, $verificationStatuses, true)
+                ? $verificationStatus : null,
             'child_search'              => isset($filters['child_search']) ? trim((string) $filters['child_search']) : '',
             'gr_number'                 => isset($filters['gr_number']) ? trim((string) $filters['gr_number']) : '',
         ];

@@ -139,6 +139,7 @@ class UserNotificationService
     public function bulkMarkAsRead(array $ids, User $user): int
     {
         $ids = $this->normalizeIds($ids);
+        $this->assertAllIdsInScopedInbox($ids, $user);
 
         return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
@@ -154,6 +155,7 @@ class UserNotificationService
     public function bulkMarkAsUnread(array $ids, User $user): int
     {
         $ids = $this->normalizeIds($ids);
+        $this->assertAllIdsInScopedInbox($ids, $user);
 
         return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
@@ -177,6 +179,8 @@ class UserNotificationService
         if ($ids === []) {
             return 0;
         }
+
+        $this->assertAllIdsInScopedInbox($ids, $user);
 
         return $this->scopedInboxQuery($user)
             ->whereIn('id', $ids)
@@ -220,7 +224,7 @@ class UserNotificationService
         }
 
         if (! empty($filters['search'])) {
-            $s = '%' . str_replace(['%', '_'], ['\\%', '\\_'], (string) $filters['search']) . '%';
+            $s = frc_like_pattern((string) $filters['search']);
             $q->where(function (Builder $w) use ($s): void {
                 $w->where('title', 'like', $s)->orWhere('message', 'like', $s);
             });
@@ -247,6 +251,27 @@ class UserNotificationService
             } catch (\Throwable) {
             }
         }
+    }
+
+    /**
+     * @param  array<int>  $ids
+     */
+    private function assertAllIdsInScopedInbox(array $ids, User $user): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        $accessible = $this->scopedInboxQuery($user)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->all();
+
+        abort_if(
+            count($accessible) !== count($ids),
+            403,
+            'One or more notifications are not in your inbox.',
+        );
     }
 
     /**

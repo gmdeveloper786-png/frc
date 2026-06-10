@@ -33,8 +33,9 @@ class PaymentRepository implements PaymentRepositoryInterface
             ->when(!empty($filters['date_to']),        fn($q) => $q->whereDate('payment_date', '<=', $filters['date_to']))
             ->when(!empty($filters['branch_id']),      fn($q) => $q->whereHas('enrollment', fn($e) => $e->where('branch_id', $filters['branch_id'])))
             ->when(!empty($filters['search']),         fn($q) => $q->where(function ($q) use ($filters) {
-                $q->where('receipt_number', 'like', '%' . $filters['search'] . '%')
-                    ->orWhereHas('child', fn($c) => $c->where('full_name', 'like', '%' . $filters['search'] . '%'));
+                $like = frc_like_pattern((string) $filters['search']);
+                $q->where('receipt_number', 'like', $like)
+                    ->orWhereHas('child', fn ($c) => $c->where('full_name', 'like', $like));
             }))
             ->latest()
             ->paginate($perPage);

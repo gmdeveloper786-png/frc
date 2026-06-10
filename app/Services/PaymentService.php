@@ -20,6 +20,7 @@ class PaymentService
         private readonly PaymentRepositoryInterface $paymentRepository,
         private readonly EnrollmentRepositoryInterface $enrollmentRepository,
         private readonly NotificationService $notificationService,
+        private readonly SecureFileStorageService $secureFiles,
     ) {}
 
     public function getAll(array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -97,7 +98,7 @@ class PaymentService
             throw ValidationException::withMessages(['amount' => ['Amount cannot exceed remaining fee.']]);
         }
 
-        $slipPath = $slipFile->store('payments/slips', 'public');
+        $slipPath = $this->secureFiles->store($slipFile, 'payments/slips');
 
         $payment = $this->paymentRepository->create([
             'enrollment_id'        => $data['enrollment_id'],

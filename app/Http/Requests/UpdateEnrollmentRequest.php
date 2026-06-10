@@ -35,9 +35,19 @@ class UpdateEnrollmentRequest extends StoreEnrollmentRequest
         return ['required', 'date', 'after_or_equal:today'];
     }
 
+    private function enrollmentId(): int
+    {
+        $enrollment = $this->route('enrollment');
+        if ($enrollment instanceof Enrollment) {
+            return (int) $enrollment->id;
+        }
+
+        return (int) ($this->route('id') ?? 0);
+    }
+
     private function existingScheduleStartDate(): ?string
     {
-        $id = (int) $this->route('id');
+        $id = $this->enrollmentId();
         if ($id < 1) {
             return null;
         }
@@ -53,7 +63,7 @@ class UpdateEnrollmentRequest extends StoreEnrollmentRequest
     private function statusRules(): array
     {
         $user = $this->user();
-        $id = (int) $this->route('id');
+        $id = $this->enrollmentId();
 
         $current = $id > 0
             ? (string) (Enrollment::query()->whereKey($id)->value('status') ?? '')

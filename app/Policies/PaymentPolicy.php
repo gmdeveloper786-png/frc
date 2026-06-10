@@ -22,11 +22,20 @@ class PaymentPolicy
     public function view(User $user, Payment $payment): bool
     {
         if ($user->role?->name === 'child') {
-            return $payment->child_id === $user->id;
+            return (int) $payment->child_id === (int) $user->id;
         }
 
         return $user->hasPermission('manage_payments')
             || $user->hasPermission('verify_payments');
+    }
+
+    public function viewReceipt(User $user, Payment $payment): bool
+    {
+        if ($user->role?->name === 'child') {
+            return (int) $payment->child_id === (int) $user->id;
+        }
+
+        return $user->hasPermission('manage_payments');
     }
 
     public function create(User $user): bool

@@ -103,7 +103,7 @@
                                     <a href="{{ route('services.edit', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>
                                     <form action="{{ route('services.destroy', $item) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Delete?')"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Delete?"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
                             </td>

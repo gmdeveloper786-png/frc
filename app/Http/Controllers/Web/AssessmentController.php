@@ -57,6 +57,7 @@ class AssessmentController extends Controller
 
     public function show(Request $request, Assessment $assessment): View
     {
+        $this->authorize('view', $assessment);
         StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $assessment->load([
@@ -111,7 +112,7 @@ class AssessmentController extends Controller
 
     public function complete(CompleteAssessmentRequest $request, Assessment $assessment): RedirectResponse
     {
-        abort_unless($request->user()->hasPermission('manage_assessments'), 403);
+        $this->authorize('complete', $assessment);
         StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $this->service->complete($assessment, $request->user(), $request->validated());

@@ -19,8 +19,9 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = Role::where('name', 'super_admin')->first();
         $admin      = Role::where('name', 'admin')->first();
         $therapist  = Role::where('name', 'therapist')->first();
-        $finance    = Role::where('name', 'finance')->first();
-        $child      = Role::where('name', 'child')->first();
+        $finance           = Role::where('name', 'finance')->first();
+        $approvalDiscount  = Role::where('name', 'approval_discount')->first();
+        $child             = Role::where('name', 'child')->first();
 
         // Super Admin gets all permissions (includes manage_settings)
         $superAdmin->permissions()->sync($allPermissions);
@@ -46,6 +47,14 @@ class RolePermissionSeeder extends Seeder
             'view_finance_reports',
         ])->pluck('id')->toArray();
         $finance->permissions()->sync($financePermissions);
+
+        // Approval Discount permissions
+        $approvalDiscountPermissions = Permission::whereIn('name', [
+            'approve_high_discount',
+            'view_children',
+            'view_enrollments',
+        ])->pluck('id')->toArray();
+        $approvalDiscount?->permissions()->sync($approvalDiscountPermissions);
 
         // Therapist permissions
         $therapistPermissions = Permission::whereIn('name', [

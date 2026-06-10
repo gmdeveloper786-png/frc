@@ -16,7 +16,12 @@ class BranchController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $branches = $this->service->getAll($request->only(['status', 'search']));
+        $filters = $request->only(['status', 'search']);
+        if (! $request->user()->hasPermission('manage_branches')) {
+            $filters['status'] = 'publish';
+        }
+
+        $branches = $this->service->getAll($filters);
 
         return response()->json(['data' => BranchResource::collection($branches)]);
     }
@@ -28,8 +33,12 @@ class BranchController extends Controller
         return response()->json(['message' => 'Branch created.', 'data' => new BranchResource($branch)], 201);
     }
 
-    public function show(Branch $branch): JsonResponse
+    public function show(Request $request, Branch $branch): JsonResponse
     {
+        if (! $request->user()->hasPermission('manage_branches')) {
+            abort_unless($branch->status === 'publish', 404);
+        }
+
         return response()->json(['data' => new BranchResource($branch)]);
     }
 

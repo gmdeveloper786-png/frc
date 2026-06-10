@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -30,7 +31,7 @@ class StaffProfileWebController extends Controller
 
         $data = $request->validate([
             'current_password' => ['required'],
-            'password'         => ['required', 'confirmed', 'min:8'],
+            'password'         => ['required', 'confirmed', Password::defaults()],
         ]);
 
         if (! Hash::check($data['current_password'], $request->user()->password)) {

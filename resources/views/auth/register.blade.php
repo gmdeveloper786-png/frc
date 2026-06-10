@@ -100,17 +100,19 @@
                         <label>Password <span style="color:var(--danger)">*</span></label>
                         <input type="password" name="password" id="password"
                             class="form-control @error('password') is-invalid @enderror"
-                            placeholder="Min 8 characters" required minlength="8">
+                            placeholder="e.g. Child@123" required minlength="8" autocomplete="new-password">
                         @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="form-text">At least 8 characters, with letters and numbers.</div>
                     </div>
                     <div>
                         <label>Confirm Password <span style="color:var(--danger)">*</span></label>
                         <input type="password" name="password_confirmation" id="password_confirmation"
-                            class="form-control" placeholder="Repeat password" required minlength="8">
+                            class="form-control @error('password') is-invalid @enderror"
+                            placeholder="Repeat password" required minlength="8" autocomplete="new-password">
                     </div>
                 </div>
                 <div class="step-actions step-actions--end">
-                    <button type="button" class="btn-teal" onclick="nextStep(2)">
+                    <button type="button" class="btn-teal" data-reg-step="2">
                         Next <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>
                     </button>
                 </div>
@@ -153,10 +155,10 @@
                     </div>
                 </div>
                 <div class="step-actions">
-                    <button type="button" class="btn-outline-teal" onclick="nextStep(1)">
+                    <button type="button" class="btn-outline-teal" data-reg-step="1">
                         <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back
                     </button>
-                    <button type="button" class="btn-teal" onclick="nextStep(3)">
+                    <button type="button" class="btn-teal" data-reg-step="3">
                         Next <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>
                     </button>
                 </div>
@@ -175,7 +177,7 @@
                                 <input type="checkbox" name="disability_ids[]" value="{{ $disability->id }}"
                                     {{ in_array($disability->id, old('disability_ids', [])) ? 'checked' : '' }}
                                     style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0;"
-                                    onchange="highlightOption(this)">
+                                    >
                                 <span style="font-size:14px;">{{ $disability->name }}</span>
                             </label>
                         </div>
@@ -188,10 +190,10 @@
                 </div>
 
                 <div class="step-actions">
-                    <button type="button" class="btn-outline-teal" onclick="nextStep(2)">
+                    <button type="button" class="btn-outline-teal" data-reg-step="2">
                         <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back
                     </button>
-                    <button type="button" class="btn-teal" onclick="nextStep(4)">
+                    <button type="button" class="btn-teal" data-reg-step="4">
                         Next <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>
                     </button>
                 </div>
@@ -218,7 +220,7 @@
                 </div>
 
                 <div class="step-actions">
-                    <button type="button" class="btn-outline-teal" onclick="nextStep(3)">
+                    <button type="button" class="btn-outline-teal" data-reg-step="3">
                         <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back
                     </button>
                     <button type="submit" class="btn-teal" style="padding:10px 28px;">
@@ -237,7 +239,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 let currentStep = 1;
 const registerForm = document.getElementById('registerForm');
 
@@ -355,6 +357,14 @@ function validateStep1() {
         valid = false;
     } else if (pass.length < 8) {
         setFieldError(password, 'Password must be at least 8 characters.');
+        firstInvalid = firstInvalid || password;
+        valid = false;
+    } else if (!/[A-Za-z]/.test(pass)) {
+        setFieldError(password, 'Password must contain at least one letter.');
+        firstInvalid = firstInvalid || password;
+        valid = false;
+    } else if (!/[0-9]/.test(pass)) {
+        setFieldError(password, 'Password must contain at least one number.');
         firstInvalid = firstInvalid || password;
         valid = false;
     }
@@ -488,6 +498,16 @@ function highlightOption(checkbox) {
         .some(cb => cb.checked && cb.closest('label').querySelector('span').textContent.trim() === 'Other');
     document.getElementById('otherDisabilityField').style.display = otherChecked ? 'block' : 'none';
 }
+
+document.querySelectorAll('[data-reg-step]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        nextStep(parseInt(btn.getAttribute('data-reg-step'), 10));
+    });
+});
+
+document.querySelectorAll('input[name="disability_ids[]"]').forEach(function (cb) {
+    cb.addEventListener('change', function () { highlightOption(cb); });
+});
 
 document.querySelectorAll('input[name="disability_ids[]"]:checked').forEach(cb => highlightOption(cb));
 

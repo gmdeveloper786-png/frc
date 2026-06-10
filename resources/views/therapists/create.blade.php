@@ -53,16 +53,14 @@
             <textarea name="address" class="form-control" rows="2">{{ old('address') }}</textarea>
         </div>
         <div class="col-md-6">
-            <label>
-                Password <span style="color:var(--danger)">*</span>
-                <small class="text-muted" style="font-weight:400;">(Password must be at least 8 characters long)</small>
-            </label>
-            <input type="password" name="password" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="Minimum 8 characters">
+            <label>Password <span style="color:var(--danger)">*</span></label>
+            <input type="password" name="password" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Therapist@123" autocomplete="new-password">
             @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <div class="form-text">At least 8 characters, with letters and numbers.</div>
         </div>
         <div class="col-md-6">
             <label>Confirm Password <span style="color:var(--danger)">*</span></label>
-            <input type="password" name="password_confirmation" minlength="8" class="form-control" placeholder="Minimum 8 characters">
+            <input type="password" name="password_confirmation" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="Repeat password" autocomplete="new-password">
         </div>
    
     </div>
@@ -89,7 +87,7 @@
                     <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px solid var(--border-soft);border-radius:10px;cursor:pointer;transition:all .2s;" class="tservice-check">
                         <input type="checkbox" name="service_ids[]" value="{{ $service->id }}"
                             {{ in_array($service->id, old('service_ids', [])) ? 'checked' : '' }}
-                            style="accent-color:var(--teal);" onchange="highlightTherapistService(this); syncTherapistServiceBadges();">
+                            style="accent-color:var(--teal);">
                         <span style="font-size:13px;font-weight:500;">{{ $service->name }}</span>
                     </label>
                 @endforeach
@@ -163,7 +161,7 @@
         <label style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;display:block;">Generated Slots Preview</label>
         <div id="slotsContainer" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
     </div>
-    <button type="button" class="btn-outline-teal mt-3" onclick="previewSlots()">
+    <button type="button" class="btn-outline-teal mt-3" id="previewSlotsBtn">
         <i class="fa-solid fa-clock"></i> Preview Time Slots
     </button>
 </div>
@@ -185,7 +183,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function previewSlots() {
     const start = document.querySelector('[name="slot_start"]').value;
     const end   = document.querySelector('[name="slot_end"]').value;
@@ -249,7 +247,14 @@ function syncTherapistServiceBadges() {
         wrap.appendChild(chip);
     });
 }
+document.querySelectorAll('.tservice-check input').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+        highlightTherapistService(cb);
+        syncTherapistServiceBadges();
+    });
+});
 document.querySelectorAll('.tservice-check input:checked').forEach(highlightTherapistService);
 syncTherapistServiceBadges();
+document.getElementById('previewSlotsBtn')?.addEventListener('click', previewSlots);
 </script>
 @endpush

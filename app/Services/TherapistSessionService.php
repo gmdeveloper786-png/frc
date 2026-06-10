@@ -14,6 +14,7 @@ class TherapistSessionService
         private readonly TherapistPortalService $portal,
         private readonly NotificationService $notificationService,
         private readonly SessionOccurrenceStateService $occurrenceState,
+        private readonly SessionFeedbackService $sessionFeedback,
     ) {}
 
     public function authorize(User $therapist, EnrollmentSchedule $schedule): void
@@ -108,8 +109,13 @@ class TherapistSessionService
     /**
      * Complete all in-progress group members for this occurrence (shared completion note).
      */
-    public function completeGroupSessions(User $therapist, EnrollmentSchedule $anchor, string $sessionDateIso, ?string $completionNote = null): int
-    {
+    public function completeGroupSessions(
+        User $therapist,
+        EnrollmentSchedule $anchor,
+        string $sessionDateIso,
+        ?string $completionNote = null,
+        array $ratings = [],
+    ): int {
         $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
         $schedules  = $this->portal->groupSchedulesMatchingAnchorSlot($anchor);
 
@@ -121,9 +127,11 @@ class TherapistSessionService
             }
         }
 
+        $this->sessionFeedback->validateRatingsForSchedule($anchor, $ratings);
+
         $count = 0;
         foreach ($schedules as $schedule) {
-            $this->completeSession($therapist, $schedule, $sessionDateIso, $completionNote);
+            $this->completeSession($therapist, $schedule, $sessionDateIso, $completionNote, $ratings);
             $count++;
         }
 
@@ -156,8 +164,13 @@ class TherapistSessionService
         return $count;
     }
 
-    public function completeSession(User $therapist, EnrollmentSchedule $schedule, string $sessionDateIso, ?string $completionNote = null): EnrollmentSchedule
-    {
+    public function completeSession(
+        User $therapist,
+        EnrollmentSchedule $schedule,
+        string $sessionDateIso,
+        ?string $completionNote = null,
+        array $ratings = [],
+    ): EnrollmentSchedule {
         $this->authorize($therapist, $schedule);
 
         $sessionDay = Carbon::parse($sessionDateIso)->startOfDay();
@@ -174,18 +187,22 @@ class TherapistSessionService
             'Only in-progress sessions can be completed.',
         );
 
+        $this->sessionFeedback->validateRatingsForSchedule($schedule, $ratings);
+
         if ($this->occurrenceState->isRecurringTemplate($schedule)) {
-            DB::transaction(function () use ($schedule, $therapist, $sessionDay, $completionNote): void {
+            DB::transaction(function () use ($schedule, $therapist, $sessionDay, $completionNote, $sessionDateIso, $ratings): void {
                 $this->occurrenceState->completeOccurrence($therapist, $schedule, $sessionDay, $completionNote);
+                $this->sessionFeedback->saveResponses($schedule, $sessionDateIso, $therapist, $ratings);
             });
         } else {
-            DB::transaction(function () use ($schedule, $therapist, $completionNote): void {
+            DB::transaction(function () use ($schedule, $therapist, $completionNote, $sessionDateIso, $ratings): void {
                 $schedule->update([
                     'status'          => 'completed',
                     'completed_at'    => now(),
                     'completed_by'    => $therapist->id,
                     'completion_note' => $completionNote,
                 ]);
+                $this->sessionFeedback->saveResponses($schedule, $sessionDateIso, $therapist, $ratings);
             });
         }
 

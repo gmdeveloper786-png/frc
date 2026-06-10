@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\EnrollmentSchedule;
 use App\Services\ChildScheduleService;
+use App\Services\SessionFeedbackService;
 use App\Services\SessionOccurrenceStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class ChildScheduleController extends Controller
     public function __construct(
         private readonly ChildScheduleService $scheduleService,
         private readonly SessionOccurrenceStateService $occurrenceState,
+        private readonly SessionFeedbackService $sessionFeedback,
     ) {}
 
     public function index(Request $request): View
@@ -54,6 +56,8 @@ class ChildScheduleController extends Controller
         $detail = $this->scheduleService->getOccurrenceDetail($childId, $schedule->id, $sessionDate);
         abort_if($detail === null, 404);
 
-        return view('child.schedule.show', compact('detail'));
+        $sessionFeedback = $this->sessionFeedback->summaryForSchedule($schedule, $sessionDate);
+
+        return view('child.schedule.show', compact('detail', 'sessionFeedback'));
     }
 }

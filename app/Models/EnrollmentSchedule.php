@@ -73,6 +73,11 @@ class EnrollmentSchedule extends Model
         return $this->hasMany(EnrollmentScheduleOccurrence::class);
     }
 
+    public function feedbackResponses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SessionFeedbackResponse::class, 'enrollment_schedule_id');
+    }
+
     public function scopeScheduled($query)
     {
         return $query->where('status', 'scheduled');

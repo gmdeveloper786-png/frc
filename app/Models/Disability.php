@@ -34,4 +34,14 @@ class Disability extends Model
     {
         return $query->where('status', 'publish');
     }
+
+    /** ID of the published "Other" disability option (case-insensitive name match). */
+    public static function otherId(): ?int
+    {
+        $id = static::query()
+            ->whereRaw('LOWER(name) = ?', ['other'])
+            ->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
 }

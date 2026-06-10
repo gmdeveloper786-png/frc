@@ -151,7 +151,7 @@ class StaffUserService
     private function resolveStaffRole(string $slug): Role
     {
         $slug = strtolower(trim($slug));
-        if (! in_array($slug, [Role::ADMIN, Role::FINANCE], true)) {
+        if (! in_array($slug, [Role::ADMIN, Role::FINANCE, Role::APPROVAL_DISCOUNT], true)) {
             throw new InvalidArgumentException('Invalid staff role.');
         }
 

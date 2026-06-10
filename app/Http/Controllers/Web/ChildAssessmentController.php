@@ -14,13 +14,7 @@ class ChildAssessmentController extends Controller
 
     public function show(Assessment $assessment): View
     {
-        $childId = auth()->id();
-        abort_if($assessment->status === 'draft', 403);
-        abort_if($assessment->status === 'cancelled' && ! $assessment->isVisibleAsCancelledToAssignees(), 403);
-        abort_unless(
-            $assessment->children()->where('users.id', $childId)->exists(),
-            403
-        );
+        $this->authorize('view', $assessment);
 
         $assessment->load(['branch', 'services', 'therapist']);
 

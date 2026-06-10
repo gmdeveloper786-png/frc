@@ -148,7 +148,7 @@
 
 @push('scripts')
 @if($editable)
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
     const form = document.getElementById('rolePermissionsForm');
     if (!form) return;

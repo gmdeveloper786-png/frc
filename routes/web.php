@@ -32,21 +32,21 @@ use App\Http\Controllers\Web\PublicStorageController;
 use App\Http\Controllers\Web\TherapistSessionController;
 use Illuminate\Support\Facades\Route;
 
-// Public uploads (no storage:link / symlink — works on shared hosting)
-Route::get('/storage/{path}', [PublicStorageController::class, 'show'])
+// Uploads served only to authenticated, authorized users (no public directory listing).
+Route::middleware(['auth:sanctum,web', 'active_user'])->get('/storage/{path}', [PublicStorageController::class, 'show'])
     ->where('path', '.+')
     ->name('storage.public');
 
 // ── Guest routes ──────────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
     Route::get('login',           [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('login',          [LoginController::class, 'login'])->name('login.post');
+    Route::post('login',          [LoginController::class, 'login'])->middleware('throttle:auth')->name('login.post');
     Route::get('register',        [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('register',       [RegisterController::class, 'register'])->name('register.post');
+    Route::post('register',       [RegisterController::class, 'register'])->middleware('throttle:auth')->name('register.post');
     Route::get('forgot-password', [PasswordController::class, 'showForgotForm'])->name('password.request');
-    Route::post('forgot-password', [PasswordController::class, 'sendResetLink'])->name('password.email');
+    Route::post('forgot-password', [PasswordController::class, 'sendResetLink'])->middleware('throttle:auth')->name('password.email');
     Route::get('reset-password/{token}', [PasswordController::class, 'showResetForm'])->name('password.reset');
-    Route::post('reset-password', [PasswordController::class, 'resetPassword'])->name('password.update');
+    Route::post('reset-password', [PasswordController::class, 'resetPassword'])->middleware('throttle:auth')->name('password.update');
 });
 
 // ── Logout ────────────────────────────────────────────────────────────────────
@@ -123,12 +123,15 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::post('/{id}/reject', [ChildController::class, 'reject'])->name('reject')->where('id', '[0-9]+');
     });
 
-    Route::middleware('permission:manage_children')->prefix('children')->name('children.')->group(function () {
+    Route::middleware('permission:manage_children,view_children')->prefix('children')->name('children.')->group(function () {
         Route::get('/', [ChildController::class, 'index'])->name('index');
+        Route::get('/{id}', [ChildController::class, 'show'])->name('show')->where('id', '[0-9]+');
+    });
+
+    Route::middleware('permission:manage_children')->prefix('children')->name('children.')->group(function () {
         Route::get('/{id}/edit', [ChildController::class, 'edit'])->name('edit')->where('id', '[0-9]+');
         Route::put('/{id}', [ChildController::class, 'update'])->name('update')->where('id', '[0-9]+');
         Route::delete('/{id}', [ChildController::class, 'destroy'])->name('destroy')->where('id', '[0-9]+');
-        Route::get('/{id}', [ChildController::class, 'show'])->name('show')->where('id', '[0-9]+');
     });
 
     Route::middleware('permission:manage_disabilities')->group(function () {
@@ -157,20 +160,26 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::post('/{assessment}/notes', [AssessmentController::class, 'storeNote'])->name('notes');
     });
 
-    Route::middleware('permission:manage_enrollments')->prefix('enrollments')->name('enrollments.')->group(function () {
+    Route::middleware('permission:manage_enrollments,view_enrollments')->prefix('enrollments')->name('enrollments.')->group(function () {
         Route::get('/', [EnrollmentController::class, 'index'])->name('index');
+        Route::get('/{id}', [EnrollmentController::class, 'show'])->name('show')->where('id', '[0-9]+');
+    });
+
+    Route::middleware('permission:manage_enrollments')->prefix('enrollments')->name('enrollments.')->group(function () {
         Route::get('/create', [EnrollmentController::class, 'create'])->name('create');
         Route::post('/', [EnrollmentController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [EnrollmentController::class, 'edit'])->name('edit')->where('id', '[0-9]+');
         Route::put('/{id}', [EnrollmentController::class, 'update'])->name('update')->where('id', '[0-9]+');
-        Route::get('/{id}', [EnrollmentController::class, 'show'])->name('show')->where('id', '[0-9]+');
-        Route::post('/{id}/approve', [EnrollmentController::class, 'approve'])->name('approve')->where('id', '[0-9]+');
-        Route::post('/{id}/reject', [EnrollmentController::class, 'reject'])->name('reject')->where('id', '[0-9]+');
         Route::delete('/{id}', [EnrollmentController::class, 'destroy'])->name('destroy')->where('id', '[0-9]+');
     });
 
     Route::middleware('permission:approve_high_discount')->group(function () {
         Route::get('/enrollments/high-discount', [EnrollmentController::class, 'pendingHighDiscount'])->name('enrollments.high-discount');
+    });
+
+    Route::middleware('permission:manage_enrollments,approve_high_discount')->prefix('enrollments')->name('enrollments.')->group(function () {
+        Route::post('/{id}/approve', [EnrollmentController::class, 'approve'])->name('approve')->where('id', '[0-9]+');
+        Route::post('/{id}/reject', [EnrollmentController::class, 'reject'])->name('reject')->where('id', '[0-9]+');
     });
 
     Route::middleware('permission:manage_payments')->group(function () {
@@ -191,9 +200,12 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::get('/finance/print', [ReportController::class, 'financePrint'])->name('finance.print');
     });
 
+    Route::middleware('permission:view_staff_users')->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/staff-users', [StaffUserController::class, 'index'])->name('staff-users.index');
+    });
+
     // ── Super Admin only ─────────────────────────────────────────────────────
     Route::middleware('role:super_admin')->prefix('super-admin')->name('super-admin.')->group(function () {
-        Route::get('/staff-users', [StaffUserController::class, 'index'])->name('staff-users.index');
         Route::get('/staff-users/create', [StaffUserController::class, 'create'])->name('staff-users.create');
         Route::post('/staff-users', [StaffUserController::class, 'store'])->name('staff-users.store');
         Route::get('/staff-users/{user}/edit', [StaffUserController::class, 'edit'])->name('staff-users.edit');
@@ -235,6 +247,7 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::post('/sessions/{schedule}/group/cancel', [TherapistSessionController::class, 'cancelGroup'])->name('sessions.group-cancel');
         Route::get('/sessions/{schedule}/show', [TherapistSessionController::class, 'showOccurrence'])->name('sessions.show');
         Route::get('/sessions/{schedule}/occurrence-detail', [TherapistSessionController::class, 'occurrenceDetail'])->name('sessions.occurrence-detail');
+        Route::get('/sessions/{schedule}/feedback-questions', [TherapistSessionController::class, 'feedbackQuestions'])->name('sessions.feedback-questions');
 
         Route::post('/sessions/{schedule}/start', [TherapistSessionController::class, 'start'])->name('sessions.start');
         Route::post('/sessions/{schedule}/complete', [TherapistSessionController::class, 'complete'])->name('sessions.complete');

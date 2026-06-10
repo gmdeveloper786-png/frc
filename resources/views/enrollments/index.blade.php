@@ -127,12 +127,12 @@
                                     @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
                                         <form action="{{ route('enrollments.destroy', $e->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Delete this enrollment?')"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Delete this enrollment?"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                     @endif
-                                    @if(in_array($e->status, ['draft','pending_super_admin_approval']))
+                                    @if($e->status === 'draft' && auth()->user()?->hasPermission('manage_enrollments'))
                                         <form action="{{ route('enrollments.approve', $e->id) }}" method="POST">@csrf
-                                            <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" onclick="return confirm('Approve?')"><i class="fa-solid fa-check"></i></button>
+                                            <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Approve?"><i class="fa-solid fa-check"></i></button>
                                         </form>
                                     @endif
                                 </div>

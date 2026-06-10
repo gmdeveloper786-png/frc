@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\TherapistRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
@@ -14,6 +15,7 @@ class TherapistService
 {
     public function __construct(
         private readonly TherapistRepositoryInterface $repository,
+        private readonly SecureFileStorageService $secureFiles,
     ) {}
 
     public function getAll(array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -86,7 +88,10 @@ class TherapistService
         return true;
     }
 
-    public function create(array $data): User
+    /**
+     * @param  array<int, UploadedFile>  $documentFiles
+     */
+    public function create(array $data, array $documentFiles = []): User
     {
         $therapistRole = Role::where('name', Role::THERAPIST)->firstOrFail();
 
@@ -122,14 +127,17 @@ class TherapistService
             'break_time'           => isset($data['break_start'], $data['break_end'])
                 ? $data['break_start'] . ' - ' . $data['break_end']
                 : null,
-            'documents'            => $data['documents'] ?? null,
+            'documents'            => $this->storeDocumentPaths($documentFiles),
             'status'               => $data['profile_status'] ?? 'active',
         ];
 
         return $this->repository->create($userData, $profileData, $serviceIds);
     }
 
-    public function update(User $therapist, array $data): User
+    /**
+     * @param  array<int, UploadedFile>  $documentFiles
+     */
+    public function update(User $therapist, array $data, array $documentFiles = []): User
     {
         $serviceIds = array_values(array_unique(array_map('intval', $data['service_ids'] ?? [])));
 
@@ -168,11 +176,31 @@ class TherapistService
             'break_time'           => isset($data['break_start'], $data['break_end'])
                 ? $data['break_start'] . ' - ' . $data['break_end']
                 : null,
-            'documents'            => $data['documents'] ?? null,
             'status'               => $data['profile_status'] ?? null,
         ], fn($v) => ! is_null($v));
 
+        $newDocumentPaths = $this->storeDocumentPaths($documentFiles);
+        if ($newDocumentPaths !== null) {
+            $existing = is_array($therapist->therapistProfile?->documents)
+                ? $therapist->therapistProfile->documents
+                : [];
+            $profileData['documents'] = array_values(array_merge($existing, $newDocumentPaths));
+        }
+
         return $this->repository->update($therapist, $userData, $profileData, $serviceIds);
+    }
+
+    /**
+     * @param  array<int, UploadedFile>  $files
+     * @return list<string>|null
+     */
+    private function storeDocumentPaths(array $files): ?array
+    {
+        if ($files === []) {
+            return null;
+        }
+
+        return $this->secureFiles->storeMany($files, 'therapists/documents');
     }
 
     public function delete(User $therapist): bool

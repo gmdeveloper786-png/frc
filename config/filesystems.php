@@ -39,9 +39,16 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            // Served via routes/web.php → PublicStorageController (no symlink required).
+            // Legacy uploads only — new sensitive files use the "private" disk.
             'url' => rtrim((string) env('APP_URL', ''), '/').'/storage',
             'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
             'throw' => false,
         ],
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Service extends Model
@@ -33,6 +34,16 @@ class Service extends Model
     {
         return $this->belongsToMany(User::class, 'therapist_services', 'service_id', 'therapist_id')
             ->withTimestamps();
+    }
+
+    public function feedbackQuestions(): HasMany
+    {
+        return $this->hasMany(ServiceFeedbackQuestion::class)->ordered();
+    }
+
+    public function activeFeedbackQuestions(): HasMany
+    {
+        return $this->feedbackQuestions()->active();
     }
 
     public function scopePublished($query)

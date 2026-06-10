@@ -88,10 +88,10 @@
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
         <h6 class="card-title-frc"><i class="fa-solid fa-children me-2" style="color:var(--teal);"></i>All Children ({{ $children->total() }})</h6>
-        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+        @if(auth()->user()?->hasPermission('approve_children'))
             <a href="{{ route('children.pending') }}" class="btn-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
-            <i class="fa-solid fa-user-clock"></i> Pending Approvals
-        </a>
+                <i class="fa-solid fa-user-clock"></i> Pending Approvals
+            </a>
         @endif
     </div>
 
@@ -107,7 +107,7 @@
                 <thead>
                     <tr>
                         <th>GR No.</th><th>Name</th><th>Branch</th><th>Email</th><th>Phone</th><th>Age</th><th>Gender</th><th>Status</th>
-                        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                        @if(auth()->user()?->hasPermission('manage_assessments') || auth()->user()?->hasPermission('view_enrollments') || auth()->user()?->hasPermission('manage_enrollments'))
                             <th class="text-center">Assessments</th><th class="text-center">Enrollments</th>
                         @endif
                         <th>Registered</th><th>Actions</th>
@@ -126,21 +126,21 @@
                             <td style="font-size:13px; white-space:nowrap;">{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td style="font-size:13px; white-space:nowrap;">{{ ucfirst($child->gender ?? '—') }}</td>
                             <td style="white-space:nowrap;"><span class="badge-status badge-{{ $child->status }}">{{ ucfirst(str_replace('_',' ', $child->status)) }}</span></td>
-                            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                            @if(auth()->user()?->hasPermission('manage_assessments') || auth()->user()?->hasPermission('view_enrollments') || auth()->user()?->hasPermission('manage_enrollments'))
                                 <td class="text-center" style="font-size:13px;">
                                     @php $assessmentCount = (int) ($child->child_assessments_count ?? 0); @endphp
-                                    @if($assessmentCount > 0)
+                                    @if($assessmentCount > 0 && auth()->user()?->hasPermission('manage_assessments'))
                                         <a href="{{ route('assessments.index', ['child_id' => $child->id]) }}" class="text-decoration-none" style="color:var(--navy);font-weight:600;" title="View assessments">{{ $assessmentCount }}</a>
                                     @else
-                                        <span class="text-muted">0</span>
+                                        <span class="text-muted">{{ $assessmentCount }}</span>
                                     @endif
                                 </td>
                                 <td class="text-center" style="font-size:13px;">
                                     @php $enrollmentCount = (int) ($child->enrollments_count ?? 0); @endphp
-                                    @if($enrollmentCount > 0)
+                                    @if($enrollmentCount > 0 && (auth()->user()?->hasPermission('view_enrollments') || auth()->user()?->hasPermission('manage_enrollments')))
                                         <a href="{{ route('enrollments.index', ['child_id' => $child->id]) }}" class="text-decoration-none" style="color:var(--navy);font-weight:600;" title="View enrollments">{{ $enrollmentCount }}</a>
                                     @else
-                                        <span class="text-muted">0</span>
+                                        <span class="text-muted">{{ $enrollmentCount }}</span>
                                     @endif
                                 </td>
                             @endif
@@ -155,7 +155,7 @@
                                         <form action="{{ route('children.destroy', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Delete" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
-                                            onclick="return confirm('Delete {{ $child->full_name }}? This archives the account.')"><i class="fa-solid fa-trash"></i></button>
+                                            onclick="return confirm(@json('Delete ' . $child->full_name . '? This archives the account.'))"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                     @endif
                                 </div>

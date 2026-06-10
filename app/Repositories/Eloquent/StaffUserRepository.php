@@ -11,7 +11,7 @@ use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
 class StaffUserRepository
 {
-    private const STAFF_ROLE_NAMES = [Role::ADMIN, Role::FINANCE];
+    private const STAFF_ROLE_NAMES = [Role::ADMIN, Role::FINANCE, Role::APPROVAL_DISCOUNT];
 
     /**
      * @param  array{search?:string, role?:string, status?:string}  $filters
@@ -27,7 +27,7 @@ class StaffUserRepository
             ->with(['role', 'branch'])
             ->whereHas('role', fn($q) => $q->whereIn('name', self::STAFF_ROLE_NAMES))
             ->when($search !== '', function ($q) use ($search) {
-                $like = '%' . $search . '%';
+                $like = frc_like_pattern($search);
                 $q->where(function ($inner) use ($like) {
                     $inner->where('full_name', 'like', $like)
                         ->orWhere('email', 'like', $like)

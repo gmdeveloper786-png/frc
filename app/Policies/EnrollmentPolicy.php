@@ -22,10 +22,12 @@ class EnrollmentPolicy
     public function view(User $user, Enrollment $enrollment): bool
     {
         if ($user->role?->name === 'child') {
-            return $enrollment->child_id === $user->id;
+            return (int) $enrollment->child_id === (int) $user->id
+                && $enrollment->isVisibleToChild();
         }
 
         return $user->hasPermission('manage_enrollments')
+            || $user->hasPermission('view_enrollments')
             || $user->hasPermission('view_finance_reports');
     }
 
@@ -53,12 +55,22 @@ class EnrollmentPolicy
         return $user->hasPermission('manage_enrollments');
     }
 
+    public function reject(User $user, Enrollment $enrollment): bool
+    {
+        if ($enrollment->status === 'pending_super_admin_approval') {
+            return $user->hasPermission('approve_high_discount');
+        }
+
+        return $user->hasPermission('manage_enrollments');
+    }
+
     /**
      * Full dated session grid for one enrolment ({@see \App\Http\Controllers\Web\EnrollmentController::fullSchedule}).
      */
     public function viewFullSchedule(User $user, Enrollment $enrollment): bool
     {
         if ($user->hasPermission('manage_enrollments')
+            || $user->hasPermission('view_enrollments')
             || $user->hasPermission('view_finance_reports')
             || $user->hasPermission('manage_payments')) {
             return true;

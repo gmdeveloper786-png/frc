@@ -60,8 +60,10 @@
 @section('content')
 <div class="card-frc card-frc--list-page mb-3">
     <div class="card-header-frc">
-        <h6 class="card-title-frc mb-0"><i class="fa-solid fa-user-tie me-2" style="color:var(--teal);"></i>Admin &amp; Finance users</h6>
-        <a href="{{ route('super-admin.staff-users.create') }}" class="btn-teal" style="font-size:13px;white-space:nowrap;"><i class="fa-solid fa-plus"></i> Add staff user</a>
+        <h6 class="card-title-frc mb-0"><i class="fa-solid fa-user-tie me-2" style="color:var(--teal);"></i>Staff users</h6>
+        @if(auth()->user()?->isSuperAdmin())
+            <a href="{{ route('super-admin.staff-users.create') }}" class="btn-teal" style="font-size:13px;white-space:nowrap;"><i class="fa-solid fa-plus"></i> Add staff user</a>
+        @endif
     </div>
     <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
         <div class="row g-2 align-items-end">
@@ -75,6 +77,7 @@
                     <option value="">All roles</option>
                     <option value="admin" @selected(request('role') === 'admin')>Admin</option>
                     <option value="finance" @selected(request('role') === 'finance')>Finance</option>
+                    <option value="approval_discount" @selected(request('role') === 'approval_discount')>Approval Discount</option>
                 </select>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
@@ -108,7 +111,9 @@
                         <th>City</th>
                         <th>Status</th>
                         <th>Created</th>
-                        <th>Actions</th>
+                        @if(auth()->user()?->isSuperAdmin())
+                            <th>Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -118,7 +123,7 @@
                             <td style="font-weight:500;color:var(--navy); white-space:nowrap;">{{ $row->full_name ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ $row->email ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ $row->phone_number ?? '—' }}</td>
-                            <td><span class="badge-status badge-publish" style="text-transform:capitalize;">{{ $row->role?->name ?? '—' }}</span></td>
+                            <td><span class="badge-status badge-publish">{{ $row->role?->display_name ?? '—' }}</span></td>
                             <td style="white-space:nowrap;">{{ $row->branch?->name ?? '—' }}</td>
                             <td style="white-space:nowrap;">{{ $row->branch?->city ?? '—' }}</td>
                             <td>
@@ -129,24 +134,26 @@
                                 @endif
                             </td>
                             <td style="white-space:nowrap;">{{ $row->created_at?->format('d M Y') ?? '—' }}</td>
-                            <td style="white-space:nowrap;">
-                                <a href="{{ route('super-admin.staff-users.edit', $row) }}" class="btn-outline-teal" style="font-size:11px;padding:4px 8px;"><i class="fa-solid fa-pen"></i> Edit</a>
-                                @if((int) $row->id !== (int) auth()->id())
-                                    <button type="button" class="btn-outline-teal border-warning text-warning" style="font-size:11px;padding:4px 8px;"
-                                        data-bs-toggle="modal" data-bs-target="#toggleStaffModal"
-                                        data-action="{{ route('super-admin.staff-users.toggle-status', $row) }}"
-                                        data-name="{{ $row->full_name }}"
-                                        data-next="{{ $row->status === 'active' ? 'deactivate' : 'activate' }}">
-                                        {{ $row->status === 'active' ? 'Deactivate' : 'Activate' }}
-                                    </button>
-                                    <button type="button" class="btn-outline-teal border-danger text-danger" style="font-size:11px;padding:4px 8px;"
-                                        data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
-                                        data-action="{{ route('super-admin.staff-users.destroy', $row) }}"
-                                        data-name="{{ $row->full_name }}">
-                                        <i class="fa-solid fa-trash"></i> Delete
-                                    </button>
-                                @endif
-                            </td>
+                            @if(auth()->user()?->isSuperAdmin())
+                                <td style="white-space:nowrap;">
+                                    <a href="{{ route('super-admin.staff-users.edit', $row) }}" class="btn-outline-teal" style="font-size:11px;padding:4px 8px;"><i class="fa-solid fa-pen"></i> Edit</a>
+                                    @if((int) $row->id !== (int) auth()->id())
+                                        <button type="button" class="btn-outline-teal border-warning text-warning" style="font-size:11px;padding:4px 8px;"
+                                            data-bs-toggle="modal" data-bs-target="#toggleStaffModal"
+                                            data-action="{{ route('super-admin.staff-users.toggle-status', $row) }}"
+                                            data-name="{{ $row->full_name }}"
+                                            data-next="{{ $row->status === 'active' ? 'deactivate' : 'activate' }}">
+                                            {{ $row->status === 'active' ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                        <button type="button" class="btn-outline-teal border-danger text-danger" style="font-size:11px;padding:4px 8px;"
+                                            data-bs-toggle="modal" data-bs-target="#deleteStaffModal"
+                                            data-action="{{ route('super-admin.staff-users.destroy', $row) }}"
+                                            data-name="{{ $row->full_name }}">
+                                            <i class="fa-solid fa-trash"></i> Delete
+                                        </button>
+                                    @endif
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>
@@ -207,7 +214,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 document.addEventListener('DOMContentLoaded', function () {
     var toggleModal = document.getElementById('toggleStaffModal');
     if (toggleModal) {
