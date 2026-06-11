@@ -2,7 +2,7 @@
 @section('title', 'Edit Service')
 @section('page-title', 'Edit Service')
 @section('content')
-<div class="row justify-content-center"><div class="col-md-8">
+<div class="row justify-content-center"><div class="col-12 col-lg-8">
 <div class="card-frc">
     <div class="card-header-frc"><h6 class="card-title-frc">Edit Service</h6></div>
     <form action="{{ route('services.update', $service) }}" method="POST" class="form-frc">

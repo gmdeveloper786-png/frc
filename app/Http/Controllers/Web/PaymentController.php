@@ -72,7 +72,7 @@ class PaymentController extends Controller
                 ->active()
                 ->where('remaining_amount', '>', 0)
                 ->find($preselectId);
-            if ($extra) {
+            if ($extra && $extra->outstandingForSlipUpload() > 0) {
                 $lockedBranch = StaffBranchScope::lockedBranchId($user);
                 if ($lockedBranch === null || (int) $extra->branch_id === $lockedBranch) {
                     $enrollments->prepend($extra);
@@ -83,11 +83,13 @@ class PaymentController extends Controller
         $enrollmentLookup = $enrollments->mapWithKeys(static function (Enrollment $e): array {
             return [
                 $e->id => [
-                    'id'               => $e->id,
-                    'child_name'       => $e->child?->full_name ?? '—',
-                    'final_total'      => (float) $e->getRawOriginal('final_total'),
-                    'paid_amount'      => (float) $e->getRawOriginal('paid_amount'),
-                    'remaining_amount' => (float) $e->getRawOriginal('remaining_amount'),
+                    'id'                    => $e->id,
+                    'child_name'            => $e->child?->full_name ?? '—',
+                    'final_total'           => (float) $e->getRawOriginal('final_total'),
+                    'paid_amount'           => (float) $e->getRawOriginal('paid_amount'),
+                    'pending_verification'  => $e->sumPendingVerificationAmount(),
+                    'collectible_amount'    => $e->outstandingForSlipUpload(),
+                    'remaining_amount'      => (float) $e->getRawOriginal('remaining_amount'),
                 ],
             ];
         });

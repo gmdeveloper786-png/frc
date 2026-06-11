@@ -3,12 +3,12 @@
 @section('page-title', 'Session details')
 
 @section('content')
-<div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
+<div class="card-frc mb-4 session-details-page" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-circle-info me-2" style="color:var(--teal);"></i>Session details</h6>
         <span class="badge-status {{ $statusBadge }}" style="font-size:12px;">{{ $occurrenceDetail['status_label'] ?? ucfirst(str_replace('_', ' ', $schedule->status)) }}</span>
     </div>
-    <div class="p-3 p-md-4">
+    <div class="p-3 p-md-4 session-details-body">
         <dl class="row mb-0 small">
             <dt class="col-sm-4 text-muted mb-2">Session date</dt>
             <dd class="col-sm-8 mb-2 fw-semibold" style="color:var(--navy);">{{ $occurrenceDetail['session_date_label'] ?? '—' }}</dd>

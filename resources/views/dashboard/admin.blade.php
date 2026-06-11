@@ -79,7 +79,7 @@
 <div class="admin-dashboard-page">
     <div class="row g-3 mb-4 admin-dashboard-stats">
         @foreach($statCards as $card)
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
                 @if(! empty($card['href']))
                     <a href="{{ $card['href'] }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
                 @endif
@@ -97,16 +97,18 @@
         @endforeach
     </div>
 
+<div class="admin-fee-summary">
 @include('dashboard.partials.fee-summary-cards', ['stats' => $stats])
+</div>
 
 {{-- Finance overview + quick actions --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc">Quick Actions</h6>
             </div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="admin-quick-actions">
                 @if(auth()->user()?->hasPermission('approve_children'))
                 <a href="{{ route('children.pending') }}" class="btn-teal" style="justify-content:flex-start;">
                     <i class="fa-solid fa-user-check"></i> Review Child Approvals
@@ -141,7 +143,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8">
         @include('dashboard.partials.finance-overview', ['stats' => $stats, 'showYearFilter' => true])
     </div>
 </div>

@@ -147,7 +147,9 @@
                         </div>
             <div class="col-12 filter-actions d-flex flex-wrap gap-2">
                 <button type="submit" class="btn-teal flex-grow-1 flex-sm-grow-0">Filter</button>
-                <a href="{{ route('child.schedule.index') }}" class="btn-outline-teal flex-grow-1 flex-sm-grow-0">Reset</a>
+                @if(request()->hasAny(['date_from', 'date_to', 'service_id', 'therapist_id', 'status']))
+                    <a href="{{ route('child.schedule.index') }}" class="btn-outline-teal flex-grow-1 flex-sm-grow-0">Clear</a>
+                @endif
             </div>
             </div>
         </form>

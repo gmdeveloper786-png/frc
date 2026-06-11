@@ -2,13 +2,45 @@
 @section('title', 'Assessment Details')
 @section('page-title', 'Assessment Details')
 
+@push('styles')
+<style>
+.assessment-show-page .assessment-info-table {
+    table-layout: auto;
+}
+.assessment-show-children-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.assessment-show-children-table .table-frc {
+    min-width: 36rem;
+    width: 100%;
+}
+.assessment-show-children-table .table-frc thead th,
+.assessment-show-children-table .table-frc tbody td {
+    white-space: nowrap;
+}
+@media (max-width: 991.98px) {
+    .assessment-show-page .assessment-structured-notes-card__header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .assessment-show-page .assessment-structured-notes-card__subtitle {
+        max-width: none;
+        text-align: left;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="row g-3">
-    <div class="col-md-4 min-w-0">
+<div class="row g-3 assessment-show-page">
+    <div class="col-12 col-lg-4 min-w-0">
         <div class="card-frc">
             <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:16px;">Assessment Info</h6>
-            <table class="assessment-info-table" style="width:100%;font-size:14px;table-layout:fixed;">
-                <colgroup><col style="width:38%;"><col></colgroup>
+            <table class="assessment-info-table" style="width:100%;font-size:14px;">
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Date</td><td style="font-weight:500;">{{ $assessment->date->format('d M Y') }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Day</td><td>{{ $assessment->day }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Time</td><td>{{ date('g:i A', strtotime($assessment->time)) }}</td></tr>
@@ -33,7 +65,7 @@
         </div>
        
     </div>
-    <div class="col-md-8 min-w-0">
+    <div class="col-12 col-lg-8 min-w-0">
         <div class="card-frc mb-3">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-children me-2" style="color:var(--teal);"></i>Assigned Children ({{ $assessment->children->count() }})</h6>
@@ -41,8 +73,8 @@
             @if($assessment->children->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No children assigned to this assessment.</p></div>
             @else
-                <div class="table-responsive">
-                    <table class="table-frc">
+                <div class="table-responsive assessment-show-children-table">
+                    <table class="table-frc mb-0">
                         <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th>Disabilities</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($assessment->children as $child)

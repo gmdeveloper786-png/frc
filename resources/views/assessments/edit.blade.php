@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-9">
+    <div class="col-12 col-lg-9">
         <form action="{{ route('assessments.update', $assessment) }}" method="POST" class="form-frc" id="assessmentForm">
         @csrf @method('PUT')
         <div class="form-section">

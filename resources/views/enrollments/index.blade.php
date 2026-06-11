@@ -2,6 +2,44 @@
 @section('title', 'Enrollments')
 @section('page-title', 'Enrollments')
 
+@push('styles')
+<style>
+.enrollments-filters .filter-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+}
+.enrollments-filters .filter-actions .btn-teal,
+.enrollments-filters .filter-actions .btn-outline-teal {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+}
+@media (min-width: 768px) {
+    .enrollments-filters .filter-actions-label {
+        visibility: hidden;
+        display: block;
+        height: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .enrollments-filters .filter-actions {
+        flex-wrap: nowrap;
+    }
+    .enrollments-filters .filter-actions .btn-teal,
+    .enrollments-filters .filter-actions .btn-outline-teal {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 8px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
@@ -13,16 +51,16 @@
         @endif
    
     </div>
-    <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+    <form method="GET" class="p-3 border-bottom list-filters enrollments-filters" style="border-color:var(--border-soft)!important;">
         @if($branches->count() === 1)
             <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
         @endif
         <div class="row g-2 align-items-end form-frc">
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Search</label>
                 <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Child name or GR number">
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Enrollment Status</label>
                 <select name="status" class="form-control">
                     <option value="">All Enrollment Status</option>
@@ -31,17 +69,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Payment Status</label>
                 <select name="payment_status" class="form-control">
                     <option value="">All Payment Status</option>
-                    @foreach(['unpaid','partial_paid','fully_paid','overdue'] as $s)
+                    @foreach(['unpaid','partial_paid','fully_paid'] as $s)
                         <option value="{{ $s }}" {{ request('payment_status') == $s ? 'selected' : '' }}>{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($s) }}</option>
                     @endforeach
                 </select>
             </div>
             @if($branches->count() > 1)
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Branch</label>
                 <select name="branch_id" class="form-control">
                     <option value="">All Branches</option>
@@ -51,7 +89,7 @@
                 </select>
             </div>
             @endif
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Service</label>
                 <select name="service_id" class="form-control">
                     <option value="">All Services</option>
@@ -60,19 +98,22 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Start date from</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small text-muted mb-1">Start date to</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
             </div>
-            <div class="col-12 filter-actions">
-                <button type="submit" class="btn-teal">Filter</button>
-                @if(request()->hasAny(['search', 'status', 'payment_status', 'branch_id', 'service_id', 'date_from', 'date_to']))
-                    <a href="{{ route('enrollments.index') }}" class="btn-outline-teal" style="justify-content:center;">Clear</a>
-                @endif
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <label class="form-label small text-muted mb-1 filter-actions-label" aria-hidden="true">&nbsp;</label>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-teal">Filter</button>
+                    @if(request()->hasAny(['search', 'status', 'payment_status', 'branch_id', 'service_id', 'date_from', 'date_to']))
+                        <a href="{{ route('enrollments.index') }}" class="btn-outline-teal">Clear</a>
+                    @endif
+                </div>
             </div>
         </div>
     </form>

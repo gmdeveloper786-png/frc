@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="row g-3 therapist-show-page">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc therapist-show-profile-card">
             <div class="therapist-show-hero">
                 <div class="therapist-show-avatar">
@@ -56,7 +56,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-8">
+    <div class="col-12 col-lg-8">
         <div class="card-frc therapist-show-slots-card">
             <div class="card-header-frc card-header-frc--stack-sm">
                 <h6 class="card-title-frc mb-0">Available Time Slots</h6>

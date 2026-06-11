@@ -53,14 +53,24 @@
             <textarea name="address" class="form-control" rows="2">{{ old('address') }}</textarea>
         </div>
         <div class="col-md-6">
-            <label>Password <span style="color:var(--danger)">*</span></label>
-            <input type="password" name="password" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Therapist@123" autocomplete="new-password">
-            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <label for="therapistPassword">Password <span style="color:var(--danger)">*</span></label>
+            <div class="auth-pass-wrap">
+                <input type="password" id="therapistPassword" name="password" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Therapist@123" autocomplete="new-password">
+                <button type="button" class="auth-pass-toggle" data-pass-toggle="therapistPassword" data-pass-icon="therapistPassIcon" aria-label="Show password">
+                    <i class="fa-regular fa-eye" id="therapistPassIcon"></i>
+                </button>
+            </div>
+            @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
             <div class="form-text">At least 8 characters, with letters and numbers.</div>
         </div>
         <div class="col-md-6">
-            <label>Confirm Password <span style="color:var(--danger)">*</span></label>
-            <input type="password" name="password_confirmation" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="Repeat password" autocomplete="new-password">
+            <label for="therapistPasswordConfirmation">Confirm Password <span style="color:var(--danger)">*</span></label>
+            <div class="auth-pass-wrap">
+                <input type="password" id="therapistPasswordConfirmation" name="password_confirmation" minlength="8" class="form-control @error('password') is-invalid @enderror" placeholder="Repeat password" autocomplete="new-password">
+                <button type="button" class="auth-pass-toggle" data-pass-toggle="therapistPasswordConfirmation" data-pass-icon="therapistPassConfirmIcon" aria-label="Show password">
+                    <i class="fa-regular fa-eye" id="therapistPassConfirmIcon"></i>
+                </button>
+            </div>
         </div>
    
     </div>

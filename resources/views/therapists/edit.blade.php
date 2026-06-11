@@ -19,14 +19,24 @@
             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-6">
-            <label>New Password <span style="color:var(--text-muted);font-weight:400;">(leave blank to keep current)</span></label>
-            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
-            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <label for="therapistEditPassword">New Password <span style="color:var(--text-muted);font-weight:400;">(leave blank to keep current)</span></label>
+            <div class="auth-pass-wrap">
+                <input type="password" id="therapistEditPassword" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+                <button type="button" class="auth-pass-toggle" data-pass-toggle="therapistEditPassword" data-pass-icon="therapistEditPassIcon" aria-label="Show password">
+                    <i class="fa-regular fa-eye" id="therapistEditPassIcon"></i>
+                </button>
+            </div>
+            @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
             <div class="form-text">If changing: at least 8 characters, with letters and numbers.</div>
         </div>
         <div class="col-md-6">
-            <label>Confirm Password</label>
-            <input type="password" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+            <label for="therapistEditPasswordConfirmation">Confirm Password</label>
+            <div class="auth-pass-wrap">
+                <input type="password" id="therapistEditPasswordConfirmation" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+                <button type="button" class="auth-pass-toggle" data-pass-toggle="therapistEditPasswordConfirmation" data-pass-icon="therapistEditPassConfirmIcon" aria-label="Show password">
+                    <i class="fa-regular fa-eye" id="therapistEditPassConfirmIcon"></i>
+                </button>
+            </div>
         </div>
         <div class="col-md-4">
             <label>Phone</label>

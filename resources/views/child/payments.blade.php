@@ -56,19 +56,82 @@
 @endpush
 
 @section('content')
+@php
+    $paymentMethods = ['cash', 'bank_transfer', 'easypaisa', 'jazzcash', 'card', 'other'];
+    $verificationStatuses = ['pending_verification', 'paid', 'rejected', 'cancelled'];
+@endphp
 <div class="card-frc card-frc--list-page child-payments-page">
     <div class="card-header-frc flex-wrap gap-2">
-        <h6 class="card-title-frc mb-0"><i class="fa-solid fa-receipt me-2" style="color:var(--teal);"></i>Payment history @if(!$payments->isEmpty())<span class="text-muted fw-normal" style="font-size:0.85rem;">({{ $payments->total() }})</span>@endif</h6>
+        <h6 class="card-title-frc mb-0"><i class="fa-solid fa-receipt me-2" style="color:var(--teal);"></i>Payment history <span class="text-muted fw-normal" style="font-size:0.85rem;">({{ $payments->total() }})</span></h6>
         @if($can_upload_fee_slip ?? false)
             <a href="{{ route('child.upload-slip') }}" class="btn-teal btn-view-all" style="white-space:nowrap;"><i class="fa-solid fa-upload"></i> Upload slip</a>
         @endif
     </div>
 
+    <form method="GET" action="{{ route('child.payments') }}" class="p-3 border-bottom list-filters child-payments-filters" style="border-color:var(--border-soft)!important;">
+        <div class="row g-2 align-items-end form-frc">
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">Receipt # or Enrollment ID</label>
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Receipt # or Enrollment ID...">
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="verification_status" class="form-control">
+                    <option value="">All</option>
+                    @foreach($verificationStatuses as $status)
+                        <option value="{{ $status }}" @selected(request('verification_status') === $status)>{{ \App\Models\Payment::labelForVerificationStatus($status) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">Programme</label>
+                <select name="enrollment_id" class="form-control">
+                    <option value="">All programmes</option>
+                    @foreach($enrollmentOptions as $enrollment)
+                        <option value="{{ $enrollment->id }}" @selected((string) request('enrollment_id') === (string) $enrollment->id)>
+                            #{{ $enrollment->id }} — {{ $enrollment->service?->name ?? 'Programme' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">Payment method</label>
+                <select name="payment_method" class="form-control">
+                    <option value="">All</option>
+                    @foreach($paymentMethods as $method)
+                        <option value="{{ $method }}" @selected(request('payment_method') === $method)>{{ \App\Models\Payment::labelForPaymentMethod($method) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">From</label>
+                <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+                <label class="form-label small text-muted mb-1">To</label>
+                <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
+            </div>
+            <div class="col-12 child-payments-filter-actions">
+                <div class="filter-actions">
+                    <button type="submit" class="btn-teal">Filter</button>
+                    @if($filterActive ?? false)
+                        <a href="{{ route('child.payments') }}" class="btn-outline-teal">Clear</a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </form>
+
     @if($payments->isEmpty())
         <div class="empty-state py-5">
             <i class="fa-solid fa-receipt empty-icon"></i>
-            <h5>No payments yet</h5>
-            <p class="text-muted mb-0">Manual payments recorded by staff and slips you upload will appear here.</p>
+            @if($filterActive ?? false)
+                <h5>No matching payments</h5>
+                <p class="text-muted mb-0">Try changing or clearing your filters.</p>
+            @else
+                <h5>No payments yet</h5>
+                <p class="text-muted mb-0">Manual payments recorded by staff and slips you upload will appear here.</p>
+            @endif
         </div>
     @else
         <div class="frc-table-wrap frc-table-wrap--wide table-scroll child-payments-table-wrap">
@@ -76,6 +139,7 @@
                 <thead>
                     <tr>
                         <th>Receipt #</th>
+                        <th>Programme</th>
                         <th>Amount</th>
                         <th>Method</th>
                         <th>Date</th>
@@ -88,6 +152,12 @@
                     @foreach($payments as $p)
                         <tr>
                             <td class="child-payments-receipt">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
+                            <td class="child-payments-programme">
+                                <span class="child-payments-programme-name">{{ $p->enrollment?->service?->name ?? '—' }}</span>
+                                @if($p->enrollment_id)
+                                    <span class="child-payments-programme-id text-muted">#{{ $p->enrollment_id }}</span>
+                                @endif
+                            </td>
                             <td class="text-amount child-payments-amount">PKR {{ frc_money($p->amount) }}</td>
                             <td class="child-payments-method">{{ \App\Models\Payment::labelForPaymentMethod($p->payment_method) }}</td>
                             <td class="child-payments-date">{{ $p->payment_date?->format('d M Y') }}</td>

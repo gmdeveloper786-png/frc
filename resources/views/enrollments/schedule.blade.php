@@ -2,12 +2,67 @@
 @section('title', 'Enrollment Schedule')
 @section('page-title', 'Enrollment Schedule')
 
+@push('styles')
+<style>
+.enrollment-schedule-page > .card-header-frc {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.enrollment-schedule-page > .card-header-frc .card-title-frc {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.enrollment-schedule-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.enrollment-schedule-table .table-frc thead th,
+.enrollment-schedule-table .table-frc tbody td {
+    white-space: nowrap;
+}
+@media (max-width: 575.98px) {
+    .frc-main:has(.enrollment-schedule-page) {
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 12px;
+    }
+    .enrollment-schedule-page.card-frc {
+        padding: 12px;
+        border-radius: 12px;
+    }
+    .enrollment-schedule-page > .card-header-frc {
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+    }
+    .enrollment-schedule-page .enrollment-schedule-body {
+        padding: 0 !important;
+    }
+    .enrollment-schedule-page .enrollment-schedule-summary {
+        padding: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    .enrollment-schedule-page .enrollment-schedule-filters .btn-teal,
+    .enrollment-schedule-page .enrollment-schedule-filters .btn-outline-teal {
+        flex: 1 1 calc(50% - 4px);
+        justify-content: center;
+    }
+    .enrollment-schedule-page .enrollment-schedule-table .table-frc thead th,
+    .enrollment-schedule-page .enrollment-schedule-table .table-frc tbody td {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 @php
     $statusFilter = request('status', 'all');
 @endphp
 
-<div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
+<div class="card-frc mb-4 enrollment-schedule-page" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-calendar-week me-2" style="color:var(--teal);"></i>Enrollment Schedule</h6>
         @if(auth()->user()?->hasPermission('manage_enrollments') || auth()->user()?->hasPermission('view_enrollments') || auth()->user()->isFinance())
@@ -29,10 +84,10 @@
             </a>
         @endif --}}
     </div>
-    <div class="p-3 p-md-4">
-        <div class="mb-4 p-3" style="background:var(--bg-light);border-radius:12px;border:1px solid var(--border-soft);">
+    <div class="enrollment-schedule-body p-3 p-md-4">
+        <div class="mb-4 p-3 enrollment-schedule-summary" style="background:var(--bg-light);border-radius:12px;border:1px solid var(--border-soft);">
             <div class="row g-3 small">
-                <div class="col-sm-6 col-lg-4">
+                <div class="col-12 col-sm-6 col-lg-4">
                     <div class="text-muted mb-1">Child</div>
                     <div style="font-weight:600;color:var(--navy);">{{ $enrollment->child?->full_name ?? '—' }}</div>
                 </div>
@@ -40,15 +95,15 @@
                     <div class="text-muted mb-1">Enrollment ID</div>
                     <div style="font-weight:600;color:var(--navy);">#{{ $enrollment->id }}</div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6 col-lg-3">
                     <div class="text-muted mb-1">Branch</div>
                     <div style="font-weight:600;color:var(--navy);">{{ $enrollment->branch?->name ?? '—' }}</div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6 col-lg-3">
                     <div class="text-muted mb-1">Therapist</div>
                     <div style="font-weight:600;color:var(--navy);">{{ $enrollment->therapist?->full_name ?? '—' }}</div>
                 </div>
-                <div class="col-sm-6 col-lg-4">
+                <div class="col-12 col-sm-6 col-lg-4">
                     <div class="text-muted mb-1">Service</div>
                     <div style="font-weight:600;color:var(--navy);">{{ $enrollment->service?->name ?? '—' }}</div>
                 </div>
@@ -60,7 +115,7 @@
                     <div class="text-muted mb-1">Completed</div>
                     <div style="font-weight:600;color:var(--success);">{{ $stats['completed_sessions'] }}</div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6 col-lg-3">
                     <div class="text-muted mb-1">Upcoming</div>
                     <div style="font-weight:600;color:var(--teal-dark);">{{ $stats['upcoming_sessions'] }}</div>
                 </div>
@@ -71,24 +126,24 @@
             </div>
         </div>
 
-        <form method="get" action="{{ route('enrollments.schedule', $enrollment) }}" class="row g-3 align-items-end mb-4">
-            <div class="col-6 col-lg">
+        <form method="get" action="{{ route('enrollments.schedule', $enrollment) }}" class="row g-3 align-items-end mb-4 enrollment-schedule-filters">
+            <div class="col-6 col-md-4 col-lg">
                 <label class="small text-muted mb-1">Date from</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
             </div>
-            <div class="col-6 col-lg">
+            <div class="col-6 col-md-4 col-lg">
                 <label class="small text-muted mb-1">Date to</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
             </div>
-            <div class="col-6 col-lg">
-                            <label class="small text-muted mb-1">Status</label>
-                            <select name="status" class="form-control form-control-sm">
-                                <option value="all" {{ $statusFilter==='all' ? 'selected' : '' }}>All</option>
-                                <option value="scheduled" {{ $statusFilter==='scheduled' ? 'selected' : '' }}>Scheduled</option>
-                                <option value="in_progress" {{ $statusFilter==='in_progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="completed" {{ $statusFilter==='completed' ? 'selected' : '' }}>Completed</option>
-                                <option value="cancelled" {{ $statusFilter==='cancelled' ? 'selected' : '' }}>Cancelled</option>
-                            </select>
+            <div class="col-12 col-md-4 col-lg">
+                <label class="small text-muted mb-1">Status</label>
+                <select name="status" class="form-control form-control-sm">
+                    <option value="all" {{ $statusFilter==='all' ? 'selected' : '' }}>All</option>
+                    <option value="scheduled" {{ $statusFilter==='scheduled' ? 'selected' : '' }}>Scheduled</option>
+                    <option value="in_progress" {{ $statusFilter==='in_progress' ? 'selected' : '' }}>In Progress</option>
+                    <option value="completed" {{ $statusFilter==='completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="cancelled" {{ $statusFilter==='cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
             </div>
             {{-- <div class="col-6 col-lg">
                 <label class="small text-muted mb-1">Service</label>
@@ -109,9 +164,20 @@
                 </select>
             </div> --}}
             <div class="col-12 col-lg-auto d-flex flex-wrap gap-2">
-                <button type="submit" class="btn-teal" style="font-size:13px;padding:8px 16px;">Apply</button>
-                <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal" style="font-size:13px;padding:8px 16px;">Reset</a>
+                <button type="submit" class="btn-teal" style="font-size:13px;padding:8px 16px;">Filter</button>
+                @if(
+                    request()->filled('date_from') ||
+                    request()->filled('date_to') ||
+                    ($statusFilter ?? 'all') !== 'all'
+                    /* Add more filter checks here as needed, e.g.,
+                       request()->filled('service_id') ||
+                       request()->filled('therapist_id')
+                    */
+                )
+                    <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal" style="font-size:13px;padding:8px 16px;">Clear</a>
+                @endif
             </div>
+      
         </form>
 
         @if($paginator->isEmpty())
@@ -121,11 +187,11 @@
                 <p class="text-muted mb-0 small">Adjust filters or ensure this enrolment has schedule slots configured.</p>
             </div>
         @else
-            <div class="d-none d-md-block table-responsive" style="max-width:100%;overflow-x:visible;">
+            <div class="frc-table-wrap frc-table-wrap--wide table-scroll enrollment-schedule-table">
                 <table class="table-frc mb-0">
                     <thead>
                         <tr>
-                            <th>Session date</th>
+                            <th style="white-space:nowrap;">Session date</th>
                             <th>Day</th>
                             <th>Time</th>
                             <th>Branch</th>
@@ -140,10 +206,10 @@
                             <tr>
                                 <td style="font-weight:600;color:var(--navy);white-space:nowrap;">{{ $row['session_date']->format('d M Y') }}</td>
                                 <td style="white-space:nowrap;">{{ $row['day_label'] }}</td>
-                                <td style="white-space:normal;">{{ $row['time_slot'] }}</td>
-                                <td style="white-space:normal;word-break:break-word;">{{ $row['branch_name'] }}</td>
-                                <td style="white-space:normal;word-break:break-word;">{{ $row['therapist_name'] }}</td>
-                                <td style="white-space:normal;word-break:break-word;">{{ $row['service_name'] }}</td>
+                                <td style="white-space:nowrap;">{{ $row['time_slot'] }}</td>
+                                <td style="white-space:nowrap;">{{ $row['branch_name'] }}</td>
+                                <td style="white-space:nowrap;">{{ $row['therapist_name'] }}</td>
+                                <td style="white-space:nowrap;">{{ $row['service_name'] }}</td>
                                 <td style="white-space:nowrap;">
                                     <span class="badge-status {{ $row['badge_class'] }}" style="font-size:11px;">{{ $row['status_label'] }}</span>
                                 </td>
@@ -156,26 +222,6 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
-
-            <div class="d-md-none">
-                @foreach($paginator as $row)
-                    <div class="card-frc mb-3 p-3" style="border-radius:12px;">
-                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                            <div>
-                                <div style="font-weight:700;color:var(--navy);">{{ $row['session_date']->format('d M Y') }}</div>
-                                <div class="small text-muted">{{ $row['day_label'] }} · {{ $row['time_slot'] }}</div>
-                            </div>
-                            <span class="badge-status {{ $row['badge_class'] }}" style="font-size:11px;">{{ $row['status_label'] }}</span>
-                        </div>
-                        <div class="small mb-1"><span class="text-muted">Branch</span><br>{{ $row['branch_name'] }}</div>
-                        <div class="small mb-1"><span class="text-muted">Therapist</span><br>{{ $row['therapist_name'] }}</div>
-                        <div class="small mb-3"><span class="text-muted">Service</span><br>{{ $row['service_name'] }}</div>
-                        <a href="{{ route('enrollments.schedule.show', ['enrollment' => $enrollment, 'schedule' => $row['schedule_id'], 'session_date' => $row['date_iso']]) }}" class="btn-outline-teal w-100 justify-content-center d-inline-flex align-items-center gap-1" style="font-size:12px;border-radius:10px;">
-                            <i class="fa-solid fa-eye"></i> View details
-                        </a>
-                    </div>
-                @endforeach
             </div>
 
             @if($paginator->hasPages())

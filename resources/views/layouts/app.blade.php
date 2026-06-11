@@ -63,7 +63,7 @@
 {{-- ── Topbar ─────────────────────────────────────────────────────────────── --}}
 <header class="frc-topbar">
     <div class="d-flex align-items-center gap-3">
-        <button type="button" class="btn-outline-teal d-md-none" id="sidebarToggle" style="padding:6px 10px;font-size:18px;" aria-label="Open menu" aria-expanded="false">
+        <button type="button" class="btn-outline-teal d-lg-none" id="sidebarToggle" style="padding:6px 10px;font-size:18px;" aria-label="Open menu" aria-expanded="false">
             <i class="fa-solid fa-bars" id="sidebarToggleIcon"></i>
         </button>
         @php
@@ -172,9 +172,11 @@
                             ? route('admin.profile')
                             : (auth()->user()->isFinance()
                                 ? route('finance.profile')
-                                : (auth()->user()->isTherapist()
-                                    ? route('therapist.profile')
-                                    : null)));
+                                : (auth()->user()->isApprovalDiscount()
+                                    ? route('approval-discount.profile')
+                                    : (auth()->user()->isTherapist()
+                                        ? route('therapist.profile')
+                                        : null))));
                 @endphp
                 @if($headerProfileHref)
                     <a href="{{ $headerProfileHref }}" class="dropdown-item frc-user-dropdown-item"><i class="fa-regular fa-user me-2"></i> My profile</a>

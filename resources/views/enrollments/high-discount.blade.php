@@ -109,11 +109,12 @@
                         <th>#</th>
                         <th>Child</th>
                         <th>Enrollment</th>
-                        <th>Branch / Therapist</th>
-                        <th>Total Sessions</th>
-                        <th>Before Discount / Subtotal</th>
+                        <th>Branch</th>
+                        <th>Therapist</th>
+                        <th style="white-space:nowrap;">Total Sessions</th>
+                        <th>Subtotal</th>
                         <th>Discount</th>
-                        <th>After Discount / Final Total</th>
+                        <th style="white-space:nowrap;">Final Total</th>
                         <th>Reason</th>
                         <th>Document</th>
                         <th>Actions</th>
@@ -124,7 +125,7 @@
                         <tr>
                             <td style="color:var(--text-muted);">{{ $enrollments->firstItem() + $loop->index }}</td>
                             <td>
-                                <a href="{{ route('children.show', $e->child_id) }}" style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer;">
+                                <a href="{{ route('children.show', $e->child_id) }}" style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer; white-space:nowrap;">
                                     {{ $e->child?->full_name }}
                                 </a>
                                 <div style="font-size:12px;color:var(--text-muted);font-family:monospace;">{{ $e->child?->gr_number }}</div>
@@ -134,15 +135,17 @@
                                     #{{ $e->id }}
                                 </a>
                             </td>
-                            <td style="font-size:13px;">
-                                <div>{{ $e->branch?->name }}</div>
-                                <div style="color:var(--text-muted);">{{ $e->therapist?->full_name }}</div>
+                            <td>
+                                <div style="font-weight:700;color:var(--navy);white-space:nowrap;">{{ $e->branch?->name }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:700;color:var(--navy);">{{ $e->total_sessions }}</div>
+                                <div style="font-weight:700;color:var(--navy);white-space:nowrap;">{{ $e->therapist?->full_name }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:700;color:var(--navy);">{{ frc_pkr($e->subtotal) }}</div>
+                                <div style="font-weight:700;color:var(--navy);white-space:nowrap;">{{ $e->total_sessions }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:700;color:var(--navy);white-space:nowrap;">{{ frc_pkr($e->subtotal) }}</div>
                             </td>
                             <td>
                                 <span style="background:rgba(220,53,69,.1);color:var(--danger);padding:4px 10px;border-radius:20px;font-weight:600;font-size:13px;">
@@ -151,7 +154,7 @@
                                 <div style="font-size:12px;color:var(--danger);margin-top:4px;">- {{ frc_pkr($e->discount_amount) }}</div>
                             </td>
                             <td>
-                                <div style="font-weight:700;color:var(--navy);">{{ frc_pkr($e->final_total) }}</div>
+                                <div style="font-weight:700;color:var(--navy);white-space:nowrap;">{{ frc_pkr($e->final_total) }}</div>
                             </td>
                             <td style="max-width:200px;">
                                 <p style="font-size:12px;color:var(--text-muted);margin:0;white-space:pre-wrap;">{{ Str::limit($e->discount_reason, 30) }}</p>

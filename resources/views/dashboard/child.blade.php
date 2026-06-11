@@ -63,7 +63,7 @@
             'href' => route('child.payments'),
         ],
         [
-            'label' => 'Pending / Overdue',
+            'label' => 'Pending',
             'value' => $totalEnrollments > 0 ? $formatPkr($pendingOverdue) : '—',
             'icon' => 'fa-hourglass-half',
             'tone' => 'red',

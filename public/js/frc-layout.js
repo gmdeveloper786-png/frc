@@ -12,7 +12,7 @@
     var toggleBtn = document.getElementById('sidebarToggle');
 
     function isMobile() {
-        return window.matchMedia('(max-width: 768px)').matches;
+        return window.matchMedia('(max-width: 991.98px)').matches;
     }
 
     function setCollapsed(collapsed) {

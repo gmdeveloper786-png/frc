@@ -24,7 +24,7 @@
                         <th>Branch</th>
                         <th style="white-space:nowrap;">Last assessment</th>
                         <th style="white-space:nowrap;">Last session</th>
-                        <th>Next session</th>
+                        <th style="white-space:nowrap;">Next session</th>
                         <th>Enrollment</th>
                         <th>Actions</th>
                     </tr>

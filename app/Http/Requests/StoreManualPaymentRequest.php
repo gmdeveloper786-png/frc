@@ -72,15 +72,18 @@ class StoreManualPaymentRequest extends FormRequest
                 return;
             }
 
-            $remaining = $enrollment->outstandingAmount();
-            if ($remaining <= 0) {
-                $fail('This enrollment is already fully paid.');
+            $collectible = $enrollment->outstandingForSlipUpload();
+            if ($collectible <= 0) {
+                $pending = $enrollment->sumPendingVerificationAmount();
+                $fail($pending > 0
+                    ? 'A payment of '.frc_pkr($pending).' is already pending verification. Verify or reject it before recording another manual payment.'
+                    : 'This enrollment is already fully paid.');
 
                 return;
             }
 
-            if (round((float) $value, 2) > $remaining) {
-                $fail('The amount cannot exceed the remaining balance ('.frc_pkr($remaining).').');
+            if (round((float) $value, 2) > $collectible) {
+                $fail('The amount cannot exceed the available balance ('.frc_pkr($collectible).'). Pending verification amounts are reserved.');
             }
         };
     }

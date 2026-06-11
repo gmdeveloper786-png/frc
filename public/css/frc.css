@@ -722,7 +722,7 @@ a.frc-notif-item:focus-visible {
 }
 .card-frc .card-header-frc {
   display: flex;
-  align-items: center;
+  /* align-items: center; */
   justify-content: space-between;
   margin-bottom: 20px;
   padding-bottom: 16px;
@@ -1982,7 +1982,7 @@ a.frc-notif-item:focus-visible {
   }
   .auth-left { display: none; }
   .auth-card {
-    max-width: min(480px, 100%);
+    max-width: min(600px, 100%);
     min-height: auto;
     border-radius: 20px;
   }
@@ -2027,7 +2027,7 @@ a.frc-notif-item:focus-visible {
 body.sidebar-mobile-open {
   overflow: hidden;
 }
-@media (max-width: 768px) {
+@media (max-width: 991.98px) {
   html.sidebar-collapsed { --sidebar-current-w: var(--sidebar-w); }
   .frc-sidebar {
     transform: translateX(-100%);
@@ -2082,14 +2082,17 @@ body.sidebar-mobile-open {
   .frc-main {
     margin-left: 0;
     margin-top: 72px;
+    padding: 20px 16px 32px;
   }
 }
 @media (max-width: 576px) {
   .frc-main { padding: 16px; }
-  .card-frc,
-  .card-frc.card-frc--panel {
-    padding: 16px;
+  .card-frc{
+    padding: 5px;
   }
+        .card-frc.card-frc--panel {
+          padding: 16px;
+        }
   .card-frc .card-header-frc {
     gap: 12px;
     margin-bottom: 14px;
@@ -2903,6 +2906,69 @@ body.sidebar-mobile-open {
     width: 100%;
   }
 }
+@media (max-width: 575.98px) {
+  .frc-main:has(.child-enrollment-detail-page) {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 12px;
+  }
+  .child-enrollment-detail-page__back {
+    margin-bottom: 0.75rem;
+    font-size: 13px;
+  }
+  .child-enrollment-detail.card-frc .card-header-frc.child-enrollment-detail__header {
+    padding: 12px 14px;
+  }
+  .child-enrollment-detail__body {
+    padding: 0 14px 14px;
+  }
+  .child-enrollment-detail__section {
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+  .child-enrollment-detail__stat {
+    min-height: 64px;
+    padding: 8px 10px;
+  }
+  .child-enrollment-detail__session-metrics {
+    --bs-gutter-x: 0.5rem;
+    --bs-gutter-y: 0.5rem;
+  }
+  .child-enrollment-detail__payment-tile {
+    min-height: 68px;
+    padding: 10px 12px;
+  }
+}
+
+/* Session details (child / staff / therapist) — mobile spacing */
+@media (max-width: 575.98px) {
+  .frc-main:has(.session-details-page) {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 12px;
+  }
+  .session-details-page.card-frc {
+    padding: 12px;
+    border-radius: 12px;
+  }
+  .session-details-page > .card-header-frc {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .session-details-page .session-details-body {
+    padding: 0 !important;
+  }
+  .session-details-page .session-feedback-overall {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .session-details-page .session-feedback-overall__percent {
+    font-size: 26px;
+  }
+  .session-details-page .session-feedback-overall__score {
+    min-width: 72px;
+  }
+}
 
 /* ─── Child profile ─────────────────────────────────────────────────────── */
 .child-profile-card,
@@ -3320,6 +3386,88 @@ body.sidebar-mobile-open {
 .enrollment-show-high-discount {
   border-left: 4px solid var(--teal);
 }
+.enrollment-show-schedule-card-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.enrollment-show-schedule-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.enrollment-show-schedule-header .card-title-frc {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+.enrollment-show-schedule-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.enrollment-show-summary-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  margin-bottom: 14px;
+  border-bottom: none;
+}
+.enrollment-show-summary-header .card-title-frc {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  color: var(--navy);
+  font-size: 1rem;
+}
+.enrollment-show-summary-header .btn-view-all {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.enrollment-show-payments-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.enrollment-show-payments-header .card-title-frc {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+.enrollment-show-payments-header .btn-view-all {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+@media (max-width: 991.98px) {
+  .enrollment-show-page .enrollment-show-schedule-table,
+  .enrollment-show-page .enrollment-show-payments-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .enrollment-show-page .enrollment-show-schedule-table .table-frc thead th,
+  .enrollment-show-page .enrollment-show-schedule-table .table-frc tbody td,
+  .enrollment-show-page .enrollment-show-payments-table .table-frc thead th,
+  .enrollment-show-page .enrollment-show-payments-table .table-frc tbody td {
+    white-space: nowrap;
+  }
+  .enrollment-show-page .enrollment-detail-kv td:first-child {
+    width: 42%;
+    max-width: 11rem;
+    vertical-align: top;
+  }
+  .enrollment-show-page .enrollment-detail-kv td:last-child {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+}
 .enrollment-detail-kv {
   width: 100%;
   border-collapse: collapse;
@@ -3402,7 +3550,17 @@ body.sidebar-mobile-open {
   margin: 0;
 }
 .child-show-break-all {
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.child-show-page .child-show-detail-kv td:first-child {
+  width: 36%;
+  max-width: 9.5rem;
+  vertical-align: top;
+}
+.child-show-page .child-show-detail-kv td:last-child {
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Therapist — assigned child profile */
@@ -3786,7 +3944,17 @@ body.sidebar-mobile-open {
   font-size: 13px;
 }
 .therapist-show-break-all {
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.therapist-show-page .enrollment-detail-kv td:first-child {
+  width: 36%;
+  max-width: 9.5rem;
+  vertical-align: top;
+}
+.therapist-show-page .enrollment-detail-kv td:last-child {
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 .therapist-show-actions.frc-form-actions {
   margin-top: 16px;
@@ -3833,6 +4001,26 @@ body.sidebar-mobile-open {
 @media (min-width: 480px) {
   .therapist-show-slots {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .therapist-show-page .therapist-show-slots {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .therapist-show-page .therapist-show-slot {
+    font-size: 13px;
+    padding: 10px 8px;
+    min-height: 48px;
+  }
+  .therapist-show-page .therapist-show-actions.frc-form-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .therapist-show-page .therapist-show-actions .btn-teal,
+  .therapist-show-page .therapist-show-actions .btn-outline-teal {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
   }
 }
 @media (min-width: 992px) {
@@ -3917,12 +4105,53 @@ body.sidebar-mobile-open {
   }
 }
 
-@media (min-width: 768px) {
-  .child-show-profile-hero {
+@media (max-width: 991.98px) {
+  .child-show-page:not(.therapist-child-show-page) .child-show-profile-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-profile-hero {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    padding: 0;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-avatar {
+    margin: 0;
+    width: 72px;
+    height: 72px;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-name {
+    margin-bottom: 6px;
+    text-align: left;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-edit-btn {
+    flex-shrink: 0;
+    align-self: center;
+    width: auto;
+  }
+  .child-show-page .child-show-table {
+    -webkit-overflow-scrolling: touch;
+  }
+  .child-show-page .child-show-table .table-frc thead th,
+  .child-show-page .child-show-table .table-frc tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+@media (min-width: 992px) {
+  .child-show-page:not(.therapist-child-show-page) .child-show-profile-hero {
     flex: 1 1 auto;
     text-align: left;
     padding: 0;
   }
+}
+@media (min-width: 768px) {
   .therapist-child-show-page .child-show-profile-hero {
     display: flex;
     align-items: center;
@@ -3957,6 +4186,20 @@ body.sidebar-mobile-open {
   .child-show-profile-header {
     flex-direction: column;
     align-items: stretch;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-profile-hero {
+    display: block;
+    text-align: center;
+    padding: 8px 0 0;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-avatar {
+    margin: 0 auto 12px;
+    width: 80px;
+    height: 80px;
+    font-size: 34px;
+  }
+  .child-show-page:not(.therapist-child-show-page) .child-show-name {
+    text-align: center;
   }
   .child-show-profile-hero {
     padding: 8px 0 0;
@@ -3994,18 +4237,10 @@ body.sidebar-mobile-open {
   .enrollment-detail-kv--summary td:last-child {
     font-size: 15px;
   }
-  .enrollment-show-schedule-header {
-    flex-direction: column;
-    align-items: stretch !important;
-  }
   .enrollment-show-schedule-btn {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0 !important;
     font-size: 13px;
     padding: 8px 14px;
   }
-  .enrollment-show-page .card-header-frc .btn-view-all,
   .child-show-page .card-header-frc .btn-view-all {
     justify-content: center;
   }
@@ -4016,9 +4251,54 @@ body.sidebar-mobile-open {
   }
 }
 
+/* Child payment history — filters */
+.child-payments-filters .child-payments-filter-actions .filter-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.child-payments-filters .child-payments-filter-actions .filter-actions .btn-teal,
+.child-payments-filters .child-payments-filter-actions .filter-actions .btn-outline-teal {
+  flex: 1 1 calc(50% - 5px);
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+@media (min-width: 768px) {
+  .child-payments-filters .child-payments-filter-actions .filter-actions {
+    flex-wrap: nowrap;
+  }
+  .child-payments-filters .child-payments-filter-actions .filter-actions .btn-teal,
+  .child-payments-filters .child-payments-filter-actions .filter-actions .btn-outline-teal {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}
+
 /* Child payment history table */
 .child-payments-table-wrap {
   padding: 0;
+}
+.child-payments-table .child-payments-programme {
+  font-size: 13px;
+  min-width: 120px;
+  max-width: 180px;
+}
+.child-payments-table .child-payments-programme-name {
+  display: block;
+  color: var(--navy);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.child-payments-table .child-payments-programme-id {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
 }
 .child-payments-table thead th {
   white-space: nowrap;
@@ -4074,10 +4354,17 @@ body.sidebar-mobile-open {
     width: 100%;
     justify-content: center;
   }
+  .child-payments-filters {
+    padding: 12px !important;
+  }
   .child-payments-table thead th,
   .child-payments-table tbody td {
     padding: 10px 12px;
     font-size: 12px;
+  }
+  .child-payments-table .child-payments-programme {
+    min-width: 100px;
+    max-width: 140px;
   }
 }
 
@@ -4664,6 +4951,373 @@ body.sidebar-mobile-open {
 }
 .dashboard-chart-canvas-wrap--donut-sm .dashboard-donut-center-value {
   font-size: 18px;
+}
+
+/* Admin / super admin dashboards — responsive */
+.super-admin-dashboard-page,
+.admin-dashboard-page {
+  max-width: 100%;
+  overflow-x: clip;
+}
+.super-admin-dashboard-page canvas,
+.admin-dashboard-page canvas {
+  max-width: 100%;
+}
+.super-admin-dashboard-page .super-admin-quick-actions,
+.admin-dashboard-page .admin-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.super-admin-dashboard-page .super-admin-quick-actions .btn-teal,
+.super-admin-dashboard-page .super-admin-quick-actions .btn-navy,
+.admin-dashboard-page .admin-quick-actions .btn-teal,
+.admin-dashboard-page .admin-quick-actions .btn-navy {
+  justify-content: flex-start;
+  width: 100%;
+  flex-wrap: wrap;
+  white-space: normal;
+  text-align: left;
+  gap: 8px;
+  line-height: 1.35;
+  padding: 10px 16px;
+}
+.super-admin-dashboard-page .super-admin-quick-actions .badge-status,
+.admin-dashboard-page .admin-quick-actions .badge-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.super-admin-dashboard-page .super-admin-fee-summary .stat-value,
+.admin-dashboard-page .admin-fee-summary .stat-value {
+  word-break: break-word;
+  line-height: 1.25;
+}
+.super-admin-dashboard-page .dashboard-recent-row li a,
+.super-admin-dashboard-page .dashboard-recent-row li > div:first-child {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767.98px) {
+  .super-admin-dashboard-page .super-admin-dashboard-stats,
+  .admin-dashboard-page .admin-dashboard-stats {
+    --bs-gutter-x: 0.75rem;
+    --bs-gutter-y: 0.75rem;
+  }
+  .super-admin-dashboard-page .stat-card,
+  .admin-dashboard-page .stat-card {
+    padding: 14px 16px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .super-admin-dashboard-page .stat-card .stat-icon,
+  .admin-dashboard-page .stat-card .stat-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+  .super-admin-dashboard-page .stat-card .stat-value,
+  .admin-dashboard-page .stat-card .stat-value {
+    font-size: 20px;
+  }
+  .super-admin-dashboard-page .stat-card .stat-label,
+  .admin-dashboard-page .stat-card .stat-label {
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  .super-admin-dashboard-page .super-admin-fee-summary .stat-value,
+  .admin-dashboard-page .admin-fee-summary .stat-value {
+    font-size: 15px !important;
+  }
+  .super-admin-dashboard-page .dashboard-chart-card,
+  .admin-dashboard-page .dashboard-chart-card {
+    padding: 14px;
+  }
+  .super-admin-dashboard-page .dashboard-chart-card-head,
+  .admin-dashboard-page .dashboard-chart-card-head {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .super-admin-dashboard-page .dashboard-chart-card-title,
+  .admin-dashboard-page .dashboard-chart-card-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .super-admin-dashboard-page .dashboard-chart-canvas-wrap--tall,
+  .admin-dashboard-page .dashboard-chart-canvas-wrap--tall {
+    height: 220px;
+  }
+  .super-admin-dashboard-page .dashboard-chart-canvas-wrap--bar-v,
+  .super-admin-dashboard-page .dashboard-chart-canvas-wrap--bar-h,
+  .admin-dashboard-page .dashboard-chart-canvas-wrap--bar-v,
+  .admin-dashboard-page .dashboard-chart-canvas-wrap--bar-h {
+    height: 200px;
+  }
+  .super-admin-dashboard-page .dashboard-stat-row strong,
+  .admin-dashboard-page .dashboard-stat-row strong {
+    white-space: normal;
+    text-align: right;
+    word-break: break-word;
+  }
+}
+@media (max-width: 991.98px) {
+  .super-admin-dashboard-page .dashboard-finance-charts,
+  .super-admin-dashboard-page .dashboard-finance-charts-body,
+  .admin-dashboard-page .dashboard-finance-charts,
+  .admin-dashboard-page .dashboard-finance-charts-body {
+    width: 100%;
+    max-width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-finance-charts-body,
+  .admin-dashboard-page .dashboard-finance-charts-body {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 20px;
+  }
+  .super-admin-dashboard-page .dashboard-fee-donut-panel,
+  .admin-dashboard-page .dashboard-fee-donut-panel {
+    flex: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+    padding-bottom: 16px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .super-admin-dashboard-page .dashboard-fee-donut-wrap,
+  .admin-dashboard-page .dashboard-fee-donut-wrap {
+    max-width: min(300px, 100%);
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .super-admin-dashboard-page .dashboard-fee-donut-legend,
+  .admin-dashboard-page .dashboard-fee-donut-legend {
+    max-width: min(360px, 100%);
+    width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-fee-bar-wrap,
+  .admin-dashboard-page .dashboard-fee-bar-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    flex: none !important;
+  }
+  .super-admin-dashboard-page #monthlyFinanceChart,
+  .admin-dashboard-page #monthlyFinanceChart {
+    width: 100% !important;
+    max-width: 100%;
+    height: 240px !important;
+  }
+  .admin-dashboard-page .admin-dashboard-stats .stat-card .stat-label {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}
+@media (max-width: 575.98px) {
+  .super-admin-dashboard-page .super-admin-quick-actions .btn-teal,
+  .super-admin-dashboard-page .super-admin-quick-actions .btn-navy,
+  .admin-dashboard-page .admin-quick-actions .btn-teal,
+  .admin-dashboard-page .admin-quick-actions .btn-navy {
+    font-size: 13px;
+  }
+  .super-admin-dashboard-page .dashboard-recent-row .card-header-frc {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .super-admin-dashboard-page .dashboard-recent-row .card-header-frc .btn-view-all {
+    width: 100%;
+    justify-content: center;
+  }
+  .super-admin-dashboard-page .dashboard-recent-row .card-title-frc {
+    font-size: 14px;
+  }
+  .super-admin-dashboard-page .dashboard-finance-charts-header,
+  .admin-dashboard-page .dashboard-finance-charts-header {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .super-admin-dashboard-page .dashboard-finance-charts-header .dashboard-chart-filter,
+  .admin-dashboard-page .dashboard-finance-charts-header .dashboard-chart-filter {
+    margin-left: 0;
+    width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-year-picker--header,
+  .admin-dashboard-page .dashboard-year-picker--header {
+    width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-chart-card-head,
+  .admin-dashboard-page .dashboard-chart-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .super-admin-dashboard-page .dashboard-chart-filter--card,
+  .super-admin-dashboard-page .dashboard-chart-card-head-meta,
+  .admin-dashboard-page .dashboard-chart-filter--card,
+  .admin-dashboard-page .dashboard-chart-card-head-meta {
+    margin-left: 0;
+    width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-year-picker,
+  .admin-dashboard-page .dashboard-year-picker {
+    width: 100%;
+  }
+  .super-admin-dashboard-page .dashboard-fee-donut-value,
+  .admin-dashboard-page .dashboard-fee-donut-value {
+    font-size: 13px;
+  }
+  .super-admin-dashboard-page #monthlyFinanceChart,
+  .admin-dashboard-page #monthlyFinanceChart {
+    height: 200px !important;
+  }
+}
+
+/* Finance dashboard — responsive */
+.finance-dashboard-page {
+  max-width: 100%;
+  overflow-x: clip;
+}
+.finance-dashboard-page canvas {
+  max-width: 100%;
+}
+.finance-dashboard-page .finance-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.finance-dashboard-page .finance-quick-actions .btn-teal,
+.finance-dashboard-page .finance-quick-actions .btn-navy,
+.finance-dashboard-page .finance-quick-actions .btn-outline-teal {
+  justify-content: flex-start;
+  width: 100%;
+  flex-wrap: wrap;
+  white-space: normal;
+  text-align: left;
+  gap: 8px;
+  line-height: 1.35;
+  padding: 10px 16px;
+}
+.finance-dashboard-page .finance-quick-actions .badge-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.finance-dashboard-page .finance-dashboard-stats .stat-value,
+.finance-dashboard-page .finance-dashboard-fee-stats .stat-value {
+  word-break: break-word;
+  line-height: 1.25;
+}
+.finance-dashboard-page .finance-recent-payments-table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.finance-dashboard-page .finance-recent-payments-table .table-frc thead th,
+.finance-dashboard-page .finance-recent-payments-table .table-frc tbody td {
+  white-space: nowrap;
+}
+@media (max-width: 767.98px) {
+  .finance-dashboard-page .finance-dashboard-stats,
+  .finance-dashboard-page .finance-dashboard-fee-stats {
+    --bs-gutter-x: 0.75rem;
+    --bs-gutter-y: 0.75rem;
+  }
+  .finance-dashboard-page .stat-card {
+    padding: 14px 16px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .finance-dashboard-page .stat-card .stat-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+  .finance-dashboard-page .stat-card .stat-label {
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .finance-dashboard-page .finance-dashboard-fee-stats .stat-value {
+    font-size: 15px !important;
+  }
+}
+@media (max-width: 991.98px) {
+  .finance-dashboard-page .dashboard-finance-charts,
+  .finance-dashboard-page .dashboard-finance-charts-body {
+    width: 100%;
+    max-width: 100%;
+  }
+  .finance-dashboard-page .dashboard-finance-charts-body {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 20px;
+  }
+  .finance-dashboard-page .dashboard-fee-donut-panel {
+    flex: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+    padding-bottom: 16px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .finance-dashboard-page .dashboard-fee-donut-wrap {
+    max-width: min(300px, 100%);
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .finance-dashboard-page .dashboard-fee-donut-legend {
+    max-width: min(360px, 100%);
+    width: 100%;
+  }
+  .finance-dashboard-page .dashboard-fee-bar-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    flex: none !important;
+  }
+  .finance-dashboard-page #monthlyFinanceChart {
+    width: 100% !important;
+    max-width: 100%;
+    height: 240px !important;
+  }
+  .finance-dashboard-page .finance-dashboard-fee-stats .stat-card .stat-label {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}
+@media (max-width: 575.98px) {
+  .finance-dashboard-page .finance-quick-actions .btn-teal,
+  .finance-dashboard-page .finance-quick-actions .btn-navy,
+  .finance-dashboard-page .finance-quick-actions .btn-outline-teal {
+    font-size: 13px;
+  }
+  .finance-dashboard-page .dashboard-finance-charts-header {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .finance-dashboard-page .dashboard-finance-charts-header .dashboard-chart-filter {
+    margin-left: 0;
+    width: 100%;
+  }
+  .finance-dashboard-page .dashboard-year-picker--header {
+    width: 100%;
+  }
+  .finance-dashboard-page #monthlyFinanceChart {
+    height: 200px !important;
+  }
 }
 
 /* Therapist dashboard */

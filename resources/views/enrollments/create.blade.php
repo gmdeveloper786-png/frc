@@ -6,6 +6,24 @@
 <style>
 .schedule-row { background:var(--bg-light); border:1px solid var(--border-soft); border-radius:10px; padding:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
 #discountSection { transition: all .3s; }
+@media (max-width: 991.98px) {
+    .enrollment-form-page .enrollment-form-fee-panel {
+        position: static;
+        top: auto;
+    }
+    .enrollment-form-page .form-section {
+        padding: 18px;
+    }
+}
+@media (max-width: 575.98px) {
+    .enrollment-form-page .schedule-row {
+        grid-template-columns: 1fr;
+    }
+    .enrollment-form-page .schedule-row > div:last-child button {
+        margin-top: 0;
+        width: 100%;
+    }
+}
 </style>
 @endpush
 
@@ -13,9 +31,9 @@
 <form action="{{ route('enrollments.store') }}" method="POST" enctype="multipart/form-data" class="form-frc" id="enrollForm">
 @csrf
 
-<div class="row g-3">
+<div class="row g-3 enrollment-form-page">
     {{-- Left Column --}}
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8">
         {{-- Child + Branch + Therapist --}}
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Children & Therapist</div>
@@ -33,7 +51,7 @@
                     ])
                     <small class="text-muted d-block mt-1">Select one child for individual therapy, or two or more for group therapy in the same slot.</small>
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
                     @if($branches->count() === 1)
                         @php $onlyBranch = $branches->first(); @endphp
@@ -49,7 +67,7 @@
                     @endif
                     @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Service <span style="color:var(--danger)">*</span></label>
                     <select name="service_id" id="serviceSelect" class="form-control @error('service_id') is-invalid @enderror">
                         <option value="">Select Service</option>
@@ -59,14 +77,14 @@
                     </select>
                     @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Therapist <span style="color:var(--danger)">*</span></label>
                     <select name="therapist_id" id="therapistSelect" class="form-control @error('therapist_id') is-invalid @enderror">
                         <option value="">Select branch &amp; service first</option>
                     </select>
                     @error('therapist_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Status</label>
                     <select name="status" class="form-control">
                         <option value="draft" @selected(old('status', 'draft') === 'draft')>Draft</option>
@@ -80,7 +98,7 @@
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-calendar-days" style="color:var(--teal);"></i> Session Schedule</div>
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
+                <div class="col-12">
                     <label>First session starts on <span style="color:var(--danger)">*</span></label>
                     <input type="date" name="schedule_start_date" id="scheduleStartDate"
                         class="form-control @error('schedule_start_date') is-invalid @enderror"
@@ -147,8 +165,8 @@
     </div>
 
     {{-- Right Column: Fee Calculation --}}
-    <div class="col-md-4">
-        <div class="form-section" style="position:sticky;top:80px;">
+    <div class="col-12 col-lg-4">
+        <div class="form-section enrollment-form-fee-panel" style="position:sticky;top:80px;">
             <div class="form-section-title"><i class="fa-solid fa-calculator" style="color:var(--teal);"></i> Fee Calculation</div>
             <div class="mb-3">
                 <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>

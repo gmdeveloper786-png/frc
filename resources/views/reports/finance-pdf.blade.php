@@ -39,7 +39,7 @@
 <table class="sum">
     <tr><td>Total Expected</td><td class="num">PKR {{ frc_money(($summary['total_expected'] ?? 0)) }}</td></tr>
     <tr><td>Total Paid</td><td class="num">PKR {{ frc_money(($summary['total_paid'] ?? 0)) }}</td></tr>
-    <tr><td>Pending / Overdue</td><td class="num">PKR {{ frc_money(($summary['total_pending'] ?? 0)) }}</td></tr>
+    <tr><td>Pending</td><td class="num">PKR {{ frc_money(($summary['total_pending'] ?? 0)) }}</td></tr>
     <tr><td>Cash Received</td><td class="num">PKR {{ frc_money(($summary['cash_received'] ?? 0)) }}</td></tr>
     <tr><td>Online/Bank</td><td class="num">PKR {{ frc_money(($summary['online_received'] ?? 0)) }}</td></tr>
     <tr><td>Pending Verification</td><td class="num">PKR {{ frc_money(($summary['pending_verification'] ?? 0)) }}</td></tr>
@@ -100,7 +100,7 @@
                 <td @if(strtolower($r['enrollment_payment_status'])==='partial paid' ) style="color:orange;font-weight:600;"
                     @elseif(strtolower($r['enrollment_payment_status'])==='fully paid' ) style="color:green;font-weight:600;"
                     @elseif(strtolower($r['enrollment_payment_status'])==='unpaid' ) style="color:red;font-weight:600;"
-                    @elseif(strtolower($r['enrollment_payment_status'])==='overdue' ) style="color:red;font-weight:600;" @endif>
+                    @endif>
                     {{ \App\Models\Payment::labelForEnrollmentPaymentStatus($r['enrollment_payment_status']) }}
                 </td>
             

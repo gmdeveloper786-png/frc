@@ -76,7 +76,7 @@
         </div>
         <div class="col-12 col-md-2 filter-actions">
             <button type="submit" class="btn-teal">
-                <i class="fa-solid fa-magnifying-glass"></i> Filter
+                Filter
             </button>
             @if(request()->hasAny(['search','status']))
                 <a href="{{ route('children.index') }}" class="btn-outline-teal" style="justify-content:center;">Clear</a>

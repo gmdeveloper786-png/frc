@@ -2,13 +2,54 @@
 @section('title', 'Session details')
 @section('page-title', 'Session details')
 
+@push('styles')
+<style>
+.enrollment-session-show-actions .btn-teal,
+.enrollment-session-show-actions .btn-outline-teal {
+    text-decoration: none !important;
+    justify-content: center;
+    line-height: 1.35;
+}
+@media (min-width: 576px) {
+    .enrollment-session-show-actions {
+        justify-content: flex-start;
+    }
+    .enrollment-session-show-actions .btn-teal,
+    .enrollment-session-show-actions .btn-outline-teal {
+        flex: 0 0 auto;
+        width: auto;
+    }
+}
+@media (max-width: 575.98px) {
+    .enrollment-session-show-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .enrollment-session-show-actions .btn-teal,
+    .enrollment-session-show-actions .btn-outline-teal {
+        flex: none !important;
+        display: flex !important;
+        width: 100% !important;
+        max-width: 100%;
+        align-self: stretch;
+        box-sizing: border-box;
+        padding: 11px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+        text-align: center;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
+<div class="card-frc mb-4 session-details-page" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-circle-info me-2" style="color:var(--teal);"></i>Session details</h6>
         <span class="badge-status {{ $detail['badge_class'] }}" style="font-size:12px;">{{ $detail['status_label'] }}</span>
     </div>
-    <div class="p-3 p-md-4">
+    <div class="p-3 p-md-4 session-details-body">
         <dl class="row mb-0 small">
             <dt class="col-sm-4 text-muted mb-2">Session date</dt>
             <dd class="col-sm-8 mb-2 fw-semibold" style="color:var(--navy);">{{ $detail['session_date']->format('l, d M Y') }}</dd>
@@ -89,10 +130,10 @@
 
         @include('sessions.partials.feedback-summary', ['sessionFeedback' => $sessionFeedback ?? ['items' => [], 'overall' => null]])
 
-        <div class="mt-4 d-flex flex-wrap gap-2">
-            <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal d-inline-flex align-items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Back to enrollment schedule</a>
+        <div class="frc-form-actions enrollment-session-show-actions">
+            <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal"><i class="fa-solid fa-arrow-left"></i> Back to schedule</a>
             @if(auth()->user()?->hasPermission('manage_enrollments') || auth()->user()?->hasPermission('view_enrollments'))
-                <a href="{{ route('enrollments.show', $enrollment->id) }}" class="btn-teal d-inline-flex align-items-center gap-1"><i class="fa-solid fa-file-contract"></i> Enrollment detail</a>
+                <a href="{{ route('enrollments.show', $enrollment->id) }}" class="btn-teal"><i class="fa-solid fa-file-contract"></i> Enrollment detail</a>
             @endif
         </div>
     </div>

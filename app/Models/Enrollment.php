@@ -243,7 +243,7 @@ class Enrollment extends Model
     }
 
     /**
-     * Remaining balance the child may still submit a slip for (excludes pending verification).
+     * Balance still available to pay (slip upload or manual desk payment), excluding pending verification.
      */
     public function outstandingForSlipUpload(): float
     {

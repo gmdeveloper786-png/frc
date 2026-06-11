@@ -28,7 +28,7 @@
             <div class="stat-icon red"><i class="fa-solid fa-hourglass-half"></i></div>
             <div class="stat-body">
                 <div class="stat-value" style="font-size:16px;color:var(--danger);">{{ frc_pkr($stats['fee_pending_overdue'] ?? 0) }}</div>
-                <div class="stat-label">Pending / Overdue</div>
+                <div class="stat-label">Pending</div>
             </div>
         </div>
     </div>

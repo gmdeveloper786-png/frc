@@ -92,7 +92,10 @@
                 <tbody>
                     @foreach($assessments as $row)
                         @php
-                            $childNames = $row->children->pluck('full_name')->filter()->join(', ');
+                            $childrenList = $row->children->filter(fn ($c) => filled($c->full_name));
+                            $firstChild = $childrenList->first();
+                            $extraChildCount = max(0, $childrenList->count() - 1);
+                            $childNames = $childrenList->pluck('full_name')->join(', ');
                         @endphp
                         <tr>
                             <td style="color:var(--text-muted); white-space:nowrap;">{{ $assessments->firstItem() + $loop->index }}</td>
@@ -100,9 +103,12 @@
                             <td style="white-space:nowrap;">{{ $row->day }}</td>
                             <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($row->time)->format('h:i A') }}</td>
                             <td style="white-space:nowrap;">{{ $row->branch?->name ?? '—' }}</td>
-                            <td style="font-size:13px;white-space:nowrap;">
-                                @if($childNames !== '')
-                                    {{ $childNames }}
+                            <td style="font-size:13px;white-space:nowrap;" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                                @if($firstChild)
+                                    <a href="{{ route('therapist.children.show', $firstChild) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstChild->full_name }}</a>
+                                    @if($extraChildCount > 0)
+                                        <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                    @endif
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif

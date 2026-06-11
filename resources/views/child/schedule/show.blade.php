@@ -3,12 +3,12 @@
 @section('page-title', 'Session details')
 
 @section('content')
-<div class="card-frc mb-4" style="border-radius:14px;overflow:hidden;">
+<div class="card-frc mb-4 session-details-page" style="border-radius:14px;overflow:hidden;">
     <div class="card-header-frc flex-wrap gap-2">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-circle-info me-2" style="color:var(--teal);"></i>Session details</h6>
         <span class="badge-status {{ $detail['badge_class'] }}" style="font-size:12px;">{{ $detail['status_label'] }}</span>
     </div>
-    <div class="p-3 p-md-4">
+    <div class="p-3 p-md-4 session-details-body">
         @if(($detail['status'] ?? '') === 'cancelled')
             <div class="alert border-0 mb-4" role="alert" style="border-radius:12px;background:rgba(220,53,69,0.08);color:var(--navy);">
                 <i class="fa-solid fa-circle-info me-2" style="color:var(--danger);"></i>

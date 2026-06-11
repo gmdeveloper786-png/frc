@@ -127,19 +127,34 @@
 
                     <div class="child-profile-field">
                         <label for="child-current-password">Current password <span class="child-profile-required">*</span></label>
-                        <input id="child-current-password" type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" autocomplete="current-password">
-                        @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="auth-pass-wrap">
+                            <input id="child-current-password" type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" autocomplete="current-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="child-current-password" data-pass-icon="childCurrentPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="childCurrentPassIcon"></i>
+                            </button>
+                        </div>
+                        @error('current_password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="child-profile-field">
                         <label for="child-new-password">New password <span class="child-profile-required">*</span></label>
-                        <input id="child-new-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
-                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="auth-pass-wrap">
+                            <input id="child-new-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="child-new-password" data-pass-icon="childNewPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="childNewPassIcon"></i>
+                            </button>
+                        </div>
+                        @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="child-profile-field">
                         <label for="child-confirm-password">Confirm new password <span class="child-profile-required">*</span></label>
-                        <input id="child-confirm-password" type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
+                        <div class="auth-pass-wrap">
+                            <input id="child-confirm-password" type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="child-confirm-password" data-pass-icon="childConfirmPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="childConfirmPassIcon"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="child-profile-form-actions">

@@ -79,7 +79,7 @@
     if (el('feeOverviewChart')) new Chart(el('feeOverviewChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Total Paid', 'Pending / Overdue'],
+            labels: ['Total Paid', 'Pending'],
             datasets: [{
                 data: [data.feePaid, data.feePending],
                 backgroundColor: ['#28a745', '#dc3545'],

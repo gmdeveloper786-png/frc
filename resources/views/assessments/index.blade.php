@@ -54,6 +54,59 @@
     border-color: var(--teal, #008080);
     color: #fff;
 }
+.assessments-filters .filter-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+}
+.assessments-filters .filter-actions .btn-teal,
+.assessments-filters .filter-actions .btn-outline-teal {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+}
+@media (min-width: 768px) {
+    .assessments-filters .filter-actions-label {
+        visibility: hidden;
+        display: block;
+        height: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .assessments-filters .filter-actions {
+        flex-wrap: nowrap;
+    }
+    .assessments-filters .filter-actions .btn-teal,
+    .assessments-filters .filter-actions .btn-outline-teal {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 8px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}
+.assessments-index-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.assessments-index-table .table-frc thead th,
+.assessments-index-table .table-frc tbody td {
+    white-space: nowrap;
+}
+.assessments-index-table .assessments-row-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+}
+.assessments-index-table .assessments-row-actions form {
+    display: inline-flex;
+    margin: 0;
+}
 </style>
 @endpush
 
@@ -63,7 +116,7 @@
         <h6 class="card-title-frc"><i class="fa-solid fa-clipboard-list me-2" style="color:var(--teal);"></i>Assessments ({{ $assessments->total() }})</h6>
         <a href="{{ route('assessments.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;"><i class="fa-solid fa-plus"></i> Schedule Assessment</a>
     </div>
-    <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+    <form method="GET" class="p-3 border-bottom list-filters assessments-filters" style="border-color:var(--border-soft)!important;">
         @if($branches->count() === 1)
             <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
         @endif
@@ -71,12 +124,12 @@
             <input type="hidden" name="child_id" value="{{ request('child_id') }}">
         @endif
         <div class="row g-2 align-items-end form-frc">
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-sm-6 col-lg-3">
                 <label class="form-label small text-muted mb-1">Search child</label>
                 <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Child name or GR number">
             </div>
             @if($branches->count() > 1)
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small text-muted mb-1">Branch</label>
                 <select name="branch_id" class="form-control">
                     <option value="">All Branches</option>
@@ -86,7 +139,7 @@
                 </select>
             </div>
             @endif
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small text-muted mb-1">Status</label>
                 <select name="status" class="form-control">
                     <option value="">All Statuses</option>
@@ -95,26 +148,29 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-2">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small text-muted mb-1">From</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
             </div>
-            <div class="col-12 col-sm-6 col-md-2">
+            <div class="col-12 col-sm-6 col-lg-2">
                 <label class="form-label small text-muted mb-1">To</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
             </div>
-            <div class="col-12 col-md-2 filter-actions">
-                <button type="submit" class="btn-teal">Filter</button>
-                @if(request()->hasAny(['branch_id','status','date_from','date_to','search','child_id']))
-                    <a href="{{ route('assessments.index') }}" class="btn-outline-teal" style="justify-content:center;">Clear</a>
-                @endif
+            <div class="col-12 col-sm-6 col-lg-auto">
+                <label class="form-label small text-muted mb-1 filter-actions-label" aria-hidden="true">&nbsp;</label>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-teal">Filter</button>
+                    @if(request()->hasAny(['branch_id','status','date_from','date_to','search','child_id']))
+                        <a href="{{ route('assessments.index') }}" class="btn-outline-teal">Clear</a>
+                    @endif
+                </div>
             </div>
         </div>
     </form>
     @if($assessments->isEmpty())
         <div class="empty-state"><i class="fa-solid fa-clipboard-list empty-icon"></i><h5>No Assessments Found</h5></div>
     @else
-        <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
+        <div class="frc-table-wrap frc-table-wrap--wide table-scroll assessments-index-table">
             <table class="table-frc mb-0">
                 <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Therapist</th><th>Children</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
@@ -152,7 +208,7 @@
                             </td>
                             <td><span class="badge-status badge-{{ $item->status === 'cancelled' ? 'cancelled' : $item->status }}">{{ $item->status === 'cancelled' ? 'Cancelled' : ucfirst($item->status) }}</span></td>
                             <td>
-                                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                                <div class="assessments-row-actions">
                                     <a href="{{ route('assessments.show', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-eye"></i></a>
                                     @if(in_array($item->status, ['draft','publish'], true))
                                         <a href="{{ route('assessments.edit', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>

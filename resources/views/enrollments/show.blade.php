@@ -19,7 +19,7 @@
 @endphp
 
 <div class="row g-3 enrollment-show-page">
-    <div class="col-12 col-md-5">
+    <div class="col-12 col-lg-5">
         @if($enrollment->isGroupEnrollment())
             @php $groupMembers = $enrollment->groupMembers(); @endphp
             <div class="card-frc mb-3">
@@ -36,7 +36,15 @@
             </div>
         @endif
         <div class="card-frc mb-3">
-            <h6 class="enrollment-show-card-title">Enrollment Summary</h6>
+            <div class="card-header-frc enrollment-show-summary-header">
+                <h6 class="card-title-frc mb-0">Enrollment Summary</h6>
+                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin'))
+                    <a href="{{ route('enrollments.edit', $enrollment->id) }}" class="btn-outline-teal btn-view-all enrollment-show-summary-btn">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </a>
+                @endif
+           
+            </div>
             <table class="enrollment-detail-kv enrollment-detail-kv--summary">
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Child</td><td style="font-weight:500;"><a href="{{ route('children.show', $enrollment->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $enrollment->child?->full_name }}</a>@if($enrollment->child?->gr_number)<span style="display:block;font-size:12px;color:var(--text-muted);font-family:monospace;">{{ $enrollment->child->gr_number }}</span>@endif</td></tr>
                 <tr><td style="color:var(--text-muted);padding:6px 0;">Branch</td><td>{{ $enrollment->branch?->name }}</td></tr>
@@ -130,11 +138,11 @@
         @endif
     </div>
 
-    <div class="col-12 col-md-7">
+    <div class="col-12 col-lg-7">
         {{-- Schedule --}}
         <div class="card-frc mb-3">
-            <div class="card-header-frc card-header-frc--stack-sm flex-column align-items-stretch gap-2">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 enrollment-show-schedule-header">
+            <div class="card-header-frc card-header-frc--stack-sm enrollment-show-schedule-card-header">
+                <div class="enrollment-show-schedule-header">
                     <h6 class="card-title-frc mb-0"><i class="fa-solid fa-calendar me-2" style="color:var(--teal);"></i>{{ $scheduleCardTitle }}</h6>
                     @can('viewFullSchedule', $enrollment)
                         <a href="{{ route('enrollments.schedule', $enrollment) }}" class="btn-outline-teal btn-view-all enrollment-show-schedule-btn">
@@ -154,7 +162,7 @@
             @if($enrollment->schedules->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No schedule set.</p></div>
             @else
-                <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
+                <div class="frc-table-wrap frc-table-wrap--wide table-scroll enrollment-show-schedule-table">
                     <table class="table-frc mb-0">
                         <thead><tr><th>Day</th><th>Time slot</th><th>Therapist</th><th>Service</th></tr></thead>
                         <tbody>
@@ -183,7 +191,7 @@
 
         {{-- Payments --}}
         <div class="card-frc">
-            <div class="card-header-frc card-header-frc--stack-sm flex-wrap gap-2">
+            <div class="card-header-frc card-header-frc--stack-sm enrollment-show-payments-header">
                 <h6 class="card-title-frc mb-0"><i class="fa-solid fa-receipt me-2" style="color:var(--teal);"></i>Payments</h6>
                 @if(in_array($enrollment->status, ['approved','active']) && auth()->user()->hasPermission('manage_payments'))
                     @if($remainingPaid)

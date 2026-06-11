@@ -142,7 +142,7 @@
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">{{ $row['effective_date']->format('d M Y') }}</td>
                             <td class="small text-muted white-space:nowrap;">{{ $row['effective_date']->format('l') }}</td>
                             <td style="white-space:nowrap;">{{ $row['time_slot'] }}</td>
-                            <td style="white-space:normal;max-width:360px;line-height:1.45;">
+                            <td style="white-space:nowrap;">
                                 @if($isGroupRow)
                                     @php
                                         $gmList = is_array($groupMembers) ? $groupMembers : collect($groupMembers)->all();

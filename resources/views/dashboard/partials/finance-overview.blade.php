@@ -35,7 +35,7 @@
                 </li>
                 <li class="dashboard-fee-donut-legend-item">
                     <span class="dashboard-fee-donut-legend-dot dashboard-fee-donut-legend-dot--pending" aria-hidden="true"></span>
-                    <span class="dashboard-fee-donut-legend-label">Pending / Overdue</span>
+                    <span class="dashboard-fee-donut-legend-label">Pending</span>
                     <strong class="dashboard-fee-donut-legend-amount dashboard-fee-donut-legend-amount--pending">{{ frc_pkr($stats['fee_pending_overdue']) }}</strong>
                 </li>
             </ul>

@@ -2,15 +2,55 @@
 @section('title', 'Upload Payment Slip')
 @section('page-title', 'Upload Payment Slip')
 
+@push('styles')
+<style>
+.upload-slip-page {
+    min-width: 0;
+    max-width: 100%;
+}
+.upload-slip-page .upload-slip-card {
+    min-width: 0;
+    max-width: 100%;
+}
+.upload-slip-page .upload-slip-enrollment-field {
+    min-width: 0;
+    max-width: 100%;
+}
+.upload-slip-page .upload-slip-enrollment-field select {
+    width: 100%;
+    max-width: 100%;
+    text-overflow: ellipsis;
+}
+@media (max-width: 575.98px) {
+    .frc-main:has(.upload-slip-page) {
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 12px;
+    }
+    .upload-slip-page .upload-slip-card {
+        padding: 16px;
+        border-radius: 12px;
+    }
+    .upload-slip-page .upload-slip-fee-box {
+        padding: 12px !important;
+    }
+    .upload-slip-page .upload-slip-fee-box .row {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 @php
     $pickerList = isset($picker) ? $picker : collect();
     $eligibleList = isset($eligible) ? $eligible : collect();
     $repopulateForm = $errors->any();
 @endphp
-<div class="row g-3 justify-content-center">
-    <div class="col-lg-7 col-md-9">
-        <div class="card-frc">
+<div class="row g-3 justify-content-center upload-slip-page">
+    <div class="col-12 col-lg-7">
+        <div class="card-frc upload-slip-card">
             <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:16px;">
                 <i class="fa-solid fa-upload me-2" style="color:var(--teal);"></i>Fee payment — {{ auth()->user()->full_name }}
             </h6>
@@ -56,7 +96,7 @@
                 @endif
             @else
                 @if($pickerList->count() > 1)
-                    <form method="GET" action="{{ route('child.upload-slip') }}" class="form-frc mb-4" id="enrollmentPickForm">
+                    <form method="GET" action="{{ route('child.upload-slip') }}" class="form-frc mb-4 upload-slip-enrollment-field" id="enrollmentPickForm">
                         <label class="form-label" style="font-weight:600;color:var(--navy);">Which programme are you paying for? <span class="text-danger">*</span></label>
                         <p class="text-muted small mb-2">Each enrollment has its own fee. Pick the programme for this slip.</p>
                         <select name="enrollment_id" class="form-control" data-auto-submit-form="enrollmentPickForm">
@@ -64,14 +104,17 @@
                                 @php
                                     $optUploadable = $opt->outstandingForSlipUpload();
                                     $optPending = $opt->sumPendingVerificationAmount();
+                                    $serviceName = $opt->service?->name ?? 'Programme';
+                                    if ($optUploadable > 0) {
+                                        $optionLabel = '#'.$opt->id.' — '.$serviceName.' · '.frc_pkr($optUploadable);
+                                        $optionTitle = $optionLabel;
+                                    } else {
+                                        $optionLabel = '#'.$opt->id.' — '.$serviceName.' · '.frc_pkr($optPending).' pending';
+                                        $optionTitle = '#'.$opt->id.' — '.$serviceName.' — '.frc_pkr($optPending).' pending verification';
+                                    }
                                 @endphp
-                                <option value="{{ $opt->id }}" @selected($enrollment && (int) $enrollment->id === (int) $opt->id)>
-                                    #{{ $opt->id }} — {{ $opt->service?->name ?? 'Programme' }} —
-                                    @if($optUploadable > 0)
-                                        pay up to {{ frc_pkr($optUploadable) }}
-                                    @else
-                                        {{ frc_pkr($optPending) }} pending verification
-                                    @endif
+                                <option value="{{ $opt->id }}" title="{{ $optionTitle }}" @selected($enrollment && (int) $enrollment->id === (int) $opt->id)>
+                                    {{ $optionLabel }}
                                 </option>
                             @endforeach
                         </select>
@@ -83,7 +126,7 @@
                         <strong>{{ $enrollment->service?->name ?? 'Programme' }}</strong>
                         <span class="text-muted">· Enrollment #{{ $enrollment->id }} · {{ $enrollment->branch?->name ?? '—' }}</span>
                     </div>
-                    <div style="background:var(--bg-light);border-radius:14px;padding:16px;margin-bottom:20px;">
+                    <div class="upload-slip-fee-box" style="background:var(--bg-light);border-radius:14px;padding:16px;margin-bottom:20px;">
                         <div class="row g-3" style="font-size:13px;">
                             <div class="col-sm-6"><span class="text-muted d-block mb-1">Total fee</span><strong class="text-navy">PKR {{ frc_money($enrollment->final_total) }}</strong></div>
                             <div class="col-sm-6"><span class="text-muted d-block mb-1">Paid (verified)</span><strong style="color:var(--success);">PKR {{ frc_money($enrollment->paid_amount) }}</strong></div>

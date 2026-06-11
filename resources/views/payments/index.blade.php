@@ -83,7 +83,7 @@
                 <label class="form-label small text-muted mb-1">Payment Status</label>
                 <select name="enrollment_payment_status" class="form-control">
                     <option value="">All</option>
-                    @foreach(['unpaid','partial_paid','fully_paid','overdue'] as $s)
+                    @foreach(['unpaid','partial_paid','fully_paid'] as $s)
                         <option value="{{ $s }}" {{ request('enrollment_payment_status') == $s ? 'selected' : '' }}>{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($s) }}</option>
                     @endforeach
                 </select>
@@ -92,7 +92,7 @@
                 <label class="form-label small text-muted mb-1">Verification</label>
                 <select name="verification_status" class="form-control">
                     <option value="">All</option>
-                    @foreach(['pending_verification','paid','rejected','cancelled','refunded'] as $s)
+                    @foreach(['pending_verification','paid','rejected','cancelled'] as $s)
                         <option value="{{ $s }}" {{ request('verification_status', request('status')) == $s ? 'selected' : '' }}>{{ \App\Models\Payment::labelForVerificationStatus($s) }}</option>
                     @endforeach
                 </select>
@@ -106,11 +106,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-2">
+            <div class="col-12 col-sm-6 col-md-4">
                 <label class="form-label small text-muted mb-1">From</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
             </div>
-            <div class="col-12 col-sm-6 col-md-2">
+            <div class="col-12 col-sm-6 col-md-4">
                 <label class="form-label small text-muted mb-1">To</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
             </div>

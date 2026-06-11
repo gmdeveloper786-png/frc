@@ -79,19 +79,34 @@
                     @else
                         <div class="therapist-dashboard-assessment-list d-md-none">
                             @foreach($todayAssessmentsPreview as $a)
+                                @php
+                                    $childrenList = $a->children->filter(fn ($c) => filled($c->full_name));
+                                    $firstChild = $childrenList->first();
+                                    $extraChildCount = max(0, $childrenList->count() - 1);
+                                    $childNames = $childrenList->pluck('full_name')->join(', ');
+                                @endphp
                                 <div class="therapist-dashboard-assessment-item">
                                     <div class="therapist-dashboard-assessment-main">
                                         <div class="therapist-dashboard-assessment-time">{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</div>
-                                        <div class="therapist-dashboard-assessment-child">{{ $a->children->pluck('full_name')->join(', ') }}</div>
+                                        <div class="therapist-dashboard-assessment-child" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                                            @if($firstChild)
+                                                <a href="{{ route('therapist.children.show', $firstChild) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstChild->full_name }}</a>
+                                                @if($extraChildCount > 0)
+                                                    <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </div>
                                         <div class="therapist-dashboard-assessment-meta">{{ $a->branch?->name }}</div>
                                     </div>
                                     <div class="therapist-dashboard-assessment-foot">
                                         <span class="badge-status badge-{{ $a->status }}">{{ ucfirst($a->status) }}</span>
                                         <div class="therapist-dashboard-assessment-actions">
                                             <a href="{{ route('therapist.assessments.show', $a) }}" class="btn-outline-teal btn-sm-frc">View</a>
-                                            @foreach($a->children->take(1) as $c)
-                                                <a href="{{ route('therapist.children.show', $c) }}" class="btn-outline-teal btn-sm-frc">Child</a>
-                                            @endforeach
+                                            @if($firstChild)
+                                                <a href="{{ route('therapist.children.show', $firstChild) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -102,20 +117,29 @@
                                 <thead><tr><th>Time</th><th>Children</th><th>Branch</th><th>Status</th><th>Actions</th></tr></thead>
                                 <tbody>
                                     @foreach($todayAssessmentsPreview as $a)
+                                        @php
+                                            $childrenList = $a->children->filter(fn ($c) => filled($c->full_name));
+                                            $firstChild = $childrenList->first();
+                                            $extraChildCount = max(0, $childrenList->count() - 1);
+                                            $childNames = $childrenList->pluck('full_name')->join(', ');
+                                        @endphp
                                         <tr>
-                                            <td>{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</td>
-                                            <td>{{ $a->children->pluck('full_name')->join(', ') }}</td>
-                                            <td>{{ $a->branch?->name }}</td>
+                                            <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</td>
+                                            <td style="font-size:13px;white-space:nowrap;" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                                                @if($firstChild)
+                                                    <a href="{{ route('therapist.children.show', $firstChild) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstChild->full_name }}</a>
+                                                    @if($extraChildCount > 0)
+                                                        <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td style="white-space:nowrap;">{{ $a->branch?->name }}</td>
                                             <td><span class="badge-status badge-{{ $a->status }}">{{ ucfirst($a->status) }}</span></td>
                                             <td>
                                                 <div class="d-inline-flex gap-1 align-items-center flex-wrap">
                                                     <a href="{{ route('therapist.assessments.show', $a) }}" class="btn-outline-teal btn-sm-frc">View</a>
-                                                    @foreach($a->children->take(2) as $c)
-                                                        <a href="{{ route('therapist.children.show', $c) }}" class="btn-outline-teal btn-sm-frc" title="{{ $c->full_name }}">Child</a>
-                                                    @endforeach
-                                                    @if($a->children->count() > 2)
-                                                        <span class="small text-muted">+{{ $a->children->count() - 2 }}</span>
-                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -148,6 +172,13 @@
                                 $sch = $row['schedule'];
                                 $occStatus = (string) ($row['status'] ?? $sch->status);
                                 $cid = $sch->enrollment?->child_id;
+                                $sessionMembers = ! empty($row['is_group']) && ! empty($row['group_members'])
+                                    ? collect($row['group_members'])->filter(fn ($m) => filled($m['child_name'] ?? null))
+                                    : collect($cid ? [['child_id' => $cid, 'child_name' => $row['child_name'] ?? '—']] : []);
+                                $firstSessionChild = $sessionMembers->first();
+                                $extraSessionChildCount = max(0, $sessionMembers->count() - 1);
+                                $sessionChildNames = $sessionMembers->pluck('child_name')->filter()->join(', ');
+                                $firstSessionChildId = (int) ($firstSessionChild['child_id'] ?? 0);
                                 $sb = match ($occStatus) {
                                     'scheduled' => 'badge-session-scheduled',
                                     'in_progress' => 'badge-session-in-progress',
@@ -159,13 +190,26 @@
                             @endphp
                             <div class="therapist-dashboard-session-item">
                                 <div class="therapist-dashboard-session-main">
-                                    <div class="therapist-dashboard-session-name">{{ $row['child_name'] }}</div>
+                                    <div class="therapist-dashboard-session-name" @if($sessionChildNames !== '') title="{{ $sessionChildNames }}" @endif>
+                                        @if($firstSessionChild)
+                                            @if($firstSessionChildId > 0)
+                                                <a href="{{ route('therapist.children.show', $firstSessionChildId) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstSessionChild['child_name'] }}</a>
+                                            @else
+                                                {{ $firstSessionChild['child_name'] }}
+                                            @endif
+                                            @if($extraSessionChildCount > 0)
+                                                <span class="text-muted"> +{{ $extraSessionChildCount }} more</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </div>
                                     <div class="therapist-dashboard-session-meta">{{ $row['time_slot'] }} · {{ $row['service_name'] }}</div>
                                 </div>
                                 <div class="therapist-dashboard-session-actions">
                                     <span class="badge-status {{ $sb }}">{{ ucfirst(str_replace('_', ' ', $occStatus)) }}</span>
-                                    @if($cid)
-                                        <a href="{{ route('therapist.children.show', $cid) }}" class="btn-outline-teal btn-sm-frc">Child</a>
+                                    @if($firstSessionChildId > 0)
+                                        <a href="{{ route('therapist.children.show', $firstSessionChildId) }}" class="btn-outline-teal btn-sm-frc">Child</a>
                                     @endif
                                 </div>
                             </div>

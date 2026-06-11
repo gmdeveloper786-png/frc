@@ -113,20 +113,35 @@
 
                     <div class="staff-profile-field">
                         <label for="staff-current-password">Current password <span class="staff-profile-required">*</span></label>
-                        <input id="staff-current-password" type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" required autocomplete="current-password">
-                        @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="auth-pass-wrap">
+                            <input id="staff-current-password" type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" required autocomplete="current-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="staff-current-password" data-pass-icon="staffCurrentPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="staffCurrentPassIcon"></i>
+                            </button>
+                        </div>
+                        @error('current_password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="staff-profile-field">
                         <label for="staff-new-password">New password <span class="staff-profile-required">*</span></label>
-                        <input id="staff-new-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="new-password" minlength="8">
-                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="auth-pass-wrap">
+                            <input id="staff-new-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="new-password" minlength="8">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="staff-new-password" data-pass-icon="staffNewPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="staffNewPassIcon"></i>
+                            </button>
+                        </div>
+                        @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         <p class="staff-profile-hint mb-0">Minimum 8 characters.</p>
                     </div>
 
                     <div class="staff-profile-field">
                         <label for="staff-confirm-password">Confirm new password <span class="staff-profile-required">*</span></label>
-                        <input id="staff-confirm-password" type="password" name="password_confirmation" class="form-control" required autocomplete="new-password" minlength="8">
+                        <div class="auth-pass-wrap">
+                            <input id="staff-confirm-password" type="password" name="password_confirmation" class="form-control" required autocomplete="new-password" minlength="8">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="staff-confirm-password" data-pass-icon="staffConfirmPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="staffConfirmPassIcon"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="staff-profile-form-actions">

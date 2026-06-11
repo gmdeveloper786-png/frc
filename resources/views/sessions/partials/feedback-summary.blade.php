@@ -8,8 +8,8 @@
 
     @if($overallPercent !== null)
         <div class="session-feedback-overall mb-4" style="display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,rgba(22,172,172,.08),rgba(17,81,124,.06));border:1px solid rgba(22,172,172,.18);">
-            <div style="min-width:88px;text-align:center;">
-                <div style="font-family:'Poppins',sans-serif;font-size:32px;font-weight:700;color:var(--teal);line-height:1;">{{ $overallPercent }}%</div>
+            <div class="session-feedback-overall__score" style="min-width:88px;text-align:center;">
+                <div class="session-feedback-overall__percent" style="font-family:'Poppins',sans-serif;font-size:32px;font-weight:700;color:var(--teal);line-height:1;">{{ $overallPercent }}%</div>
                 <div class="small text-muted" style="margin-top:4px;">Overall</div>
             </div>
             <div style="flex:1;">

@@ -170,8 +170,6 @@
                             style="color:green;font-weight:600;"
                         @elseif(strtolower($r['enrollment_payment_status']) === 'unpaid')
                             style="color:red;font-weight:600;"
-                        @elseif(strtolower($r['enrollment_payment_status']) === 'overdue')
-                            style="color:red;font-weight:600;"
                         @endif
                     >
                         {{ \App\Models\Payment::labelForEnrollmentPaymentStatus($r['enrollment_payment_status']) }}

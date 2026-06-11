@@ -54,6 +54,25 @@
     border-color: var(--teal, #008080);
     color: #fff;
 }
+.pending-children-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.pending-children-table .table-frc thead th,
+.pending-children-table .table-frc tbody td {
+    white-space: nowrap;
+}
+.pending-children-table .table-frc tbody td a {
+    white-space: nowrap;
+}
+.pending-children-table .pending-children-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: center;
+}
 </style>
 @endpush
 
@@ -74,7 +93,7 @@
             <p>All child registrations have been reviewed.</p>
         </div>
     @else
-        <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
+        <div class="frc-table-wrap frc-table-wrap--wide table-scroll pending-children-table">
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
@@ -104,7 +123,7 @@
                             <td style="font-size:13px;color:var(--text-muted);">{{ $child->created_at->diffForHumans() }}</td>
                             <td>
                                 @if(auth()->user()->canApproveChild($child))
-                                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                                <div class="pending-children-actions">
                                     <form action="{{ route('children.approve', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn-teal" style="padding:5px 12px;font-size:12px;"

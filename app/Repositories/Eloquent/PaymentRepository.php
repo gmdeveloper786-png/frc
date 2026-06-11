@@ -51,11 +51,11 @@ class PaymentRepository implements PaymentRepositoryInterface
             ->get();
     }
 
-    public function paginateForChild(int $childId, int $perPage = 15): LengthAwarePaginator
+    public function paginateForChild(int $childId, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
-        $paginator = Payment::with(['enrollment'])
-            ->where('child_id', $childId)
+        $paginator = $this->childPaymentsQuery($childId, $filters)
+            ->with(['enrollment.service'])
             ->latest()
             ->paginate($perPage);
 
@@ -117,6 +117,30 @@ class PaymentRepository implements PaymentRepositoryInterface
 
             return 'FRC-' . str_pad((string) ($maxSeq + 1), 6, '0', STR_PAD_LEFT);
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function childPaymentsQuery(int $childId, array $filters = [])
+    {
+        return Payment::query()
+            ->where('child_id', $childId)
+            ->when($this->verificationStatusFilter($filters), fn ($q, $st) => $q->where('status', $st))
+            ->when(! empty($filters['enrollment_id']), fn ($q) => $q->where('enrollment_id', $filters['enrollment_id']))
+            ->when(! empty($filters['payment_method']), fn ($q) => $q->where('payment_method', $filters['payment_method']))
+            ->when(! empty($filters['date_from']), fn ($q) => $q->whereDate('payment_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($q) => $q->whereDate('payment_date', '<=', $filters['date_to']))
+            ->when(! empty($filters['search']), fn ($q) => $q->where(function ($q) use ($filters): void {
+                $term = trim((string) $filters['search']);
+                $like = frc_like_pattern($term);
+                $q->where('receipt_number', 'like', $like);
+
+                $enrollmentId = ltrim($term, '#');
+                if (ctype_digit($enrollmentId)) {
+                    $q->orWhere('enrollment_id', (int) $enrollmentId);
+                }
+            }));
     }
 
     /** Payment row verification status (`payments.status`). Prefer explicit key; fall back to legacy `status`. */

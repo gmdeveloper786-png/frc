@@ -114,7 +114,7 @@
         <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Payment Status</label>
             <select name="enrollment_payment_status" class="form-control">
                 <option value="">All</option>
-                @foreach(['unpaid','partial_paid','fully_paid','overdue'] as $s)
+                @foreach(['unpaid','partial_paid','fully_paid'] as $s)
                     <option value="{{ $s }}" {{ request('enrollment_payment_status') == $s ? 'selected' : '' }}>{{ \App\Models\Payment::labelForEnrollmentPaymentStatus($s) }}</option>
                 @endforeach
             </select>
@@ -122,7 +122,7 @@
         <div class="col-lg-2 col-md-4"><label style="font-size:12px;">Verification Status</label>
             <select name="verification_status" class="form-control">
                 <option value="">All</option>
-                @foreach(['pending_verification','paid','rejected','cancelled','refunded'] as $s)
+                @foreach(['pending_verification','paid','rejected','cancelled'] as $s)
                     <option value="{{ $s }}" {{ request('verification_status') == $s ? 'selected' : '' }}>{{ \App\Models\Payment::labelForVerificationStatus($s) }}</option>
                 @endforeach
             </select>
@@ -165,7 +165,7 @@
         $stats = [
             ['label'=>'Total Expected','value'=>$summary['total_expected'] ?? 0,'iconClass'=>'navy','icon'=>'fa-money-bill-trend-up'],
             ['label'=>'Total Paid','value'=>$summary['total_paid'] ?? 0,'iconClass'=>'green','icon'=>'fa-circle-check'],
-            ['label'=>'Pending / Overdue','value'=>$summary['total_pending'] ?? 0,'iconClass'=>'red','icon'=>'fa-hourglass-half'],
+            ['label'=>'Pending','value'=>$summary['total_pending'] ?? 0,'iconClass'=>'red','icon'=>'fa-hourglass-half'],
             ['label'=>'Cash Received','value'=>$summary['cash_received'] ?? 0,'iconClass'=>'teal','icon'=>'fa-money-bills'],
             ['label'=>'Online/Bank','value'=>$summary['online_received'] ?? 0,'iconClass'=>'purple','icon'=>'fa-mobile-screen'],
             ['label'=>'Pending Verification Amount','value'=>$summary['pending_verification'] ?? 0,'iconClass'=>'orange','icon'=>'fa-money-bill-trend-up'],

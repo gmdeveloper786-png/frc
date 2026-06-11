@@ -97,18 +97,28 @@
                             class="form-control" placeholder="Age in years" min="0" max="120" readonly>
                     </div>
                     <div>
-                        <label>Password <span style="color:var(--danger)">*</span></label>
-                        <input type="password" name="password" id="password"
-                            class="form-control @error('password') is-invalid @enderror"
-                            placeholder="e.g. Child@123" required minlength="8" autocomplete="new-password">
-                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <label for="password">Password <span style="color:var(--danger)">*</span></label>
+                        <div class="auth-pass-wrap">
+                            <input type="password" name="password" id="password"
+                                class="form-control @error('password') is-invalid @enderror"
+                                placeholder="e.g. Child@123" required minlength="8" autocomplete="new-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="password" data-pass-icon="regPassIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="regPassIcon"></i>
+                            </button>
+                        </div>
+                        @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         <div class="form-text">At least 8 characters, with letters and numbers.</div>
                     </div>
                     <div>
-                        <label>Confirm Password <span style="color:var(--danger)">*</span></label>
-                        <input type="password" name="password_confirmation" id="password_confirmation"
-                            class="form-control @error('password') is-invalid @enderror"
-                            placeholder="Repeat password" required minlength="8" autocomplete="new-password">
+                        <label for="password_confirmation">Confirm Password <span style="color:var(--danger)">*</span></label>
+                        <div class="auth-pass-wrap">
+                            <input type="password" name="password_confirmation" id="password_confirmation"
+                                class="form-control @error('password') is-invalid @enderror"
+                                placeholder="Repeat password" required minlength="8" autocomplete="new-password">
+                            <button type="button" class="auth-pass-toggle" data-pass-toggle="password_confirmation" data-pass-icon="regPassConfirmIcon" aria-label="Show password">
+                                <i class="fa-regular fa-eye" id="regPassConfirmIcon"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="step-actions step-actions--end">

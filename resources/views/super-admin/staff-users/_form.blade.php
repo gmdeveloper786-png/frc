@@ -26,14 +26,24 @@
         <input type="email" name="email" class="form-control" required value="{{ old('email', $u?->email) }}">
     </div>
     <div class="col-md-6">
-        <label class="form-label">Password @if(!$isEdit)<span class="text-danger">*</span>@else<span class="text-muted small">(leave blank to keep)</span>@endif</label>
-        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Admin@123" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
-        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <label class="form-label" for="staffPassword">Password @if(!$isEdit)<span class="text-danger">*</span>@else<span class="text-muted small">(leave blank to keep)</span>@endif</label>
+        <div class="auth-pass-wrap">
+            <input type="password" id="staffPassword" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="e.g. Admin@123" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+            <button type="button" class="auth-pass-toggle" data-pass-toggle="staffPassword" data-pass-icon="staffPassIcon" aria-label="Show password">
+                <i class="fa-regular fa-eye" id="staffPassIcon"></i>
+            </button>
+        </div>
+        @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
         <div class="form-text">At least 8 characters, with letters and numbers.</div>
     </div>
     <div class="col-md-6">
-        <label class="form-label">Confirm password @if(!$isEdit)<span class="text-danger">*</span>@endif</label>
-        <input type="password" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+        <label class="form-label" for="staffPasswordConfirmation">Confirm password @if(!$isEdit)<span class="text-danger">*</span>@endif</label>
+        <div class="auth-pass-wrap">
+            <input type="password" id="staffPasswordConfirmation" name="password_confirmation" class="form-control @error('password') is-invalid @enderror" @if(!$isEdit) required minlength="8" @endif autocomplete="new-password">
+            <button type="button" class="auth-pass-toggle" data-pass-toggle="staffPasswordConfirmation" data-pass-icon="staffPassConfirmIcon" aria-label="Show password">
+                <i class="fa-regular fa-eye" id="staffPassConfirmIcon"></i>
+            </button>
+        </div>
     </div>
     <div class="col-md-6">
         <label class="form-label">Phone number</label>

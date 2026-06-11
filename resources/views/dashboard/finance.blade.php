@@ -16,9 +16,10 @@
         || $user?->hasPermission('verify_payments');
 @endphp
 
+<div class="finance-dashboard-page">
 @if($showFinanceStats)
-<div class="row g-3 mb-4">
-    <div class="col-md-4 col-sm-6">
+<div class="row g-3 mb-4 finance-dashboard-stats">
+    <div class="col-12 col-sm-6 col-md-4">
         <div class="stat-card">
             <div class="stat-icon navy"><i class="fa-solid fa-money-bill-trend-up"></i></div>
             <div class="stat-body">
@@ -27,7 +28,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 col-sm-6">
+    <div class="col-12 col-sm-6 col-md-4">
         <div class="stat-card">
             <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
             <div class="stat-body">
@@ -36,19 +37,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 col-sm-6">
+    <div class="col-12 col-sm-6 col-md-4">
         <div class="stat-card">
             <div class="stat-icon red"><i class="fa-solid fa-hourglass-half"></i></div>
             <div class="stat-body">
                 <div class="stat-value" style="font-size:16px; color:var(--danger);">{{ frc_pkr($stats['total_pending']) }}</div>
-                <div class="stat-label">Pending / Overdue</div>
+                <div class="stat-label">Pending</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-sm-6">
+<div class="row g-3 mb-4 finance-dashboard-fee-stats">
+    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
         <div class="stat-card">
             <div class="stat-icon teal"><i class="fa-solid fa-money-bills"></i></div>
             <div class="stat-body">
@@ -57,7 +58,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
+    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fa-solid fa-mobile-screen"></i></div>
             <div class="stat-body">
@@ -66,7 +67,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
+    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fa-solid fa-money-bill-trend-up"></i></div>
                 <div class="stat-body">
@@ -75,7 +76,7 @@
                 </div>
             </div>
         </div>
-    <div class="col-md-3 col-sm-6">
+    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
         <div class="stat-card">
             <div class="stat-icon orange"><i class="fa-solid fa-clock-rotate-left"></i></div>
             <div class="stat-body">
@@ -89,12 +90,12 @@
 @endif
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card-frc">
+    <div class="col-12 col-lg-4">
+        <div class="card-frc h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc">Quick Actions</h6>
             </div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="finance-quick-actions">
 
                 <a href="{{ route('payments.index') }}" class="btn-teal" style="justify-content:flex-start;">
                     <i class="fa-solid fa-money-bills"></i> View All Payments
@@ -132,13 +133,11 @@
     </div>
 
     @if($user?->hasPermission('manage_payments') || $user?->hasPermission('verify_payments'))
-    <div class="col-md-9">
-        <div class="card-frc">
-            <div class="card-header-frc">
-                <h6 class="card-title-frc"><i class="fa-solid fa-receipt me-2" style="color:var(--teal);"></i>Recent
-                    Payments</h6>
-                <a href="{{ route($paymentsIndexRoute) }}" class="btn-outline-teal"
-                    style="font-size:13px;padding:5px 14px;">View All</a>
+    <div class="col-12 col-lg-8">
+        <div class="card-frc h-100">
+            <div class="card-header-frc card-header-frc--stack-sm">
+                <h6 class="card-title-frc mb-0"><i class="fa-solid fa-receipt me-2" style="color:var(--teal);"></i>Recent Payments</h6>
+                <a href="{{ route($paymentsIndexRoute) }}" class="btn-outline-teal btn-view-all">View All</a>
             </div>
             @if($stats['recent_payments']->isEmpty())
             <div class="empty-state" style="padding:30px;">
@@ -146,8 +145,8 @@
                 <p>No payments recorded yet</p>
             </div>
             @else
-            <div class="table-responsive">
-                <table class="table-frc">
+            <div class="frc-table-wrap table-scroll finance-recent-payments-table">
+                <table class="table-frc mb-0">
                     <thead>
                         <tr>
                             <th>Child</th>
@@ -199,7 +198,7 @@
 </div>
 @include('dashboard.partials.analytics-grid', ['stats' => $stats])
 @endif
-
+</div>
 
 @endsection
 

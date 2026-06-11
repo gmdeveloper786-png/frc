@@ -23,7 +23,7 @@
 <div class="super-admin-dashboard-page">
     <div class="row g-3 mb-4 super-admin-dashboard-stats">
         @foreach($statCards as $card)
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
                 @if(! empty($card['href']))
                     <a href="{{ $card['href'] }}" class="stat-card-link d-block h-100 text-reset text-decoration-none rounded-3">
                 @endif
@@ -41,11 +41,13 @@
         @endforeach
     </div>
 
+<div class="super-admin-fee-summary">
 @include('dashboard.partials.fee-summary-cards', ['stats' => $stats])
+</div>
 
 {{-- Recent Children, Enrollments, and Payments --}}
 <div class="row g-3 mb-4 dashboard-recent-row">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc card-frc--panel h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-child me-2" style="color:var(--teal);"></i>Recent Children</h6>
@@ -67,7 +69,7 @@
             @endif
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc card-frc--panel h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-file-contract me-2" style="color:var(--teal);"></i>Recent Enrollments</h6>
@@ -89,7 +91,7 @@
             @endif
         </div>
     </div>
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc card-frc--panel h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-money-bill-wave me-2" style="color:var(--teal);"></i>Recent Payments</h6>
@@ -115,12 +117,12 @@
 {{-- Quick Actions + Charts --}}
 <div class="row g-3">
     {{-- Quick Actions --}}
-    <div class="col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc h-100">
             <div class="card-header-frc">
                 <h6 class="card-title-frc">Quick Actions</h6>
             </div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="super-admin-quick-actions">
                 <a href="{{ route('children.pending') }}" class="btn-teal" style="justify-content:flex-start;">
                     <i class="fa-solid fa-user-check"></i> Review Child Approvals
                     @if($stats['pending_approvals'] > 0)
@@ -156,7 +158,7 @@
         </div>
     </div>
 
-    <div class="col-md-8">
+    <div class="col-12 col-lg-8">
         @include('dashboard.partials.finance-overview', ['stats' => $stats, 'showYearFilter' => true])
     </div>
 </div>

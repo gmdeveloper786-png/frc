@@ -54,6 +54,35 @@
     border-color: var(--teal, #008080);
     color: #fff;
 }
+.staff-users-filters .filter-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+}
+.staff-users-filters .filter-actions .btn-teal,
+.staff-users-filters .filter-actions .btn-outline-teal {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+}
+@media (min-width: 992px) {
+    .staff-users-filters .filter-actions-label {
+        visibility: hidden;
+        display: block;
+        height: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .staff-users-filters .filter-actions .btn-teal,
+    .staff-users-filters .filter-actions .btn-outline-teal {
+        flex: 1 1 0;
+        padding: 8px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}
 </style>
 @endpush
 
@@ -65,13 +94,13 @@
             <a href="{{ route('super-admin.staff-users.create') }}" class="btn-teal" style="font-size:13px;white-space:nowrap;"><i class="fa-solid fa-plus"></i> Add staff user</a>
         @endif
     </div>
-    <form method="GET" class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
+    <form method="GET" class="p-3 border-bottom list-filters staff-users-filters" style="border-color:var(--border-soft)!important;">
         <div class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-lg-4">
                 <label class="form-label small text-muted mb-1">Search</label>
                 <input type="text" name="search" class="form-control" placeholder="Name, email, or phone" value="{{ request('search') }}">
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-lg-3">
                 <label class="form-label small text-muted mb-1">Role</label>
                 <select name="role" class="form-select">
                     <option value="">All roles</option>
@@ -80,7 +109,7 @@
                     <option value="approval_discount" @selected(request('role') === 'approval_discount')>Approval Discount</option>
                 </select>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-lg-3">
                 <label class="form-label small text-muted mb-1">Status</label>
                 <select name="status" class="form-select">
                     <option value="">All statuses</option>
@@ -88,9 +117,12 @@
                     <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
                 </select>
             </div>
-            <div class="col-12 col-md-2 filter-actions">
-                <button type="submit" class="btn-teal">Filter</button>
-                <a href="{{ route('super-admin.staff-users.index') }}" class="btn-outline-teal">Reset</a>
+            <div class="col-12 col-lg-2">
+                <label class="form-label small text-muted mb-1 filter-actions-label" aria-hidden="true">&nbsp;</label>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-teal">Filter</button>
+                    <a href="{{ route('super-admin.staff-users.index') }}" class="btn-outline-teal">Reset</a>
+                </div>
             </div>
         </div>
     </form>

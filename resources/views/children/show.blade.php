@@ -5,7 +5,7 @@
 @section('content')
 <div class="row g-3 child-show-page">
     {{-- Profile --}}
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
         <div class="card-frc child-show-profile-card">
             <div class="child-show-profile-header">
                 <div class="child-show-profile-hero">
@@ -67,7 +67,7 @@
     </div>
 
     {{-- Enrollments + Assessments --}}
-    <div class="col-12 col-md-8">
+    <div class="col-12 col-lg-8">
         {{-- Enrollments --}}
         <div class="card-frc mb-3">
             <div class="card-header-frc card-header-frc--stack-sm">
@@ -76,7 +76,7 @@
             @if($child->enrollments->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No enrollments yet.</p></div>
             @else
-                <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
+                <div class="frc-table-wrap frc-table-wrap--wide table-scroll child-show-table">
                     <table class="table-frc mb-0">
                         <thead><tr><th>Branch</th><th>Therapist</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Enrollment</th><th>Actions</th></tr></thead>
                         <tbody>
@@ -110,7 +110,7 @@
             @if($child->assessments->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No assessments yet.</p></div>
             @else
-                <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
+                <div class="frc-table-wrap frc-table-wrap--wide table-scroll child-show-table">
                     <table class="table-frc mb-0">
                         <thead><tr><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Status</th></tr></thead>
                         <tbody>

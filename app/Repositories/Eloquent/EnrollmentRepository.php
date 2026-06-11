@@ -71,12 +71,23 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
                 'remaining_amount',
             ])
             ->with(['child:id,full_name'])
+            ->withSum(
+                ['payments as pending_verification_amount' => fn ($q) => $q->where('status', 'pending_verification')],
+                'amount'
+            )
             ->active()
             ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
             ->where('remaining_amount', '>', 0)
             ->orderByDesc('id')
             ->limit(max(1, $limit))
-            ->get();
+            ->get()
+            ->filter(function (Enrollment $enrollment): bool {
+                $pending = (float) ($enrollment->pending_verification_amount ?? 0);
+                $remaining = (float) $enrollment->getRawOriginal('remaining_amount');
+
+                return max(0, $remaining - $pending) > 0;
+            })
+            ->values();
     }
 
     public function getForChild(int $childId): Collection

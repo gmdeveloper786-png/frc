@@ -6,6 +6,24 @@
 <style>
 .schedule-row { background:var(--bg-light); border:1px solid var(--border-soft); border-radius:10px; padding:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
 #discountSection { transition: all .3s; }
+@media (max-width: 991.98px) {
+    .enrollment-edit-page .enrollment-edit-fee-panel {
+        position: static;
+        top: auto;
+    }
+    .enrollment-edit-page .form-section {
+        padding: 18px;
+    }
+}
+@media (max-width: 575.98px) {
+    .enrollment-edit-page .schedule-row {
+        grid-template-columns: 1fr;
+    }
+    .enrollment-edit-page .schedule-row > div:last-child button {
+        margin-top: 0;
+        width: 100%;
+    }
+}
 </style>
 @endpush
 
@@ -14,20 +32,42 @@
 @csrf
 @method('PUT')
 
-<div class="row g-3">
-    <div class="col-md-8">
+<div class="row g-3 enrollment-edit-page">
+    <div class="col-12 col-lg-8">
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-user" style="color:var(--teal);"></i> Child & Therapist</div>
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label>Child</label>
-                    <input type="hidden" name="child_id" value="{{ old('child_id', $enrollment->child_id) }}">
-                    <select class="form-control" disabled style="background:var(--bg-light);">
-                        <option>{{ $enrollment->child?->full_name ?? '—' }}</option>
-                    </select>
-                    @error('child_id') <div class="text-danger small">{{ $message }}</div> @enderror
+                <div class="col-12">
+                    <label>
+                        @if($enrollment->isGroupEnrollment())
+                            Group members ({{ $enrollment->groupSize() }})
+                        @else
+                            Child
+                        @endif
+                    </label>
+                    @if($enrollment->isGroupEnrollment())
+                        @php $groupMembers = $enrollment->groupMembers(); @endphp
+                        <div style="background:var(--bg-light);border:1px solid var(--border-soft);border-radius:10px;padding:12px 14px;">
+                            <ul class="mb-0 ps-3" style="font-size:14px;">
+                                <li style="margin-bottom:6px;">
+                                    <strong>{{ $enrollment->child?->full_name }}</strong>
+                                    <span class="text-muted">(this enrollment · #{{ $enrollment->id }})</span>
+                                </li>
+                                @foreach($groupMembers as $member)
+                                    <li style="margin-bottom:6px;">
+                                        <a href="{{ route('enrollments.edit', $member->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $member->child?->full_name }}</a>
+                                        <span class="text-muted small"> · #{{ $member->id }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <small class="text-muted d-block mt-1">Group therapy creates one enrollment per child. You are editing <strong>#{{ $enrollment->id }}</strong> only. Child cannot be changed after creation — use the links above to edit another member.</small>
+                    @else
+                        <input type="text" class="form-control" value="{{ $enrollment->child?->full_name ?? '—' }}" readonly style="background:var(--bg-light);">
+                        <small class="text-muted d-block mt-1">Child cannot be changed after enrollment is created.</small>
+                    @endif
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
                     @if($branches->count() === 1)
                         @php $onlyBranch = $branches->first(); @endphp
@@ -43,7 +83,7 @@
                     @endif
                     @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Service <span style="color:var(--danger)">*</span></label>
                     <select name="service_id" id="serviceSelect" class="form-control @error('service_id') is-invalid @enderror">
                         <option value="">Select Service</option>
@@ -53,7 +93,7 @@
                     </select>
                     @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-sm-6">
                     <label>Therapist <span style="color:var(--danger)">*</span></label>
                     <select name="therapist_id" id="therapistSelect" class="form-control @error('therapist_id') is-invalid @enderror">
                         <option value="">Select branch &amp; service first</option>
@@ -76,7 +116,7 @@
                     }
                     $lockedPendingSuperAdmin = ! $canSetPendingSuperAdmin && $enrollment->status === 'pending_super_admin_approval';
                 @endphp
-                <div class="col-md-6">
+                <div class="col-12">
                     <label>Status</label>
                     @if($lockedPendingSuperAdmin)
                         <input type="hidden" name="status" value="pending_super_admin_approval">
@@ -100,7 +140,7 @@
                 $scheduleStartDefault = old('schedule_start_date', $enrollment->schedule_start_date?->toDateString() ?? $enrollment->created_at?->toDateString());
             @endphp
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
+                <div class="col-12">
                     <label>First session starts on <span style="color:var(--danger)">*</span></label>
                     <input type="date" name="schedule_start_date" id="scheduleStartDate"
                         class="form-control @error('schedule_start_date') is-invalid @enderror"
@@ -148,8 +188,8 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="form-section" style="position:sticky;top:80px;">
+    <div class="col-12 col-lg-4">
+        <div class="form-section enrollment-edit-fee-panel" style="position:sticky;top:80px;">
             <div class="form-section-title"><i class="fa-solid fa-calculator" style="color:var(--teal);"></i> Fee Calculation</div>
             <div class="mb-3">
                 <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>

@@ -53,11 +53,35 @@ class PaymentService
     }
 
     /** Paginated list for child portal payment history page. */
-    public function paginatePaymentsForChild(int $childId, int $perPage = 15): LengthAwarePaginator
+    public function paginatePaymentsForChild(int $childId, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         /** @var LengthAwarePaginatorConcrete $paginator */
-        $paginator = $this->paymentRepository->paginateForChild($childId, $perPage);
+        $paginator = $this->paymentRepository->paginateForChild($childId, $filters, $perPage);
         return $paginator->withQueryString();
+    }
+
+    /**
+     * Enrollments that appear in this child's payment history (for filter dropdown).
+     *
+     * @return Collection<int, Enrollment>
+     */
+    public function getEnrollmentFilterOptionsForChild(int $childId): Collection
+    {
+        $enrollmentIds = Payment::query()
+            ->where('child_id', $childId)
+            ->distinct()
+            ->pluck('enrollment_id');
+
+        if ($enrollmentIds->isEmpty()) {
+            return new Collection;
+        }
+
+        return Enrollment::query()
+            ->with('service:id,name')
+            ->where('child_id', $childId)
+            ->whereIn('id', $enrollmentIds)
+            ->orderByDesc('id')
+            ->get();
     }
 
     /**
@@ -136,19 +160,24 @@ class PaymentService
             throw ValidationException::withMessages(['amount' => ['Amount must be greater than 0.']]);
         }
 
-        if ($enrollment->outstandingAmount() <= 0) {
-            throw ValidationException::withMessages(['enrollment_id' => ['This enrollment is already fully paid.']]);
+        $collectible = $enrollment->outstandingForSlipUpload();
+        if ($collectible <= 0) {
+            $pending = $enrollment->sumPendingVerificationAmount();
+            $message = $pending > 0
+                ? 'A payment of '.frc_pkr($pending).' is already pending verification. Verify or reject it before recording another manual payment.'
+                : 'This enrollment is already fully paid.';
+
+            throw ValidationException::withMessages(['enrollment_id' => [$message]]);
         }
 
-        $remaining = $enrollment->outstandingAmount();
-        if ($amount > $remaining) {
-            throw ValidationException::withMessages(['amount' => ['Amount cannot exceed remaining fee of ' . frc_pkr($remaining) . '.']]);
+        if ($amount > $collectible) {
+            throw ValidationException::withMessages(['amount' => ['Amount cannot exceed the available balance of '.frc_pkr($collectible).' (pending verification amounts are reserved).']]);
         }
 
         $receiptNumber = $this->paymentRepository->generateReceiptNumber();
 
         $role = $staff->role?->name;
-        $remainingBefore = $remaining;
+        $remainingBefore = $enrollment->outstandingAmount();
 
         $payment = $this->paymentRepository->create([
             'enrollment_id'     => $data['enrollment_id'],

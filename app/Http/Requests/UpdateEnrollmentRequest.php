@@ -8,11 +8,22 @@ use Illuminate\Validation\Rule;
 
 class UpdateEnrollmentRequest extends StoreEnrollmentRequest
 {
+    protected function prepareForValidation(): void
+    {
+        parent::prepareForValidation();
+
+        // Child is locked on update — ignore any posted child_id / child_ids.
+        $this->request->remove('child_id');
+        $this->request->remove('child_ids');
+    }
+
     public function rules(): array
     {
         $rules = array_merge(parent::rules(), [
             'status' => $this->statusRules(),
         ]);
+
+        unset($rules['child_ids'], $rules['child_ids.*']);
 
         $rules['schedule_start_date'] = $this->scheduleStartDateRules();
 

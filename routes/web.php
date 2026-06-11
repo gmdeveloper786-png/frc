@@ -69,6 +69,11 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::put('/profile/password', [StaffProfileWebController::class, 'updatePassword'])->name('profile.password');
     });
 
+    Route::middleware('role:approval_discount')->prefix('approval-discount')->name('approval-discount.')->group(function () {
+        Route::get('/profile', [StaffProfileWebController::class, 'show'])->name('profile');
+        Route::put('/profile/password', [StaffProfileWebController::class, 'updatePassword'])->name('profile.password');
+    });
+
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::post('/mark-all-as-read', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
