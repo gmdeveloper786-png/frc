@@ -29,7 +29,7 @@ class DisabilityRepository implements DisabilityRepositoryInterface
 
     public function getPublished(): Collection
     {
-        return Disability::published()->orderBy('name')->get();
+        return Disability::published()->orderedForPicker()->get();
     }
 
     public function create(array $data): Disability

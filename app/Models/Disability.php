@@ -35,6 +35,14 @@ class Disability extends Model
         return $query->where('status', 'publish');
     }
 
+    /** Alphabetical list with "Other" always last (registration / child forms). */
+    public function scopeOrderedForPicker($query)
+    {
+        return $query
+            ->orderByRaw("CASE WHEN LOWER(name) = 'other' THEN 1 ELSE 0 END")
+            ->orderBy('name');
+    }
+
     /** ID of the published "Other" disability option (case-insensitive name match). */
     public static function otherId(): ?int
     {

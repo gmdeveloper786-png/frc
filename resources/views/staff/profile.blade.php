@@ -17,7 +17,7 @@
 <div class="staff-profile-page">
     <div class="row g-3 staff-profile-page__grid">
         <div class="col-12 col-lg-7">
-            <article class="card-frc staff-profile-card h-100">
+            <article class="card-frc card-frc--panel staff-profile-card h-100">
                 <div class="staff-profile-card__body">
                     <header class="staff-profile-hero">
                         <div class="staff-profile-avatar" aria-hidden="true">
@@ -101,7 +101,7 @@
         </div>
 
         <div class="col-12 col-lg-5">
-            <div class="card-frc staff-profile-password-card h-100">
+            <div class="card-frc card-frc--panel staff-profile-password-card h-100">
                 <div class="card-header-frc staff-profile-password-card__header">
                     <h3 class="card-title-frc mb-0">
                         <i class="fa-solid fa-lock" aria-hidden="true"></i> Change password

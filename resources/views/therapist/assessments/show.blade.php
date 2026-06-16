@@ -2,21 +2,74 @@
 @section('title', 'Assessment')
 @section('page-title', 'Assessment Detail')
 
+@push('styles')
+<style>
+.therapist-assessment-show-page .therapist-assessment-info-table {
+    width: 100%;
+    font-size: 14px;
+}
+.therapist-assessment-show-page .therapist-assessment-info-table td {
+    padding: 7px 0;
+    vertical-align: top;
+}
+.therapist-assessment-show-page .therapist-assessment-info-table td:first-child {
+    color: var(--text-muted);
+    width: 38%;
+    padding-right: 12px;
+}
+.therapist-assessment-show-page .therapist-assessment-child-cell {
+    white-space: normal;
+    min-width: 8rem;
+}
+@media (max-width: 575.98px) {
+    .therapist-assessment-show-page .therapist-assessment-info-table tr {
+        display: block;
+        margin-bottom: 10px;
+    }
+    .therapist-assessment-show-page .therapist-assessment-info-table tr:last-child {
+        margin-bottom: 0;
+    }
+    .therapist-assessment-show-page .therapist-assessment-info-table td {
+        display: block;
+        width: 100% !important;
+        padding: 0;
+    }
+    .therapist-assessment-show-page .therapist-assessment-info-table td:first-child {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .therapist-assessment-show-page .therapist-assessment-info-table td:last-child {
+        font-weight: 500;
+        color: var(--navy);
+    }
+    .therapist-assessment-show-page .card-frc .card-header-frc {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+    .therapist-assessment-show-page .therapist-assessment-back {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="row g-3">
-    <div class="col-md-5 min-w-0">
-        <div class="card-frc">
+<div class="row g-3 therapist-assessment-show-page">
+    <div class="col-12 col-md-5 min-w-0">
+        <div class="card-frc card-frc--panel">
             <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:16px;">Schedule</h6>
-            <table style="width:100%;font-size:14px;">
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Date</td><td style="font-weight:500;">{{ $assessment->date->format('d M Y') }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Day</td><td>{{ $assessment->day }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Time</td><td>{{ \Carbon\Carbon::parse($assessment->time)->format('h:i A') }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Branch</td><td>{{ $assessment->branch?->name ?? '—' }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span></td></tr>
+            <table class="therapist-assessment-info-table">
+                <tr><td>Date</td><td style="font-weight:500;">{{ $assessment->date->format('d M Y') }}</td></tr>
+                <tr><td>Day</td><td>{{ $assessment->day }}</td></tr>
+                <tr><td>Time</td><td>{{ \Carbon\Carbon::parse($assessment->time)->format('h:i A') }}</td></tr>
+                <tr><td>Branch</td><td>{{ $assessment->branch?->name ?? '—' }}</td></tr>
+                <tr><td>Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span></td></tr>
                 @if($assessment->status === 'completed')
-                    <tr><td style="color:var(--text-muted);padding:7px 0;">Completed</td><td>{{ $assessment->completed_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                    <tr><td>Completed</td><td>{{ $assessment->completed_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                     @if($assessment->completedBy)
-                        <tr><td style="color:var(--text-muted);padding:7px 0;">Completed by</td><td>{{ $assessment->completedBy->full_name }}</td></tr>
+                        <tr><td>Completed by</td><td>{{ $assessment->completedBy->full_name }}</td></tr>
                     @endif
                 @endif
             </table>
@@ -28,29 +81,31 @@
             @if($assessment->status === 'cancelled')
                 <hr style="border-color:var(--border-soft);">
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:8px;">Cancellation</h6>
-                <table style="width:100%;font-size:14px;">
-                    <tr><td style="color:var(--text-muted);padding:7px 0;">Cancelled at</td><td>{{ $assessment->cancelled_at?->format('d M Y H:i') ?? '—' }}</td></tr>
-                    <tr><td style="color:var(--text-muted);padding:7px 0;">Cancelled by</td><td>{{ $assessment->cancelledBy?->full_name ?? '—' }}</td></tr>
-                    <tr><td style="color:var(--text-muted);padding:7px 0;vertical-align:top;">Cancellation reason</td><td style="white-space:pre-wrap;">{{ $assessment->cancellation_reason ?: '—' }}</td></tr>
+                <table class="therapist-assessment-info-table">
+                    <tr><td>Cancelled at</td><td>{{ $assessment->cancelled_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                    <tr><td>Cancelled by</td><td>{{ $assessment->cancelledBy?->full_name ?? '—' }}</td></tr>
+                    <tr><td>Cancellation reason</td><td style="white-space:pre-wrap;">{{ $assessment->cancellation_reason ?: '—' }}</td></tr>
                 </table>
             @endif
         </div>
 
         @if($assessment->status === 'publish')
-            <div class="card-frc mt-3">
+            <div class="card-frc card-frc--panel mt-3">
                 <h6 style="font-family:'Poppins',sans-serif;color:var(--navy);margin-bottom:12px;"><i class="fa-solid fa-check-double me-2" style="color:var(--teal);"></i>Mark completed</h6>
                 <form action="{{ route('therapist.assessments.complete', $assessment) }}" method="POST" class="form-frc">
                     @csrf
                     <label style="font-size:13px;color:var(--text-muted);">Completion summary (optional)</label>
                     <textarea name="assessment_notes" class="form-control mb-2" rows="3" placeholder="Brief summary for records">{{ old('assessment_notes') }}</textarea>
-                    <button type="submit" class="btn-teal" data-confirm="Mark this assessment as completed?"><i class="fa-solid fa-check"></i> Complete</button>
+                    <div class="frc-form-actions" style="margin-top:0;padding-top:0;border-top:none;">
+                        <button type="submit" class="btn-teal" data-confirm="Mark this assessment as completed?"><i class="fa-solid fa-check"></i> Complete</button>
+                    </div>
                 </form>
             </div>
         @endif
     </div>
 
-    <div class="col-md-7 min-w-0">
-        <div class="card-frc mb-3">
+    <div class="col-12 col-md-7 min-w-0">
+        <div class="card-frc card-frc--panel mb-3">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-children me-2" style="color:var(--teal);"></i>Assigned children</h6>
             </div>
@@ -59,13 +114,21 @@
             @else
                 <div class="table-responsive">
                     <table class="table-frc">
-                        <thead><tr><th>Name</th><th>Age</th><th>Gender</th></tr></thead>
+                        <thead><tr><th>Name</th><th>Age</th><th>Gender</th><th>Actions</th></tr></thead>
                         <tbody>
                             @foreach($assessment->children as $child)
                                 <tr>
-                                    <td style="font-weight:500;">{{ $child->full_name }}</td>
+                                    <td class="therapist-assessment-child-cell" style="font-weight:500;">
+                                        {{ $child->full_name }}
+                                        @if($child->gr_number)
+                                            <span style="display:block;font-size:12px;color:var(--text-muted);font-weight:500;font-family:monospace;">GR No: {{ $child->gr_number }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $child->age ? $child->age.'y' : '—' }}</td>
                                     <td>{{ $child->gender ? ucfirst($child->gender) : '—' }}</td>
+                                    <td>
+                                        <a href="{{ route('therapist.children.show', $child) }}" class="btn-outline-teal btn-sm-frc">View</a>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -75,7 +138,7 @@
         </div>
 
         @if($assessment->status === 'publish')
-            <div class="card-frc mb-3" id="add-note">
+            <div class="card-frc card-frc--panel mb-3" id="add-note">
                 <div class="card-header-frc">
                     <h6 class="card-title-frc"><i class="fa-solid fa-note-sticky me-2" style="color:var(--teal);"></i>Add structured note</h6>
                 </div>
@@ -104,12 +167,14 @@
                             <option value="completed">Completed</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-teal"><i class="fa-solid fa-floppy-disk"></i> Save note</button>
+                    <div class="frc-form-actions" style="margin-top:0;padding-top:0;border-top:none;">
+                        <button type="submit" class="btn-teal"><i class="fa-solid fa-floppy-disk"></i> Save note</button>
+                    </div>
                 </form>
             </div>
         @endif
 
-        <div class="card-frc">
+        <div class="card-frc card-frc--panel">
             <div class="card-header-frc card-header-frc--stack-sm">
                 <h6 class="card-title-frc">Your structured notes</h6>
                 <p class="small text-muted mb-0" style="min-width:0;">You can view, edit, or delete only notes you created. Parents and children do not see these.</p>
@@ -179,7 +244,7 @@
         </div>
 
         <div class="mt-3">
-            <a href="{{ route('therapist.assessments.index') }}" class="btn-outline-teal"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ route('therapist.assessments.index') }}" class="btn-outline-teal therapist-assessment-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
     </div>
 </div>

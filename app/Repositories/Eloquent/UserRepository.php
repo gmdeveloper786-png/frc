@@ -52,6 +52,10 @@ class UserRepository implements UserRepositoryInterface
                     ->orWhere('phone_number', 'like', $like)
                     ->orWhere('gr_number', 'like', $like);
             }))
+            ->when(($filters['has_assessments'] ?? '') === 'yes', fn ($q) => $q->has('childAssessments'))
+            ->when(($filters['has_assessments'] ?? '') === 'no', fn ($q) => $q->doesntHave('childAssessments'))
+            ->when(($filters['has_enrollments'] ?? '') === 'yes', fn ($q) => $q->has('enrollments'))
+            ->when(($filters['has_enrollments'] ?? '') === 'no', fn ($q) => $q->doesntHave('enrollments'))
             ->latest()
             ->paginate($perPage);
 
@@ -72,11 +76,12 @@ class UserRepository implements UserRepositoryInterface
         }
 
         return User::children()
+            ->with('disabilities')
             ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->approved()
             ->whereIn('id', $ids)
             ->orderBy('full_name')
-            ->get(['id', 'full_name', 'phone_number', 'gender', 'date_of_birth']);
+            ->get(['id', 'full_name', 'gr_number', 'other_disability', 'phone_number', 'date_of_birth']);
     }
 
     public function searchApprovedChildren(string $search, int $limit = 40, ?User $viewer = null): Collection
@@ -85,6 +90,7 @@ class UserRepository implements UserRepositoryInterface
         $limit = min(50, max(1, $limit));
 
         $query = User::children()
+            ->with('disabilities')
             ->when($viewer, fn ($q) => $q->visibleToStaff($viewer))
             ->approved()
             ->orderBy('full_name');
@@ -105,7 +111,7 @@ class UserRepository implements UserRepositoryInterface
             });
         }
 
-        return $query->limit($limit)->get(['id', 'full_name', 'gr_number', 'phone_number', 'gender', 'date_of_birth']);
+        return $query->limit($limit)->get(['id', 'full_name', 'gr_number', 'other_disability', 'phone_number', 'date_of_birth']);
     }
 
     public function getPendingChildren(int $perPage = 15, ?User $viewer = null): LengthAwarePaginator

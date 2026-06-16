@@ -24,7 +24,7 @@ class RegisterController extends Controller
             return view('auth.register-closed');
         }
 
-        $disabilities = Disability::published()->orderBy('name')->get();
+        $disabilities = Disability::published()->orderedForPicker()->get();
         $branches     = Branch::published()->forDropdown()->orderedForDropdown()->get();
 
         return view('auth.register', compact('disabilities', 'branches'));

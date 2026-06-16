@@ -2,6 +2,34 @@
 @section('title', 'My Assessments')
 @section('page-title', 'My Assessments')
 
+@push('styles')
+<style>
+.therapist-assessments-table .assessments-children-cell {
+    white-space: normal;
+    min-width: 11rem;
+}
+.therapist-assessments-table .assessments-children-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--teal-dark, #006666);
+    background: var(--teal-light, #e6f5f5);
+    border: 1px solid rgba(0, 128, 128, 0.3);
+    white-space: nowrap;
+}
+.therapist-assessments-table .assessments-children-more i {
+    font-size: 10px;
+    opacity: 0.9;
+}
+</style>
+@endpush
+
 @section('content')
 @php
     $statuses = [
@@ -20,15 +48,11 @@
     <div class="p-3 border-bottom list-filters" style="border-color:var(--border-soft)!important;">
         <form method="get" action="{{ route('therapist.assessments.index') }}" id="therapistAssessmentsFilterForm" class="frc-sessions-filters">
             <div class="frc-sessions-filters-row">
+
                 <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_start_date">Start date</label>
-                    <input type="date" id="filter_start_date" name="start_date" class="form-control form-control-sm w-100"
-                        value="{{ request('start_date') }}">
-                </div>
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_end_date">End date</label>
-                    <input type="date" id="filter_end_date" name="end_date" class="form-control form-control-sm w-100"
-                        value="{{ request('end_date') }}">
+                    <label class="form-label small text-muted mb-1" for="filter_search">Search child</label>
+                    <input type="text" id="filter_search" name="search" class="form-control form-control-sm w-100"
+                        value="{{ request('search') }}" placeholder="Child name or GR number" autocomplete="off">
                 </div>
                 <div class="frc-sessions-filter-field">
                     <label class="form-label small text-muted mb-1" for="filter_branch_id">Branch</label>
@@ -48,14 +72,15 @@
                     </select>
                 </div>
                 <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_child_id">Child</label>
-                    <select id="filter_child_id" name="child_id" class="form-select form-select-sm w-100">
-                        <option value="">All children</option>
-                        @foreach($filterChildren ?? [] as $child)
-                            <option value="{{ $child->id }}" @selected((int) request('child_id') === (int) $child->id)>{{ $child->full_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                                    <label class="form-label small text-muted mb-1" for="filter_start_date">Start date</label>
+                                    <input type="date" id="filter_start_date" name="start_date" class="form-control form-control-sm w-100"
+                                        value="{{ request('start_date') }}">
+                                </div>
+                                <div class="frc-sessions-filter-field">
+                                    <label class="form-label small text-muted mb-1" for="filter_end_date">End date</label>
+                                    <input type="date" id="filter_end_date" name="end_date" class="form-control form-control-sm w-100"
+                                        value="{{ request('end_date') }}">
+                                </div>
                 <div class="frc-sessions-filter-field frc-sessions-filter-actions">
 
                     <div class="filter-actions">
@@ -75,7 +100,7 @@
             <p class="mb-0 mt-2">{{ ($hasActiveFilters ?? false) ? 'No assessments match your filters.' : 'No assessments found.' }}</p>
         </div>
     @else
-        <div class="table-responsive frc-sessions-table-wrap">
+        <div class="table-responsive frc-sessions-table-wrap therapist-assessments-table">
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
@@ -103,11 +128,17 @@
                             <td style="white-space:nowrap;">{{ $row->day }}</td>
                             <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($row->time)->format('h:i A') }}</td>
                             <td style="white-space:nowrap;">{{ $row->branch?->name ?? '—' }}</td>
-                            <td style="font-size:13px;white-space:nowrap;" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                            <td class="assessments-children-cell" style="font-size:13px;" @if($childNames !== '') title="{{ $childNames }}" @endif>
                                 @if($firstChild)
                                     <a href="{{ route('therapist.children.show', $firstChild) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstChild->full_name }}</a>
+                                    <div style="font-size:12px;color:var(--text-muted);">
+                                        GR No: {{ $firstChild->gr_number ?? '—' }}
+                                    </div>
                                     @if($extraChildCount > 0)
-                                        <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                        <span class="assessments-children-more" title="{{ $childNames }}">
+                                            <i class="fa-solid fa-users" aria-hidden="true"></i>
+                                            +{{ $extraChildCount }} more
+                                        </span>
                                     @endif
                                 @else
                                     <span class="text-muted">—</span>
@@ -143,8 +174,8 @@
     var form = document.getElementById('therapistAssessmentsFilterForm');
     if (!form) return;
     form.addEventListener('submit', function () {
-        form.querySelectorAll('input[type="date"], select').forEach(function (el) {
-            if (!el.value) {
+        form.querySelectorAll('input[type="date"], input[type="text"], select').forEach(function (el) {
+            if (!el.value || !String(el.value).trim()) {
                 el.removeAttribute('name');
             }
         });

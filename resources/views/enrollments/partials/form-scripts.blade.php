@@ -5,6 +5,7 @@
     $initialServiceId = $initialServiceId ?? null;
     $therapistIdInit = $isEdit && isset($enrollment) ? $enrollment->therapist_id : null;
     $therapistNameInit = $therapistNameInit ?? ($isEdit && isset($enrollment) ? $enrollment->therapist?->full_name : null);
+    $therapistEmailInit = $therapistEmailInit ?? ($isEdit && isset($enrollment) ? $enrollment->therapist?->email : null);
     $branchCityMap = $enrollmentPricing['branch_city_map'] ?? [];
     $citySessionPrices = $enrollmentPricing['city_session_prices'] ?? [];
 @endphp
@@ -23,7 +24,20 @@ const excludeEnrollmentId = @json($excludeEnrollmentId);
 const initialSchedules = @json($initialSchedules);
 const therapistIdInit = @json($therapistIdInit);
 const therapistNameInit = @json($therapistNameInit);
+const therapistEmailInit = @json($therapistEmailInit);
 const initialServiceId = @json($initialServiceId);
+
+function therapistOptionLabel(t) {
+    const name = (t.full_name || '').trim();
+    const email = (t.email || '').trim();
+    return email ? `${name} — ${email}` : name;
+}
+
+function therapistOptionLabelFromParts(name, email) {
+    const n = (name || '').trim();
+    const e = (email || '').trim();
+    return e ? `${n} — ${e}` : n;
+}
 
 function occupiedSlotKey(day, slot) {
     return `${String(day || '').trim().toLowerCase()}|${String(slot || '').trim()}`;
@@ -73,7 +87,7 @@ async function loadTherapists(branchId, opts = {}) {
     (data.data || []).forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.id;
-        opt.textContent = t.full_name;
+        opt.textContent = therapistOptionLabel(t);
         sel.appendChild(opt);
     });
     if (reset) resetSchedules();
@@ -87,7 +101,7 @@ function ensureTherapistSelected() {
     if (!Array.from(sel.options).some(o => o.value === tid)) {
         const opt = document.createElement('option');
         opt.value = tid;
-        opt.textContent = therapistNameInit || ('Therapist #' + tid);
+        opt.textContent = therapistOptionLabelFromParts(therapistNameInit, therapistEmailInit) || ('Therapist #' + tid);
         sel.appendChild(opt);
     }
     sel.value = tid;
@@ -293,7 +307,7 @@ function addScheduleRow() {
             </select>
         </div>
         <div>
-            <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
+            <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;" title="Remove" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
         </div>
     `;
     document.getElementById('scheduleRows').appendChild(row);

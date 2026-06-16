@@ -621,7 +621,7 @@ class TherapistPortalService
             ->children()
             ->whereIn('id', $ids)
             ->orderBy('full_name')
-            ->get(['id', 'full_name']);
+            ->get(['id', 'full_name', 'gr_number']);
     }
 
     /**

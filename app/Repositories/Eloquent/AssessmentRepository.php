@@ -105,6 +105,19 @@ class AssessmentRepository implements AssessmentRepositoryInterface
             ->when(! empty($filters['child_id']), function ($q) use ($filters): void {
                 $q->whereHas('children', fn($c) => $c->where('users.id', (int) $filters['child_id']));
             })
+            ->when(! empty($filters['search']), function ($q) use ($filters): void {
+                $term = trim((string) $filters['search']);
+                $like = frc_like_pattern($term);
+                $q->whereHas('children', function ($c) use ($like, $term): void {
+                    $c->where(function ($inner) use ($like, $term): void {
+                        $inner->where('full_name', 'like', $like)
+                            ->orWhere('gr_number', 'like', $like);
+                        if (ctype_digit($term)) {
+                            $inner->orWhere('users.id', (int) $term);
+                        }
+                    });
+                });
+            })
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->paginate($perPage);

@@ -4,9 +4,19 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-9">
+    <div class="col-12 col-lg-9">
         <form action="{{ route('assessments.store') }}" method="POST" class="form-frc" id="assessmentForm">
         @csrf
+
+        <div class="form-section">
+            <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Assign Children
+            </div>
+            @include('partials.approved-child-checkboxes-field', [
+            'initialChildren' => $initialChildren,
+            'selectedIds' => old('child_ids', []),
+            ])
+        </div>
+
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-clipboard-list" style="color:var(--teal);"></i> Assessment Details</div>
             <div class="row g-3">
@@ -18,7 +28,7 @@
                     @error('date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-4">
-                    <label>Day (auto)</label>
+                    <label>Day (auto) <span style="color:var(--danger)">*</span></label>
                     <input type="text" id="dayDisplay" class="form-control" readonly placeholder="Auto-calculated" style="background:var(--bg-light);">
                 </div>
                 <div class="col-md-4">
@@ -43,39 +53,34 @@
                     @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
-                    <label>Status</label>
+                    <label>Status <span style="color:var(--danger)">*</span></label>
                     <select name="status" class="form-control">
-                        <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="publish" {{ old('status') == 'publish' ? 'selected' : '' }}>Published</option>
+                        <option value="publish" {{ old('status') === 'publish' ? 'selected' : '' }}>Published</option>
+                        <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-user-doctor" style="color:var(--teal);"></i> Therapist</div>
+            <div class="form-section-title"><i class="fa-solid fa-user-doctor" style="color:var(--teal);"></i> Therapist </div>
             @error('therapist_id') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
             <div class="row g-3">
                 <div class="col-12">
-                    <label>Therapist</label>
+                    <label>Therapist <span style="color:var(--danger)">*</span></label>
                     <select name="therapist_id" id="assessmentTherapistSelect" class="form-control">
                         <option value="">Select branch first</option>
                     </select>
-                    <div id="assessmentTherapistHint" style="display:none;margin-top:8px;font-size:13px;color:var(--danger);"></div>
-                    <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:6px;">Required when status is Published. Draft assessments may leave therapist unset. Therapists are listed for the selected branch only.</small>
+                    <div id="assessmentTherapistHint" style="display:none;margin-top:8px;font-size:13px;color:var(--danger);">
+                    </div>
+                    <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:6px;">Required when status is
+                        Published. Draft assessments may leave therapist unset. Therapists are listed for the selected branch
+                        only.</small>
                 </div>
             </div>
         </div>
 
-        <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Assign Children (Optional)</div>
-            @include('partials.approved-child-checkboxes-field', [
-                'initialChildren' => $initialChildren,
-                'selectedIds' => old('child_ids', []),
-            ])
-        </div>
-
-        <div style="display:flex;gap:12px;">
+        <div class="frc-form-actions">
             <button type="submit" class="btn-teal"><i class="fa-solid fa-check"></i> Create Assessment</button>
             <a href="{{ route('assessments.index') }}" class="btn-outline-teal">Cancel</a>
         </div>
@@ -88,7 +93,9 @@
 <script nonce="{{ $cspNonce }}">
 const assessmentTherapistOld = @json(old('therapist_id'));
 function therapistOptionLabel(t) {
-    return t.full_name || '';
+    const name = (t.full_name || '').trim();
+    const email = (t.email || '').trim();
+    return email ? `${name} — ${email}` : name;
 }
 
 async function reloadAssessmentTherapists() {

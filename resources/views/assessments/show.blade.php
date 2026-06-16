@@ -21,6 +21,38 @@
 .assessment-show-children-table .table-frc tbody td {
     white-space: nowrap;
 }
+.assessment-show-children-table .assessment-show-disabilities-cell {
+    white-space: normal;
+    min-width: 9rem;
+    max-width: 16rem;
+}
+.assessment-show-children-table .assessment-show-disabilities-cell .child-show-tag-list {
+    gap: 4px;
+}
+.assessment-show-children-table .assessment-show-disabilities-cell .child-show-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    line-height: 1.35;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+.assessment-show-disabilities-more {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--teal-dark, #006666);
+    background: var(--teal-light, #e6f5f5);
+    border: 1px solid rgba(0, 128, 128, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: default;
+}
 @media (max-width: 991.98px) {
     .assessment-show-page .assessment-structured-notes-card__header {
         flex-direction: column;
@@ -75,14 +107,33 @@
             @else
                 <div class="table-responsive assessment-show-children-table">
                     <table class="table-frc mb-0">
-                        <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th>Disabilities</th><th>Status</th></tr></thead>
+                        <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th class="assessment-show-disabilities-cell">Disabilities</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($assessment->children as $child)
+                                @php
+                                    $sortedDisabilities = $child->disabilities->sortBy(fn ($d) => [strcasecmp($d->name, 'Other') === 0 ? 1 : 0, strtolower($child->disabilityLabel($d))]);
+                                    $visibleDisabilities = $sortedDisabilities->take(2);
+                                    $extraDisabilityCount = max(0, $sortedDisabilities->count() - 2);
+                                    $allDisabilityLabels = $sortedDisabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ');
+                                @endphp
                                 <tr>
                                     <td style="font-weight:500;font-family:monospace;">{{ $child->gr_number ?? '—' }}</td>
                                     <td style="font-weight:500;"><a href="{{ route('children.show', $child->id) }}" style="color:var(--navy);">{{ $child->full_name }}</a></td>
                                     <td>{{ $child->age ? $child->age . 'y' : '—' }}</td>
-                                    <td style="font-size:12px;color:var(--text-muted);">{{ $child->disabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ') ?: '—' }}</td>
+                                    <td class="assessment-show-disabilities-cell">
+                                        @if($sortedDisabilities->isNotEmpty())
+                                            <div class="child-show-tag-list">
+                                                @foreach($visibleDisabilities as $disability)
+                                                    <span class="child-show-tag">{{ $child->disabilityLabel($disability) }}</span>
+                                                @endforeach
+                                                @if($extraDisabilityCount > 0)
+                                                    <span class="assessment-show-disabilities-more" title="{{ $allDisabilityLabels }}">+{{ $extraDisabilityCount }} more</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
                                     <td><span class="badge-status badge-{{ $child->status }}">{{ ucfirst($child->status) }}</span></td>
                                 </tr>
                             @endforeach

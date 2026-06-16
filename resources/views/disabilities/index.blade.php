@@ -76,8 +76,8 @@
                 <label class="form-label small text-muted mb-1">Status</label>
                 <select name="status" class="form-control">
                     <option value="">All Statuses</option>
-                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="publish" {{ request('status') == 'publish' ? 'selected' : '' }}>Published</option>
+                    <option value="publish" {{ request('status')==='publish' ? 'selected' : '' }}>Published</option>
+                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                 </select>
             </div>
             <div class="col-12 col-md-4 filter-actions">

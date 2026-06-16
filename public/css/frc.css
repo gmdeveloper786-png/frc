@@ -1534,6 +1534,17 @@ a.frc-notif-item:focus-visible {
   text-decoration: none;
   white-space: nowrap;
 }
+@media (max-width: 575.98px) {
+  .frc-form-actions {
+    flex-direction: column;
+  }
+  .frc-form-actions .btn-teal,
+  .frc-form-actions .btn-outline-teal {
+    flex: none;
+    width: 100%;
+    white-space: normal;
+  }
+}
 
 /* ─── Alert ──────────────────────────────────────────────────────────────── */
 .alert-frc {
@@ -2088,7 +2099,7 @@ body.sidebar-mobile-open {
 @media (max-width: 576px) {
   .frc-main { padding: 16px; }
   .card-frc{
-    padding: 5px;
+    padding: 15px;
   }
         .card-frc.card-frc--panel {
           padding: 16px;
@@ -3346,22 +3357,36 @@ body.sidebar-mobile-open {
   }
 }
 @media (max-width: 767.98px) {
+  .staff-profile-page .staff-profile-card.card-frc,
+  .staff-profile-page .staff-profile-password-card.card-frc {
+    padding: 0;
+  }
   .staff-profile-card__body,
   .staff-profile-password-form {
-    padding: 0rem;
+    padding: 1rem 1rem 1.25rem;
   }
   .staff-profile-password-card__header {
-    padding: 1rem 0rem 0;
+    padding: 1rem 1rem 0;
   }
   .staff-profile-hero {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
   }
   .staff-profile-avatar {
     width: 56px;
     height: 56px;
     font-size: 22px;
     border-radius: 14px;
+  }
+  .staff-profile-section-title {
+    margin-bottom: 0.85rem;
+  }
+  .staff-profile-detail-grid {
+    gap: 0.65rem;
+  }
+  .staff-profile-detail-grid .frc-profile-detail-item {
+    padding: 0.75rem 0.9rem;
   }
   .staff-profile-form-actions {
     display: flex;
@@ -3373,6 +3398,16 @@ body.sidebar-mobile-open {
   }
   .staff-profile-footnote {
     font-size: 11px;
+    padding: 0.7rem 0.85rem;
+  }
+}
+@media (max-width: 575.98px) {
+  .staff-profile-card__body,
+  .staff-profile-password-form {
+    padding: 1rem 0.9rem 1.15rem;
+  }
+  .staff-profile-password-card__header {
+    padding: 1rem 0.9rem 0;
   }
 }
 

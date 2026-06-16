@@ -54,33 +54,90 @@
     border-color: var(--teal, #008080);
     color: #fff;
 }
+.children-index-filters .filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.children-index-filters .filter-actions .btn-teal,
+.children-index-filters .filter-actions .btn-outline-teal {
+    flex: 1 1 calc(50% - 5px);
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+}
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .children-index-filters .filter-actions .btn-teal,
+    .children-index-filters .filter-actions .btn-outline-teal {
+        flex: 1 1 auto;
+        min-width: 7.5rem;
+    }
+}
+@media (min-width: 992px) {
+    .children-index-filters .filter-actions-label {
+        visibility: hidden;
+        display: block;
+        height: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .children-index-filters .filter-actions {
+        flex-wrap: nowrap;
+    }
+    .children-index-filters .filter-actions .btn-teal,
+    .children-index-filters .filter-actions .btn-outline-teal {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 8px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}
 </style>
 @endpush
 
 @section('content')
 {{-- Filters --}}
 <div class="card-frc card-frc--list-page mb-3">
-    <form method="GET" class="list-filters row g-2 align-items-end form-frc">
-        <div class="col-12 col-md-4">
-            <label>Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="GR number, name, email, phone...">
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <label>Status</label>
-            <select name="status" class="form-control">
-                <option value="">All Statuses</option>
-                @foreach(['pending','approved','rejected','active','inactive'] as $s)
-                    <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-12 col-md-2 filter-actions">
-            <button type="submit" class="btn-teal">
-                Filter
-            </button>
-            @if(request()->hasAny(['search','status']))
-                <a href="{{ route('children.index') }}" class="btn-outline-teal" style="justify-content:center;">Clear</a>
-            @endif
+    <form method="GET" class="list-filters children-index-filters">
+        <div class="row g-2 align-items-end form-frc">
+            <div class="col-12 col-lg-4">
+                <label class="form-label small text-muted mb-1">Search</label>
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="GR number, name, email, phone...">
+            </div>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Statuses</option>
+                    @foreach(['pending','approved','rejected','active','inactive'] as $s)
+                        <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted mb-1">Assessments</label>
+                <select name="has_assessments" class="form-control">
+                    <option value="">All</option>
+                    <option value="yes" @selected(request('has_assessments') === 'yes')>With assessments</option>
+                    <option value="no" @selected(request('has_assessments') === 'no')>Without assessments</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted mb-1">Enrollments</label>
+                <select name="has_enrollments" class="form-control">
+                    <option value="">All</option>
+                    <option value="yes" @selected(request('has_enrollments') === 'yes')>With enrollments</option>
+                    <option value="no" @selected(request('has_enrollments') === 'no')>Without enrollments</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted mb-1 filter-actions-label" aria-hidden="true">&nbsp;</label>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-teal">Filter</button>
+                    @if(request()->hasAny(['search', 'status', 'has_assessments', 'has_enrollments']))
+                        <a href="{{ route('children.index') }}" class="btn-outline-teal">Clear</a>
+                    @endif
+                </div>
+            </div>
         </div>
     </form>
 </div>

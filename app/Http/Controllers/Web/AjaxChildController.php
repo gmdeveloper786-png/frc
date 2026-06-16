@@ -30,16 +30,7 @@ class AjaxChildController extends Controller
         $children = $this->userRepository->searchApprovedChildren($term, $limit, $request->user());
 
         return response()->json([
-            'data' => $children->map(static function ($child): array {
-                return [
-                    'id'           => $child->id,
-                    'full_name'    => $child->full_name,
-                    'gr_number'    => $child->gr_number,
-                    'age'          => $child->age,
-                    'gender'       => $child->gender,
-                    'phone_number' => $child->phone_number,
-                ];
-            })->values(),
+            'data' => $children->map(static fn ($child): array => $child->toApprovedPickerArray())->values(),
         ]);
     }
 }

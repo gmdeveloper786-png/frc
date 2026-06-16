@@ -267,6 +267,7 @@
     'initialSchedules' => $editScheduleSlots,
     'initialServiceId' => $enrollment->service_id,
     'therapistNameInit' => $enrollment->therapist?->full_name,
+    'therapistEmailInit' => $enrollment->therapist?->email,
     'enrollmentPricing' => $enrollmentPricing ?? [],
 ])
 @endpush

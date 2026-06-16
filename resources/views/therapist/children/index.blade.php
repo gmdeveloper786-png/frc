@@ -2,6 +2,43 @@
 @section('title', 'Assigned Children')
 @section('page-title', 'Assigned Children')
 
+@push('styles')
+<style>
+.therapist-children-table .therapist-children-disabilities-cell {
+    white-space: normal;
+    min-width: 9rem;
+    max-width: 14rem;
+}
+.therapist-children-table .therapist-children-disabilities-cell .child-show-tag-list {
+    gap: 4px;
+}
+.therapist-children-table .therapist-children-disabilities-cell .child-show-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    line-height: 1.35;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+.therapist-children-disabilities-more {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--teal-dark, #006666);
+    background: var(--teal-light, #e6f5f5);
+    border: 1px solid rgba(0, 128, 128, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: default;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
@@ -13,7 +50,7 @@
             <p class="mb-0">No children assigned yet.</p>
         </div>
     @else
-        <div class="table-responsive">
+        <div class="table-responsive therapist-children-table">
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
@@ -35,6 +72,10 @@
                             $child = $row['child'];
                             $lastAssess = $row['last_assessment'];
                             $next = $row['next_session'];
+                            $sortedDisabilities = $child->disabilities->sortBy(fn ($d) => [strcasecmp($d->name, 'Other') === 0 ? 1 : 0, strtolower($child->disabilityLabel($d))]);
+                            $visibleDisabilities = $sortedDisabilities->take(2);
+                            $extraDisabilityCount = max(0, $sortedDisabilities->count() - 2);
+                            $allDisabilityLabels = $sortedDisabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ');
                         @endphp
                         <tr>
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">
@@ -45,7 +86,20 @@
                             </td>
                             <td>{{ $child->age ? $child->age.'y' : '—' }}</td>
                             <td>{{ $child->gender ? ucfirst($child->gender) : '—' }}</td>
-                            <td class="small" style="white-space:nowrap;">{{ $child->disabilities->map(fn ($d) => $child->disabilityLabel($d))->join(', ') ?: '—' }}</td>
+                            <td class="small therapist-children-disabilities-cell">
+                                @if($sortedDisabilities->isNotEmpty())
+                                    <div class="child-show-tag-list">
+                                        @foreach($visibleDisabilities as $disability)
+                                            <span class="child-show-tag">{{ $child->disabilityLabel($disability) }}</span>
+                                        @endforeach
+                                        @if($extraDisabilityCount > 0)
+                                            <span class="therapist-children-disabilities-more" title="{{ $allDisabilityLabels }}">+{{ $extraDisabilityCount }} more</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td class="small" style="white-space:nowrap;">{{ $row['branch_name'] }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $lastAssess?->date?->format('d M Y') ?? '—' }}</td>
                             <td class="small" style="white-space:nowrap;">{{ $row['last_session_date'] ? \Carbon\Carbon::parse($row['last_session_date'])->format('d M Y') : '—' }}</td>

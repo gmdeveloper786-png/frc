@@ -151,6 +151,7 @@ class TherapistPortalApiController extends Controller
             'start_date' => $request->filled('start_date') ? (string) $request->query('start_date') : null,
             'end_date'   => $request->filled('end_date') ? (string) $request->query('end_date') : null,
             'child_id'   => $request->filled('child_id') ? (int) $request->query('child_id') : null,
+            'search'     => $request->filled('search') ? trim((string) $request->query('search')) : null,
         ], fn ($value) => $value !== null && $value !== '');
     }
 

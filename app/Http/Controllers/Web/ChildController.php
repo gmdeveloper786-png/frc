@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApproveChildRequest;
+use App\Http\Requests\ChildListFilterRequest;
 use App\Http\Requests\RejectChildRequest;
 use App\Http\Requests\UpdateChildRequest;
 use App\Models\Disability;
@@ -27,9 +28,9 @@ class ChildController extends Controller
         private readonly ChildApprovalService $approvalService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(ChildListFilterRequest $request): View
     {
-        $children = $this->userRepository->getChildren($request->only(['status', 'search']), 15, $request->user());
+        $children = $this->userRepository->getChildren($request->validated(), 15, $request->user());
 
         return view('children.index', compact('children'));
     }
@@ -57,7 +58,7 @@ class ChildController extends Controller
         abort_if(! $child || ! $child->isChild(), 404);
         $this->authorize('updateChild', $child);
         $child->load('disabilities');
-        $disabilities = Disability::published()->orderBy('name')->get();
+        $disabilities = Disability::published()->orderedForPicker()->get();
 
         return view('children.edit', compact('child', 'disabilities'));
     }

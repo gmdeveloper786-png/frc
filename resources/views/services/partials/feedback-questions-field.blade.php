@@ -1,3 +1,40 @@
+@once
+    @push('styles')
+    <style>
+    .service-feedback-question-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+    .service-feedback-question-row .form-control {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 1%;
+    }
+    .service-feedback-question-row .service-feedback-remove-btn {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+    }
+    @media (max-width: 575.98px) {
+        #serviceFeedbackQuestions {
+            gap: 10px !important;
+        }
+        .service-feedback-question-row {
+            gap: 6px;
+        }
+        .service-feedback-question-row .service-feedback-remove-btn {
+            padding: 8px 10px;
+            min-width: 38px;
+        }
+        .service-feedback-question-row .form-control {
+            font-size: 13px;
+        }
+    }
+    </style>
+    @endpush
+@endonce
+
 @php
     $existing = $service?->feedbackQuestions ?? collect();
     $oldRows = old('feedback_questions');
@@ -24,7 +61,7 @@
     <p class="small text-muted mb-3">Therapists rate progress (No progress → Excellent progress) when completing a session for this service.</p>
     <div id="serviceFeedbackQuestions" class="d-flex flex-column gap-2">
         @foreach($rows as $index => $row)
-            <div class="service-feedback-question-row d-flex gap-2 align-items-start">
+            <div class="service-feedback-question-row">
                 @if(! empty($row['id']))
                     <input type="hidden" name="feedback_questions[{{ $index }}][id]" value="{{ $row['id'] }}">
                 @endif
@@ -33,9 +70,9 @@
                     name="feedback_questions[{{ $index }}][text]"
                     value="{{ $row['text'] }}"
                     class="form-control @error('feedback_questions.' . $index . '.text') is-invalid @enderror"
-                    placeholder="e.g. How was the child's engagement during the session?"
+                    placeholder="e.g. Child engagement during session"
                 >
-                <button type="button" class="btn-outline-teal service-feedback-remove-btn" style="padding:8px 12px;flex-shrink:0;" title="Remove question" aria-label="Remove question">
+                <button type="button" class="btn-outline-teal service-feedback-remove-btn" title="Remove question" aria-label="Remove question">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -78,10 +115,10 @@
         addBtn.addEventListener('click', function () {
             var idx = nextIndex();
             var row = document.createElement('div');
-            row.className = 'service-feedback-question-row d-flex gap-2 align-items-start';
+            row.className = 'service-feedback-question-row';
             row.innerHTML =
-                '<input type="text" name="feedback_questions[' + idx + '][text]" class="form-control" placeholder="e.g. How was the child\'s engagement during the session?">' +
-                '<button type="button" class="btn-outline-teal service-feedback-remove-btn" style="padding:8px 12px;flex-shrink:0;" title="Remove question" aria-label="Remove question"><i class="fa-solid fa-trash"></i></button>';
+                '<input type="text" name="feedback_questions[' + idx + '][text]" class="form-control" placeholder="e.g. Child engagement during session">' +
+                '<button type="button" class="btn-outline-teal service-feedback-remove-btn" title="Remove question" aria-label="Remove question"><i class="fa-solid fa-trash"></i></button>';
             container.appendChild(row);
             bindRemove(row.querySelector('.service-feedback-remove-btn'));
         });

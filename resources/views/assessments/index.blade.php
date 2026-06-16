@@ -107,6 +107,29 @@
     display: inline-flex;
     margin: 0;
 }
+.assessments-index-table .assessments-children-cell {
+    white-space: normal;
+    min-width: 11rem;
+}
+.assessments-children-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--teal-dark, #006666);
+    background: var(--teal-light, #e6f5f5);
+    border: 1px solid rgba(0, 128, 128, 0.3);
+    white-space: nowrap;
+}
+.assessments-children-more i {
+    font-size: 10px;
+    opacity: 0.9;
+}
 </style>
 @endpush
 
@@ -196,16 +219,23 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td style="font-size:13px; white-space:nowrap;" @if($childNames !== '') title="{{ $childNames }}" @endif>
+                            <td class="assessments-children-cell" style="font-size:13px;" @if($childNames !== '') title="{{ $childNames }}" @endif>
                                 @if($firstChild)
                                     <a href="{{ route('children.show', $firstChild->id) }}" style="color:var(--navy);font-weight:500;">{{ $firstChild->full_name }}</a>
+                                    <div style="font-size:12px;color:var(--text-muted);">
+                                        GR No: {{ $firstChild->gr_number ?? '—' }}
+                                    </div>
                                     @if($extraChildCount > 0)
-                                        <span class="text-muted"> +{{ $extraChildCount }} more</span>
+                                        <span class="assessments-children-more" title="{{ $childNames }}">
+                                            <i class="fa-solid fa-users" aria-hidden="true"></i>
+                                            +{{ $extraChildCount }} more
+                                        </span>
                                     @endif
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                       
                             <td><span class="badge-status badge-{{ $item->status === 'cancelled' ? 'cancelled' : $item->status }}">{{ $item->status === 'cancelled' ? 'Cancelled' : ucfirst($item->status) }}</span></td>
                             <td>
                                 <div class="assessments-row-actions">

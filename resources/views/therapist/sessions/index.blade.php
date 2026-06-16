@@ -2,6 +2,100 @@
 @section('title', 'Sessions')
 @section('page-title', 'Sessions & Schedule')
 
+@push('styles')
+<style>
+.therapist-sessions-table .therapist-sessions-child-cell {
+    white-space: normal;
+    min-width: 11rem;
+}
+.therapist-sessions-children-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--teal-dark, #006666);
+    background: var(--teal-light, #e6f5f5);
+    border: 1px solid rgba(0, 128, 128, 0.3);
+    white-space: nowrap;
+}
+.therapist-sessions-children-more i {
+    font-size: 10px;
+    opacity: 0.9;
+}
+.therapist-sessions-group-badge {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 10px;
+    vertical-align: middle;
+}
+.therapist-sessions-filters-card .card-header-frc {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+}
+.therapist-sessions-filters-details > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 0 14px;
+    margin-bottom: 0;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--navy);
+    border-bottom: 1px solid var(--border-soft);
+}
+.therapist-sessions-filters-details > summary::-webkit-details-marker {
+    display: none;
+}
+.therapist-sessions-filters-summary-chevron {
+    color: var(--teal);
+    transition: transform .2s ease;
+}
+.therapist-sessions-filters-details[open] .therapist-sessions-filters-summary-chevron {
+    transform: rotate(180deg);
+}
+.therapist-sessions-filters-body {
+    padding-top: 14px;
+}
+@media (min-width: 992px) {
+    .therapist-sessions-filters-details > summary {
+        display: none;
+    }
+    .therapist-sessions-filters-details:not([open]) .therapist-sessions-filters-body {
+        display: block;
+    }
+    .therapist-sessions-filters-body {
+        padding-top: 0;
+    }
+}
+@media (max-width: 575.98px) {
+    .therapist-sessions-filters-card .frc-sessions-filters-row {
+        gap: 0.65rem;
+    }
+    .therapist-sessions-filters-card .frc-sessions-filter-field--half {
+        flex: 1 1 calc(50% - 0.325rem);
+        min-width: 0;
+    }
+    .therapist-sessions-filters-card .frc-sessions-filter-field .form-select,
+    .therapist-sessions-filters-card .frc-sessions-filter-field .form-control {
+        font-size: 13px;
+    }
+    .therapist-sessions-filters-hint {
+        font-size: 11px;
+        line-height: 1.45;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 @php
     $statuses = [
@@ -11,74 +105,86 @@
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
     ];
+    $filtersExpanded = ($hasDateFilter ?? false)
+        || ($hasStatusFilter ?? false)
+        || ($hasChildFilter ?? false)
+        || ($hasServiceFilter ?? false);
 @endphp
 
-<div class="card-frc mb-4">
-    <div class="card-header-frc">
-        <h6 class="card-title-frc mb-0"><i class="fa-solid fa-filter me-2" style="color:var(--teal);"></i>Filters</h6>
-    </div>
-    <div class="p-3">
-        <form method="get" action="{{ route('therapist.sessions.index') }}" id="therapistSessionsFilterForm" class="frc-sessions-filters">
-            <div class="frc-sessions-filters-row">
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_start_date">Start date</label>
-                    <input type="date" id="filter_start_date" name="start_date" class="form-control form-control-sm w-100"
-                        value="{{ $startDate ?? '' }}" data-auto-submit>
-                </div>
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_end_date">End date</label>
-                    <input type="date" id="filter_end_date" name="end_date" class="form-control form-control-sm w-100"
-                        value="{{ $endDate ?? '' }}" data-auto-submit>
-                </div>
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_status">Status</label>
-                    <select id="filter_status" name="status" class="form-select form-select-sm w-100" data-auto-submit>
-                    @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" @selected(($status ?? 'all') === $key)>{{ $label }}</option>
-                    @endforeach
-                    </select>
-                </div>
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_child_id">Child</label>
-                    <select id="filter_child_id" name="child_id" class="form-select form-select-sm w-100" data-auto-submit>
-                    <option value="">All children</option>
-                    @foreach($filterChildren ?? [] as $c)
-                        <option value="{{ $c->id }}" @selected(($filterChildId ?? null) === (int) $c->id)>{{ $c->full_name }}</option>
-                    @endforeach
-                    </select>
-                </div>
-                <div class="frc-sessions-filter-field">
-                    <label class="form-label small text-muted mb-1" for="filter_service_id">Service</label>
-                    <select id="filter_service_id" name="service_id" class="form-select form-select-sm w-100" data-auto-submit>
-                    <option value="">All services</option>
-                    @foreach($filterServices ?? [] as $svc)
-                        <option value="{{ $svc->id }}" @selected(($filterServiceId ?? null) === (int) $svc->id)>{{ $svc->name }}</option>
-                    @endforeach
-                    </select>
-                </div>
-                @if($hasDateFilter ?? false)
-                    <div class="frc-sessions-filter-field frc-sessions-filter-actions">
-                        <label class="form-label small text-muted mb-1 frc-sessions-filter-actions-label" aria-hidden="true">&nbsp;</label>
-                        <div class="filter-actions">
-                            <a href="{{ route('therapist.sessions.index', array_filter([
-                                'status' => ($status ?? 'all') !== 'all' ? $status : null,
-                                'child_id' => $filterChildId ?? null,
-                                'service_id' => $filterServiceId ?? null,
-                            ])) }}" class="btn-outline-teal">
-                                <i class="fa-solid fa-calendar-xmark me-1"></i>Clear dates
-                            </a>
-                        </div>
+<div class="card-frc card-frc--panel therapist-sessions-filters-card mb-3 mb-lg-4">
+    <details class="therapist-sessions-filters-details" @if($filtersExpanded) open @endif>
+        <summary class="d-lg-none therapist-sessions-filters-summary">
+            <span><i class="fa-solid fa-filter me-2" style="color:var(--teal);"></i>Filters</span>
+            <i class="fa-solid fa-chevron-down therapist-sessions-filters-summary-chevron" aria-hidden="true"></i>
+        </summary>
+        <div class="card-header-frc d-none d-lg-flex">
+            <h6 class="card-title-frc mb-0"><i class="fa-solid fa-filter me-2" style="color:var(--teal);"></i>Filters</h6>
+        </div>
+        <div class="therapist-sessions-filters-body">
+            <form method="get" action="{{ route('therapist.sessions.index') }}" id="therapistSessionsFilterForm" class="frc-sessions-filters">
+                <div class="frc-sessions-filters-row">
+                    <div class="frc-sessions-filter-field">
+                        <label class="form-label small text-muted mb-1" for="filter_child_id">Child</label>
+                        <select id="filter_child_id" name="child_id" class="form-select form-select-sm w-100" data-auto-submit>
+                            <option value="">All children</option>
+                            @foreach($filterChildren ?? [] as $c)
+                                <option value="{{ $c->id }}" @selected(($filterChildId ?? null) === (int) $c->id)>
+                                    {{ $c->full_name }}@if(filled($c->gr_number)) — {{ $c->gr_number }}@endif
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
-                @endif
-            </div>
-        </form>
-        @if(!empty($defaultRangeHint))
-            <p class="small text-muted mb-0 mt-2">{{ $defaultRangeHint }}</p>
-        @endif
-    </div>
+                    <div class="frc-sessions-filter-field">
+                        <label class="form-label small text-muted mb-1" for="filter_service_id">Service</label>
+                        <select id="filter_service_id" name="service_id" class="form-select form-select-sm w-100" data-auto-submit>
+                            <option value="">All services</option>
+                            @foreach($filterServices ?? [] as $svc)
+                                <option value="{{ $svc->id }}" @selected(($filterServiceId ?? null) === (int) $svc->id)>{{ $svc->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="frc-sessions-filter-field">
+                        <label class="form-label small text-muted mb-1" for="filter_status">Status</label>
+                        <select id="filter_status" name="status" class="form-select form-select-sm w-100" data-auto-submit>
+                            @foreach($statuses as $key => $label)
+                                <option value="{{ $key }}" @selected(($status ?? 'all') === $key)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="frc-sessions-filter-field frc-sessions-filter-field--half">
+                        <label class="form-label small text-muted mb-1" for="filter_start_date">Start date</label>
+                        <input type="date" id="filter_start_date" name="start_date" class="form-control form-control-sm w-100"
+                            value="{{ $startDate ?? '' }}" data-auto-submit>
+                    </div>
+                    <div class="frc-sessions-filter-field frc-sessions-filter-field--half">
+                        <label class="form-label small text-muted mb-1" for="filter_end_date">End date</label>
+                        <input type="date" id="filter_end_date" name="end_date" class="form-control form-control-sm w-100"
+                            value="{{ $endDate ?? '' }}" data-auto-submit>
+                    </div>
+                    @if($hasDateFilter ?? false)
+                        <div class="frc-sessions-filter-field frc-sessions-filter-actions">
+                            <label class="form-label small text-muted mb-1 frc-sessions-filter-actions-label" aria-hidden="true">&nbsp;</label>
+                            <div class="filter-actions">
+                                <a href="{{ route('therapist.sessions.index', array_filter([
+                                    'status' => ($status ?? 'all') !== 'all' ? $status : null,
+                                    'child_id' => $filterChildId ?? null,
+                                    'service_id' => $filterServiceId ?? null,
+                                ])) }}" class="btn-outline-teal">
+                                    <i class="fa-solid fa-calendar-xmark me-1"></i>Clear dates
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </form>
+            @if(!empty($defaultRangeHint))
+                <p class="small text-muted mb-0 mt-2 therapist-sessions-filters-hint">{{ $defaultRangeHint }}</p>
+            @endif
+        </div>
+    </details>
 </div>
 
-<div class="card-frc frc-sessions-schedule-card">
+<div class="card-frc card-frc--panel frc-sessions-schedule-card">
     <div class="card-header-frc">
         <h6 class="card-title-frc mb-0"><i class="fa-solid fa-hand-holding-medical me-2" style="color:var(--teal);"></i>Your sessions ({{ $sessions->total() }})</h6>
     </div>
@@ -103,7 +209,7 @@
             <p class="mb-0">{{ $emptyMessage }}</p>
         </div>
     @else
-        <div class="table-responsive frc-sessions-table-wrap">
+        <div class="table-responsive frc-sessions-table-wrap therapist-sessions-table">
             <table class="table-frc mb-0">
                 <thead>
                     <tr>
@@ -142,27 +248,40 @@
                             <td style="font-weight:600;color:var(--navy); white-space:nowrap;">{{ $row['effective_date']->format('d M Y') }}</td>
                             <td class="small text-muted white-space:nowrap;">{{ $row['effective_date']->format('l') }}</td>
                             <td style="white-space:nowrap;">{{ $row['time_slot'] }}</td>
-                            <td style="white-space:nowrap;">
+                            <td class="therapist-sessions-child-cell">
                                 @if($isGroupRow)
                                     @php
                                         $gmList = is_array($groupMembers) ? $groupMembers : collect($groupMembers)->all();
-                                        $gmShown = array_slice($gmList, 0, 1);
-                                        $gmExtra = count($gmList) - count($gmShown);
+                                        $firstMember = $gmList[0] ?? null;
+                                        $gmExtra = max(0, count($gmList) - 1);
+                                        $allChildNames = collect($gmList)->pluck('child_name')->filter()->join(', ');
+                                        $firstChildId = (int) ($firstMember['child_id'] ?? 0);
+                                        $firstGrNumber = $firstMember['schedule']->enrollment?->child?->gr_number ?? null;
                                     @endphp
-                                    @foreach($gmShown as $idx => $member)
-                                        @if($idx > 0)<span class="text-muted">, </span>@endif
-                                        @if((int) ($member['child_id'] ?? 0) > 0)
-                                            <a href="{{ route('therapist.children.show', $member['child_id']) }}" style="color:var(--navy);text-decoration:underline;">{{ $member['child_name'] }}</a>
+                                    @if($firstMember)
+                                        @if($firstChildId > 0)
+                                            <a href="{{ route('therapist.children.show', $firstChildId) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstMember['child_name'] }}</a>
                                         @else
-                                            {{ $member['child_name'] }}
+                                            <span style="font-weight:500;color:var(--navy);">{{ $firstMember['child_name'] }}</span>
                                         @endif
-                                    @endforeach
-                                    @if($gmExtra > 0)
-                                        <span class="text-muted">, +{{ $gmExtra }} more</span>
+                                        <div style="font-size:12px;color:var(--text-muted);">
+                                            GR No: {{ $firstGrNumber ?? '—' }}
+                                        </div>
+                                        @if($gmExtra > 0)
+                                            <span class="therapist-sessions-children-more" title="{{ $allChildNames }}">
+                                                <i class="fa-solid fa-users" aria-hidden="true"></i>
+                                                +{{ $gmExtra }} more
+                                            </span>
+                                        @endif
+                                        <span class="badge-status badge-draft therapist-sessions-group-badge">Group</span>
+                                    @else
+                                        <span class="text-muted">—</span>
                                     @endif
-                                    <span class="badge-status badge-draft" style="font-size:10px;margin-left:6px;vertical-align:middle;">Group</span>
                                 @elseif($cid)
-                                    <a href="{{ route('therapist.children.show', $cid) }}" style="color:var(--navy);text-decoration:underline;">{{ $row['child_name'] }}</a>
+                                    <a href="{{ route('therapist.children.show', $cid) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $row['child_name'] }}</a>
+                                    <div style="font-size:12px;color:var(--text-muted);">
+                                        GR No: {{ $sch->enrollment?->child?->gr_number ?? '—' }}
+                                    </div>
                                 @else
                                     {{ $row['child_name'] }}
                                 @endif

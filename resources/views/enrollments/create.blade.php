@@ -87,10 +87,11 @@
                 <div class="col-12 col-sm-6">
                     <label>Status</label>
                     <select name="status" class="form-control">
-                        <option value="draft" @selected(old('status', 'draft') === 'draft')>Draft</option>
-                        <option value="active" @selected(old('status', 'draft') === 'active')>Active</option>
+                        <option value="active" @selected(old('status', 'active' )==='active' )>Active</option>                        
+                        <option value="draft" @selected(old('status', 'active') === 'draft')>Draft</option>
                     </select>
                 </div>
+           
             </div>
         </div>
 
@@ -123,7 +124,7 @@
                         </select>
                     </div>
                     <div style="padding-bottom:2px;">
-                        <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;"><i class="fa-solid fa-minus"></i></button>
+                        <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;" title="Remove" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
             </div>

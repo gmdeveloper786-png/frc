@@ -41,19 +41,17 @@ class TherapistAssessmentController extends Controller
             'branch_id'   => $request->filled('branch_id') ? (int) $request->query('branch_id') : null,
             'start_date'  => $request->filled('start_date') ? (string) $request->query('start_date') : null,
             'end_date'    => $request->filled('end_date') ? (string) $request->query('end_date') : null,
-            'child_id'    => $request->filled('child_id') ? (int) $request->query('child_id') : null,
+            'search'      => $request->filled('search') ? trim((string) $request->query('search')) : null,
         ], fn($value) => $value !== null && $value !== '');
 
         $assessments = $this->assessmentService->getTherapistAssessmentsPaginated((int) $user->id, $filters, 15);
         $branches = Branch::published()->forDropdown()->orderedForDropdown()->get();
-        $filterChildren = $this->portal->childrenForSessionFilter((int) $user->id);
 
-        $hasActiveFilters = $request->hasAny(['status', 'branch_id', 'start_date', 'end_date', 'child_id']);
+        $hasActiveFilters = $request->hasAny(['status', 'branch_id', 'start_date', 'end_date', 'search']);
 
         return view('therapist.assessments.index', compact(
             'assessments',
             'branches',
-            'filterChildren',
             'status',
             'hasActiveFilters',
         ));

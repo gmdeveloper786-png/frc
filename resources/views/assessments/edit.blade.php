@@ -7,6 +7,15 @@
     <div class="col-12 col-lg-9">
         <form action="{{ route('assessments.update', $assessment) }}" method="POST" class="form-frc" id="assessmentForm">
         @csrf @method('PUT')
+
+        <div class="form-section">
+                    <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Children</div>
+                    @include('partials.approved-child-checkboxes-field', [
+                    'initialChildren' => $initialChildren,
+                    'selectedIds' => old('child_ids', $assessment->children->pluck('id')->toArray()),
+                    ])
+                </div>
+
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-clipboard-list" style="color:var(--teal);"></i> Assessment Details</div>
             <div class="row g-3">
@@ -23,7 +32,7 @@
                     @error('date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-4">
-                    <label>Day (auto)</label>
+                    <label>Day (auto) <span style="color:var(--danger)">*</span></label>
                     <input type="text" id="dayDisplay" value="{{ $assessment->day }}" class="form-control" readonly style="background:var(--bg-light);">
                 </div>
                 <div class="col-md-4">
@@ -46,7 +55,7 @@
                     @endif
                 </div>
                 <div class="col-md-6">
-                    <label>Status</label>
+                    <label>Status <span style="color:var(--danger)">*</span></label>
                     <select name="status" class="form-control">
                         @foreach(['draft','publish'] as $s)
                             <option value="{{ $s }}" {{ old('status', $assessment->status) == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
@@ -55,12 +64,13 @@
                 </div>
             </div>
         </div>
+
         <div class="form-section">
             <div class="form-section-title"><i class="fa-solid fa-user-doctor" style="color:var(--teal);"></i> Therapist</div>
             @error('therapist_id') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
             <div class="row g-3">
                 <div class="col-12">
-                    <label>Therapist</label>
+                    <label>Therapist <span style="color:var(--danger)">*</span></label>
                     <select name="therapist_id" id="assessmentTherapistSelect" class="form-control">
                         <option value="">Select branch first</option>
                     </select>
@@ -69,14 +79,10 @@
                 </div>
             </div>
         </div>
-        <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Children</div>
-            @include('partials.approved-child-checkboxes-field', [
-                'initialChildren' => $initialChildren,
-                'selectedIds' => old('child_ids', $assessment->children->pluck('id')->toArray()),
-            ])
-        </div>
-        <div style="display:flex;gap:12px;">
+
+
+
+        <div class="frc-form-actions">
             <button type="submit" class="btn-teal"><i class="fa-solid fa-check"></i> Update</button>
             <a href="{{ route('assessments.index') }}" class="btn-outline-teal">Cancel</a>
         </div>
@@ -89,7 +95,9 @@
 <script nonce="{{ $cspNonce }}">
 const assessmentTherapistOld = @json(old('therapist_id', $assessment->therapist_id));
 function therapistOptionLabel(t) {
-    return t.full_name || '';
+    const name = (t.full_name || '').trim();
+    const email = (t.email || '').trim();
+    return email ? `${name} — ${email}` : name;
 }
 
 async function reloadAssessmentTherapists() {

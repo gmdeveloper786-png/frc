@@ -3,9 +3,9 @@
 @section('page-title', 'Edit Disability')
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card-frc">
+<div class="row justify-content-center g-3 min-w-0">
+    <div class="col-12 col-md-8 col-lg-6 min-w-0">
+        <div class="card-frc card-frc--panel">
             <div class="card-header-frc">
                 <h6 class="card-title-frc"><i class="fa-solid fa-pen me-2" style="color:var(--teal);"></i>Edit Disability</h6>
             </div>
@@ -18,12 +18,13 @@
                 </div>
                 <div class="mb-4">
                     <label>Status <span style="color:var(--danger)">*</span></label>
-                    <select name="status" class="form-control">
-                        <option value="draft" {{ old('status', $disability->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                    <select name="status" class="form-control @error('status') is-invalid @enderror">
                         <option value="publish" {{ old('status', $disability->status) == 'publish' ? 'selected' : '' }}>Published</option>
+                        <option value="draft" {{ old('status', $disability->status) == 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
+                    @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div style="display:flex;gap:10px;">
+                <div class="frc-form-actions">
                     <button type="submit" class="btn-teal"><i class="fa-solid fa-check"></i> Update</button>
                     <a href="{{ route('disabilities.index') }}" class="btn-outline-teal">Cancel</a>
                 </div>

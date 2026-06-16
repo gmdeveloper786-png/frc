@@ -1,14 +1,8 @@
 @php
     $pickerMode = $pickerMode ?? 'select';
-    $initialChildrenJson = ($initialChildren ?? collect())->map(static function ($child): array {
-        return [
-            'id'           => $child->id,
-            'full_name'    => $child->full_name,
-            'age'          => $child->age,
-            'gender'       => $child->gender,
-            'phone_number' => $child->phone_number,
-        ];
-    })->values();
+    $initialChildrenJson = ($initialChildren ?? collect())->map(
+        static fn ($child): array => $child->toApprovedPickerArray(),
+    )->values();
     $approvedChildSearchUrl = route('ajax.children.approved-search');
 @endphp
 <script nonce="{{ $cspNonce }}">
@@ -17,15 +11,32 @@
     const INITIAL = @json($initialChildrenJson);
     const MODE = @json($pickerMode);
 
-    function childMetaLine(c) {
-        const parts = [];
-        if (c.age) parts.push(c.age + 'y');
-        if (c.gender) parts.push(ucFirst(c.gender));
-        return parts.join(' • ');
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function ucFirst(s) {
-        return s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : '';
+    function childMetaLine(c) {
+        return (c.gr_number || '').trim();
+    }
+
+    function renderDisabilitiesHtml(c) {
+        const list = Array.isArray(c.disabilities) ? c.disabilities.filter(Boolean) : [];
+        if (!list.length) {
+            return '';
+        }
+        const maxShow = 2;
+        const shown = list.slice(0, maxShow);
+        const extra = list.length - shown.length;
+        const fullTitle = escapeHtml(list.join(', '));
+        let html = '<div class="approved-child-picker-disabilities" title="' + fullTitle + '">';
+        shown.forEach(function (label) {
+            html += '<span class="approved-child-picker-disability-tag">' + escapeHtml(label) + '</span>';
+        });
+        if (extra > 0) {
+            html += '<span class="approved-child-picker-disability-more">+' + extra + '</span>';
+        }
+        html += '</div>';
+        return html;
     }
 
     function fetchHeaders() {
@@ -152,10 +163,6 @@
             return chip;
         }
 
-        function escapeHtml(s) {
-            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
         function renderSelected() {
             if (!selectedWrap) return;
             selectedWrap.innerHTML = '';
@@ -173,7 +180,7 @@
 
         function childCheckboxLabel(c, checked) {
             const label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px solid ' + (checked ? 'var(--teal)' : 'var(--border-soft)') + ';background:' + (checked ? 'var(--teal-light)' : '') + ';border-radius:10px;cursor:pointer;';
+            label.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border:1.5px solid ' + (checked ? 'var(--teal)' : 'var(--border-soft)') + ';background:' + (checked ? 'var(--teal-light)' : '') + ';border-radius:10px;cursor:pointer;min-width:0;';
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.value = c.id;
@@ -188,8 +195,12 @@
                 syncHiddenInputs();
             });
             const text = document.createElement('div');
-            text.innerHTML = '<div style="font-size:13px;font-weight:500;">' + escapeHtml(c.full_name) + '</div>'
-                + '<div style="font-size:11px;color:var(--text-muted);">' + escapeHtml(childMetaLine(c)) + '</div>';
+            text.style.minWidth = '0';
+            text.style.flex = '1';
+            const grLine = childMetaLine(c);
+            text.innerHTML = '<div style="font-size:13px;font-weight:500;line-height:1.3;">' + escapeHtml(c.full_name) + '</div>'
+                + (grLine ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + escapeHtml(grLine) + '</div>' : '')
+                + renderDisabilitiesHtml(c);
             label.appendChild(cb);
             label.appendChild(text);
             return label;
