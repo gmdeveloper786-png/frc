@@ -117,13 +117,14 @@
                 @else
                     <div class="table-responsive child-dashboard-table-wrap">
                         <table class="table-frc mb-0">
-                            <thead><tr><th>Date</th><th>Time</th><th>Status</th><th> Actions</th></tr></thead>
+                            <thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Status</th><th> Actions</th></tr></thead>
                             <tbody>
                                 @foreach($stats['assessments']->take(5) as $a)
                                     <tr>
                                         <td>{{ $a->date->format('d M Y') }}</td>
                                         <td>{{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</td>
-                                        <td><span class="badge-status badge-{{ $a->status }}">{{ ucfirst($a->status) }}</span></td>
+                                        <td>{{ $a->services->pluck('name')->join(', ') ?: '—' }}</td>
+                                        <td><span class="badge-status badge-{{ $a->status === 'cancelled' ? 'cancelled' : $a->status }}">{{ $a->statusLabel() }}</span></td>
                                         <td><a href="{{ route('child.assessments.show', $a) }}" class="btn-outline-teal btn-sm-frc">View Details</a></td>
                                     </tr>
                                 @endforeach

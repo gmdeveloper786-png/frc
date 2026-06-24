@@ -30,7 +30,7 @@ class DisabilityController extends Controller
     {
         $disability = $this->service->create($request->validated(), $request->user()->id);
 
-        return response()->json(['message' => 'Disability created.', 'data' => new DisabilityResource($disability)], 201);
+        return response()->json(['message' => 'Present complaint created.', 'data' => new DisabilityResource($disability)], 201);
     }
 
     public function show(Request $request, Disability $disability): JsonResponse
@@ -46,13 +46,13 @@ class DisabilityController extends Controller
     {
         $updated = $this->service->update($disability, $request->validated(), $request->user()->id);
 
-        return response()->json(['message' => 'Disability updated.', 'data' => new DisabilityResource($updated)]);
+        return response()->json(['message' => 'Present complaint updated.', 'data' => new DisabilityResource($updated)]);
     }
 
     public function destroy(StoreDisabilityRequest $request, Disability $disability): JsonResponse
     {
         $this->service->delete($disability);
 
-        return response()->json(['message' => 'Disability deleted.']);
+        return response()->json(['message' => 'Present complaint permanently deleted.']);
     }
 }

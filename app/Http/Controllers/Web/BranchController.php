@@ -49,6 +49,6 @@ class BranchController extends Controller
     {
         $this->service->delete($branch);
 
-        return redirect()->route('branches.index')->with('success', 'Branch deleted.');
+        return redirect()->route('branches.index')->with('success', 'Branch permanently deleted.');
     }
 }

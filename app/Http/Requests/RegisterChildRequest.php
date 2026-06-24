@@ -46,7 +46,7 @@ class RegisterChildRequest extends FormRequest
             $hasOther = $otherId !== null && in_array((int) $otherId, $ids, true);
 
             if ($hasOther && ! filled(trim((string) $this->input('other_disability', '')))) {
-                $validator->errors()->add('other_disability', 'Please describe the disability when "Other" is selected.');
+                $validator->errors()->add('other_disability', 'Please describe the present complaint when "Other" is selected.');
             }
         });
     }

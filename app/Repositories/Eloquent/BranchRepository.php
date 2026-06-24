@@ -49,6 +49,6 @@ class BranchRepository implements BranchRepositoryInterface
 
     public function delete(Branch $branch): bool
     {
-        return $branch->delete();
+        return (bool) $branch->forceDelete();
     }
 }

@@ -133,9 +133,21 @@
                         <tr>
                             <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->hasPrintableReceipt() ? $p->receipt_number : '—' }}</td>
                             <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">{{ $p->child?->gr_number ?? '—' }}</td>
-                            <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;"> <a href="{{ route('enrollments.show', $p->enrollment?->id) }}" style="color:var(--navy);text-decoration:underline;">#{{ $p->enrollment?->id ?? '—' }}</a></td>
+                            <td style="font-weight:500;font-family:'Poppins',sans-serif;font-size:13px;color:var(--navy); white-space:nowrap;">
+                                @if($p->enrollment)
+                                    <a href="{{ route('enrollments.show', $p->enrollment->id) }}" style="color:var(--navy);text-decoration:underline;">#{{ $p->enrollment->id }}</a>
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td style="white-space:nowrap;">
-                                <div style="font-weight:500;"><a href="{{ route('children.show', $p->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $p->child?->full_name }}</a></div>
+                                <div style="font-weight:500;">
+                                    @if($p->child)
+                                        <a href="{{ route('children.show', $p->child->id) }}" style="color:var(--navy);text-decoration:underline;">{{ $p->child->full_name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </div>
                             </td>
                             <td style="white-space:nowrap;">{{ frc_pkr($p->enrollment?->final_total) }}</td>
                             <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($p->enrollment?->paid_amount) }}</td>

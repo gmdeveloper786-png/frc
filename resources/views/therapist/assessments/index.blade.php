@@ -34,7 +34,7 @@
 @php
     $statuses = [
         '' => 'All statuses',
-        'publish' => 'Publish',
+        'publish' => 'Scheduled',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
     ];
@@ -109,6 +109,7 @@
                         <th>Day</th>
                         <th>Time</th>
                         <th>Branch</th>
+                        <th>Service</th>
                         <th>Children</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -128,6 +129,7 @@
                             <td style="white-space:nowrap;">{{ $row->day }}</td>
                             <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($row->time)->format('h:i A') }}</td>
                             <td style="white-space:nowrap;">{{ $row->branch?->name ?? '—' }}</td>
+                            <td style="font-size:13px;white-space:nowrap;">{{ $row->services->pluck('name')->join(', ') ?: '—' }}</td>
                             <td class="assessments-children-cell" style="font-size:13px;" @if($childNames !== '') title="{{ $childNames }}" @endif>
                                 @if($firstChild)
                                     <a href="{{ route('therapist.children.show', $firstChild) }}" style="color:var(--navy);font-weight:500;text-decoration:underline;">{{ $firstChild->full_name }}</a>
@@ -146,7 +148,7 @@
                             </td>
                             <td>
                                 <span class="badge-status badge-{{ $row->status === 'cancelled' ? 'cancelled' : $row->status }}">
-                                    {{ $row->status === 'cancelled' ? 'Cancelled' : ucfirst($row->status) }}
+                                    {{ $row->statusLabel() }}
                                 </span>
                             </td>
                             <td>

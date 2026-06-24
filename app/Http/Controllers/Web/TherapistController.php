@@ -79,6 +79,6 @@ class TherapistController extends Controller
         StaffBranchScope::enforceTherapistBranch($request->user(), $therapist);
         $this->service->delete($therapist);
 
-        return redirect()->route('therapists.index')->with('success', 'Therapist deleted.');
+        return redirect()->route('therapists.index')->with('success', 'Therapist permanently deleted.');
     }
 }

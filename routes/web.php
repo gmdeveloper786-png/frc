@@ -133,6 +133,11 @@ Route::middleware(['auth', 'active_user'])->group(function () {
         Route::get('/{id}', [ChildController::class, 'show'])->name('show')->where('id', '[0-9]+');
     });
 
+    Route::middleware('permission:register_children')->prefix('children')->name('children.')->group(function () {
+        Route::get('/create', [ChildController::class, 'create'])->name('create');
+        Route::post('/', [ChildController::class, 'store'])->name('store');
+    });
+
     Route::middleware('permission:manage_children')->prefix('children')->name('children.')->group(function () {
         Route::get('/{id}/edit', [ChildController::class, 'edit'])->name('edit')->where('id', '[0-9]+');
         Route::put('/{id}', [ChildController::class, 'update'])->name('update')->where('id', '[0-9]+');
@@ -140,7 +145,10 @@ Route::middleware(['auth', 'active_user'])->group(function () {
     });
 
     Route::middleware('permission:manage_disabilities')->group(function () {
-        Route::resource('disabilities', DisabilityController::class);
+        Route::resource('present-complaints', DisabilityController::class)
+            ->names('disabilities')
+            ->parameters(['present-complaints' => 'disability'])
+            ->except(['show']);
     });
     Route::middleware('permission:manage_services')->group(function () {
         Route::resource('services', ServiceController::class);

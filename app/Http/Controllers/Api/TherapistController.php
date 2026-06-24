@@ -67,7 +67,7 @@ class TherapistController extends Controller
         StaffBranchScope::enforceTherapistBranch($request->user(), $therapist);
         $this->service->delete($therapist);
 
-        return response()->json(['message' => 'Therapist deleted.']);
+        return response()->json(['message' => 'Therapist permanently deleted.']);
     }
 
     public function byBranch(Request $request, int $branch): JsonResponse

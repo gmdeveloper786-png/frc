@@ -55,8 +55,9 @@ Route::middleware(['auth:sanctum', 'active_user', 'approved_child', 'throttle:60
         });
     });
 
-    // Disabilities
-    Route::apiResource('disabilities', DisabilityController::class);
+    // Present Complaints
+    Route::apiResource('present-complaints', DisabilityController::class)
+        ->parameters(['present-complaints' => 'disability']);
 
     // Services — published list must be registered before {service} routes
     Route::get('services/published', [ServiceController::class, 'published']);

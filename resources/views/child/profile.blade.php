@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="child-profile-field child-profile-field--readonly child-profile-field--full">
-                            <label>Disabilities</label>
+                            <label>Present Complaints</label>
                             @if($user->disabilities->isEmpty())
                                 <p class="child-profile-readonly-value text-muted mb-0">—</p>
                             @else

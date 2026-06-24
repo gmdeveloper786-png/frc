@@ -77,8 +77,9 @@
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Day</td><td>{{ $assessment->day }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Time</td><td>{{ date('g:i A', strtotime($assessment->time)) }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Branch</td><td>{{ $assessment->branch?->name ?? '—' }}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:7px 0;">Service</td><td>{{ $assessment->services->pluck('name')->join(', ') ?: '—' }}</td></tr>
                 <tr><td style="color:var(--text-muted);padding:7px 0;">Therapist</td><td>{{ $assessment->therapist?->full_name ?? ($assessment->status === 'draft' ? 'Not assigned' : '—') }}</td></tr>
-                <tr><td style="color:var(--text-muted);padding:7px 0;">Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span></td></tr>
+                <tr><td style="color:var(--text-muted);padding:7px 0;">Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->statusLabel() }}</span></td></tr>
                 @if($assessment->status === 'completed')
                     <tr><td style="color:var(--text-muted);padding:7px 0;">Completed</td><td>{{ $assessment->completed_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                     @if($assessment->completedBy)<tr><td style="color:var(--text-muted);padding:7px 0;">Completed by</td><td>{{ $assessment->completedBy->full_name }}</td></tr>@endif
@@ -107,7 +108,7 @@
             @else
                 <div class="table-responsive assessment-show-children-table">
                     <table class="table-frc mb-0">
-                        <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th class="assessment-show-disabilities-cell">Disabilities</th><th>Status</th></tr></thead>
+                        <thead><tr><th>GR No.</th><th>Name</th><th>Age</th><th class="assessment-show-disabilities-cell">Present Complaints</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($assessment->children as $child)
                                 @php

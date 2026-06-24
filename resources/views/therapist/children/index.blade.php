@@ -57,7 +57,7 @@
                         <th>Child</th>
                         <th>Age</th>
                         <th>Gender</th>
-                        <th>Disabilities</th>
+                        <th>Present Complaints</th>
                         <th>Branch</th>
                         <th style="white-space:nowrap;">Last assessment</th>
                         <th style="white-space:nowrap;">Last session</th>

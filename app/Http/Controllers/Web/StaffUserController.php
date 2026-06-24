@@ -70,7 +70,7 @@ class StaffUserController extends Controller
         $this->staffUsers->ensureStaffUser($user);
         $this->staffUsers->deleteStaffUser($user, $request->user());
 
-        return redirect()->route('super-admin.staff-users.index')->with('success', 'Staff user deleted.');
+        return redirect()->route('super-admin.staff-users.index')->with('success', 'Staff user permanently deleted.');
     }
 
     public function toggleStatus(Request $request, User $user): RedirectResponse

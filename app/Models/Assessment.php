@@ -109,4 +109,20 @@ class Assessment extends Model
     {
         return $this->status === 'cancelled' && $this->cancelled_previous_status === 'draft';
     }
+
+    public function statusLabel(): string
+    {
+        return self::statusLabelFor((string) $this->status);
+    }
+
+    public static function statusLabelFor(string $status): string
+    {
+        return match ($status) {
+            'publish'   => 'Scheduled',
+            'cancelled' => 'Cancelled',
+            'completed' => 'Completed',
+            'draft'     => 'Draft',
+            default     => ucfirst($status),
+        };
+    }
 }

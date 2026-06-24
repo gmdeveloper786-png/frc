@@ -65,7 +65,8 @@
                 <tr><td>Day</td><td>{{ $assessment->day }}</td></tr>
                 <tr><td>Time</td><td>{{ \Carbon\Carbon::parse($assessment->time)->format('h:i A') }}</td></tr>
                 <tr><td>Branch</td><td>{{ $assessment->branch?->name ?? '—' }}</td></tr>
-                <tr><td>Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span></td></tr>
+                <tr><td>Service</td><td>{{ $assessment->services->pluck('name')->join(', ') ?: '—' }}</td></tr>
+                <tr><td>Status</td><td><span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->statusLabel() }}</span></td></tr>
                 @if($assessment->status === 'completed')
                     <tr><td>Completed</td><td>{{ $assessment->completed_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                     @if($assessment->completedBy)

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\AssessmentRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
 class AssessmentService
@@ -115,7 +116,7 @@ class AssessmentService
 
     public function complete(Assessment $assessment, User $actor, array $data = []): Assessment
     {
-        abort_if(! in_array($assessment->status, ['publish'], true), 403, 'Only published assessments can be completed.');
+        abort_if(! in_array($assessment->status, ['publish'], true), 403, 'Only scheduled assessments can be completed.');
 
         if ($actor->isTherapist()) {
             abort_unless((int) $assessment->therapist_id === (int) $actor->id, 403);
@@ -223,7 +224,16 @@ class AssessmentService
 
     public function delete(Assessment $assessment): bool
     {
-        return $this->repository->delete($assessment);
+        return DB::transaction(function () use ($assessment) {
+            AssessmentNote::withTrashed()
+                ->where('assessment_id', $assessment->id)
+                ->each(fn (AssessmentNote $note) => $note->forceDelete());
+
+            $assessment->services()->detach();
+            $assessment->children()->detach();
+
+            return $this->repository->delete($assessment);
+        });
     }
 
     private function buildAssessmentPayload(array $data, int $userId, bool $isCreate, ?Assessment $existing = null): array

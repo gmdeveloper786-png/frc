@@ -146,7 +146,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function delete(Enrollment $enrollment): bool
     {
-        return $enrollment->delete();
+        return (bool) $enrollment->forceDelete();
     }
 
     public function recalculatePaidAmount(Enrollment $enrollment): void

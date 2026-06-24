@@ -13,7 +13,9 @@ class StoreDisabilityRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('disability')?->id;
+        /** @var \App\Models\Disability|null $disability */
+        $disability = $this->route('disability');
+        $id = $disability?->id;
 
         return [
             'name'   => ['required', 'string', 'max:255', 'unique:disabilities,name' . ($id ? ",{$id}" : '')],

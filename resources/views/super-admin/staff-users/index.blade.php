@@ -227,7 +227,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:12px;">
             <div class="modal-header">
-                <h6 class="modal-title">Delete staff user</h6>
+                <h6 class="modal-title">Permanently delete staff user</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="deleteStaffForm" method="post">
@@ -238,7 +238,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-outline-teal" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-teal" style="background:var(--danger);border-color:var(--danger);">Delete</button>
+                    <button type="submit" class="btn-teal" style="background:var(--danger);border-color:var(--danger);">Permanently delete</button>
                 </div>
             </form>
         </div>

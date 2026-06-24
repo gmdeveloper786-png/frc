@@ -61,6 +61,6 @@ class ServiceController extends Controller
     {
         $this->service->delete($service);
 
-        return response()->json(['message' => 'Service deleted.']);
+        return response()->json(['message' => 'Service permanently deleted.']);
     }
 }

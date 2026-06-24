@@ -124,7 +124,7 @@ class EnrollmentService
         $status            = $isHighDiscount ? 'pending_super_admin_approval' : ($data['status'] ?? 'draft');
         $enrollmentGroupId = $isGroup ? (string) Str::uuid() : null;
 
-        $scheduleData = array_map(fn ($s) => [
+        $scheduleData = array_map(fn($s) => [
             'therapist_id' => $data['therapist_id'],
             'branch_id'    => $data['branch_id'],
             'day'          => $s['day'],
@@ -337,6 +337,21 @@ class EnrollmentService
             ]);
         }
 
-        return $this->repository->delete($enrollment);
+        return DB::transaction(function () use ($enrollment) {
+            if ($enrollment->discount_file) {
+                $this->secureFiles->delete($enrollment->discount_file);
+            }
+
+            $enrollment->load('payments');
+
+            foreach ($enrollment->payments as $payment) {
+                if ($payment->payment_slip) {
+                    $this->secureFiles->delete($payment->payment_slip);
+                }
+                $payment->forceDelete();
+            }
+
+            return $this->repository->delete($enrollment);
+        });
     }
 }

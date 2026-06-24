@@ -36,7 +36,7 @@
                     <input type="time" name="time" id="assessTime" value="{{ old('time') }}" class="form-control @error('time') is-invalid @enderror">
                     @error('time') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label>Branch <span style="color:var(--danger)">*</span></label>
                     @if($branches->count() === 1)
                         @php $onlyBranch = $branches->first(); @endphp
@@ -52,10 +52,20 @@
                     @endif
                     @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <label>Service <span style="color:var(--danger)">*</span></label>
+                    <select name="service_id" id="assessmentServiceSelect" class="form-control @error('service_id') is-invalid @enderror">
+                        <option value="">Select Service</option>
+                        @foreach($services as $svc)
+                            <option value="{{ $svc->id }}" {{ (int) old('service_id') === $svc->id ? 'selected' : '' }}>{{ $svc->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="col-md-4">
                     <label>Status <span style="color:var(--danger)">*</span></label>
                     <select name="status" class="form-control">
-                        <option value="publish" {{ old('status') === 'publish' ? 'selected' : '' }}>Published</option>
+                        <option value="publish" {{ old('status') === 'publish' ? 'selected' : '' }}>Scheduled</option>
                         <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     </select>
                 </div>
@@ -69,13 +79,12 @@
                 <div class="col-12">
                     <label>Therapist <span style="color:var(--danger)">*</span></label>
                     <select name="therapist_id" id="assessmentTherapistSelect" class="form-control">
-                        <option value="">Select branch first</option>
+                        <option value="">Select branch &amp; service first</option>
                     </select>
                     <div id="assessmentTherapistHint" style="display:none;margin-top:8px;font-size:13px;color:var(--danger);">
                     </div>
                     <small style="color:var(--text-muted);font-size:12px;display:block;margin-top:6px;">Required when status is
-                        Published. Draft assessments may leave therapist unset. Therapists are listed for the selected branch
-                        only.</small>
+                        Scheduled. Draft assessments may leave therapist unset. Therapists are filtered by branch and service.</small>
                 </div>
             </div>
         </div>
@@ -90,81 +99,7 @@
 @endsection
 
 @push('scripts')
-<script nonce="{{ $cspNonce }}">
-const assessmentTherapistOld = @json(old('therapist_id'));
-function therapistOptionLabel(t) {
-    const name = (t.full_name || '').trim();
-    const email = (t.email || '').trim();
-    return email ? `${name} — ${email}` : name;
-}
-
-async function reloadAssessmentTherapists() {
-    const form = document.getElementById('assessmentForm');
-    if (!form) return;
-    const branchSel = form.querySelector('[name="branch_id"]');
-    const therapistSel = document.getElementById('assessmentTherapistSelect');
-    const hint = document.getElementById('assessmentTherapistHint');
-    if (!branchSel || !therapistSel || !hint) return;
-
-    hint.style.display = 'none';
-    hint.textContent = '';
-
-    const prev = therapistSel.value || (assessmentTherapistOld != null ? String(assessmentTherapistOld) : '');
-    const branchId = branchSel.value;
-
-    therapistSel.innerHTML = '<option value="">Loading...</option>';
-
-    if (!branchId) {
-        therapistSel.innerHTML = '<option value="">Select branch first</option>';
-        return;
-    }
-
-    try {
-        const res = await fetch(`/ajax/branches/${branchId}/therapists`, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-            },
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            therapistSel.innerHTML = '<option value="">Unable to load therapists</option>';
-            return;
-        }
-        const list = data.data || [];
-        if (!list.length) {
-            therapistSel.innerHTML = '<option value="">No therapist available</option>';
-            hint.style.display = 'block';
-            hint.textContent = 'No active therapist is assigned to this branch.';
-            return;
-        }
-        therapistSel.innerHTML = '<option value="">Select Therapist</option>';
-        list.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = therapistOptionLabel(t);
-            therapistSel.appendChild(opt);
-        });
-        if (prev && Array.from(therapistSel.options).some(o => o.value === String(prev))) {
-            therapistSel.value = String(prev);
-        }
-    } catch (e) {
-        console.error(e);
-        therapistSel.innerHTML = '<option value="">Error loading therapists</option>';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('assessmentForm');
-    if (!form) return;
-    const b = form.querySelector('[name="branch_id"]');
-    if (b) b.addEventListener('change', reloadAssessmentTherapists);
-    reloadAssessmentTherapists();
-});
-
-</script>
+@include('assessments.partials.therapist-select-scripts')
 @include('assessments.partials.assessment-datetime-scripts')
 @include('partials.approved-child-picker-scripts', [
     'pickerMode' => 'checkboxes',

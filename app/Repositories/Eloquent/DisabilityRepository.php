@@ -40,11 +40,12 @@ class DisabilityRepository implements DisabilityRepositoryInterface
     public function update(Disability $disability, array $data): Disability
     {
         $disability->update($data);
-        return $disability->fresh();
+
+        return $disability->refresh();
     }
 
     public function delete(Disability $disability): bool
     {
-        return $disability->delete();
+        return (bool) $disability->forceDelete();
     }
 }

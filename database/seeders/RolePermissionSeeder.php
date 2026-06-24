@@ -29,6 +29,7 @@ class RolePermissionSeeder extends Seeder
         // Admin permissions
         $adminPermissions = Permission::whereIn('name', [
             'manage_children',
+            'register_children',
             'approve_children',
             'manage_therapists',
             'manage_assessments',
@@ -40,8 +41,8 @@ class RolePermissionSeeder extends Seeder
 
         // Finance permissions
         $financePermissions = Permission::whereIn('name', [
-            'manage_children',
-            'manage_enrollments',
+            'view_children',
+            'view_enrollments',
             'manage_payments',
             'verify_payments',
             'view_finance_reports',

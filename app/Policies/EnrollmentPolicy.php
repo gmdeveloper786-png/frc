@@ -33,16 +33,28 @@ class EnrollmentPolicy
 
     public function create(User $user): bool
     {
+        if ($user->isFinance() || $user->isApprovalDiscount()) {
+            return false;
+        }
+
         return $user->hasPermission('manage_enrollments');
     }
 
     public function update(User $user, Enrollment $enrollment): bool
     {
+        if ($user->isFinance() || $user->isApprovalDiscount()) {
+            return false;
+        }
+
         return $user->hasPermission('manage_enrollments');
     }
 
     public function delete(User $user, Enrollment $enrollment): bool
     {
+        if ($user->isFinance() || $user->isApprovalDiscount()) {
+            return false;
+        }
+
         return $user->hasPermission('manage_enrollments');
     }
 

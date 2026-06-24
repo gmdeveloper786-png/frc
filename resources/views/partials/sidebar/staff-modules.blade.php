@@ -7,6 +7,7 @@
     $canViewStaffUsers = $user->hasPermission('view_staff_users');
     $canApproveChildren = $user->hasPermission('approve_children');
     $canManageChildren = $user->hasPermission('manage_children');
+    $canRegisterChildren = $user->hasPermission('register_children');
     $canViewChildren = $user->hasPermission('view_children');
     $canTherapists = $user->hasPermission('manage_therapists');
     $canDisabilities = $user->hasPermission('manage_disabilities');
@@ -22,7 +23,7 @@
     $canSettings = $user->hasPermission('manage_settings');
 
     $showUsers = $canViewStaffUsers || $user->isSuperAdmin();
-    $showChildren = $canApproveChildren || $canManageChildren || $canViewChildren;
+    $showChildren = $canApproveChildren || $canManageChildren || $canRegisterChildren || $canViewChildren;
     $showConfiguration = $canTherapists || $canDisabilities || $canServices || $canBranches;
     $showClinical = $canAssessments || $canEnrollments || $canViewEnrollments || $canHighDiscount;
     $showFinance = $canManagePayments || $canVerifyPayments || $canFinanceReports;
@@ -60,8 +61,13 @@
         </a>
     @endif
     @if($canManageChildren || $canViewChildren)
-        <a href="{{ route('children.index') }}" class="nav-link {{ request()->routeIs('children.*') && ! request()->routeIs('children.pending') ? 'active' : '' }}">
+        <a href="{{ route('children.index') }}" class="nav-link {{ request()->routeIs('children.*') && ! request()->routeIs('children.pending', 'children.create') ? 'active' : '' }}">
             <i class="fa-solid fa-children"></i><span>All Children</span>
+        </a>
+    @endif
+    @if($canRegisterChildren)
+        <a href="{{ route('children.create') }}" class="nav-link {{ request()->routeIs('children.create') ? 'active' : '' }}">
+            <i class="fa-solid fa-user-plus"></i><span>Register Child</span>
         </a>
     @endif
 @endif
@@ -75,7 +81,7 @@
     @endif
     @if($canDisabilities)
         <a href="{{ route('disabilities.index') }}" class="nav-link {{ request()->routeIs('disabilities.*') ? 'active' : '' }}">
-            <i class="fa-solid fa-heart-pulse"></i><span>Disabilities</span>
+            <i class="fa-solid fa-heart-pulse"></i><span>Present Complaints</span>
         </a>
     @endif
     @if($canServices)

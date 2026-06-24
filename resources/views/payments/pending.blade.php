@@ -120,9 +120,13 @@
                                 <div style="font-size:11px;color:var(--text-muted);">{{ $p->child?->phone_number }}</div>
                             </td>
                             <td style="font-size:13px;">
-                                <a href="{{ route('enrollments.show', $p->enrollment_id) }}" style="color:var(--teal);">
-                                    #{{ $p->enrollment_id }} — {{ frc_pkr($p->enrollment?->final_total) }}
-                                </a>
+                                @if($p->enrollment_id)
+                                    <a href="{{ route('enrollments.show', $p->enrollment_id) }}" style="color:var(--teal);">
+                                        #{{ $p->enrollment_id }} — {{ frc_pkr($p->enrollment?->final_total) }}
+                                    </a>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td class="text-amount" style="font-weight:700;color:var(--navy);">{{ frc_pkr($p->amount) }}</td>
                             <td>

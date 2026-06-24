@@ -8,7 +8,7 @@
     $hasOperationalEnrollment = $child->hasOperationalEnrollment();
     $currentStatus = old('status', $child->status);
 @endphp
-<form action="{{ route('children.update', $child->id) }}" method="POST" class="form-frc">
+<form action="{{ route('children.update', $child->id) }}" method="POST" class="form-frc" enctype="multipart/form-data">
 @csrf
 @method('PUT')
 
@@ -106,7 +106,7 @@
 </div>
 
 <div class="form-section">
-    <div class="form-section-title"><i class="fa-solid fa-heart-pulse" style="color:var(--teal);"></i> Disabilities</div>
+    <div class="form-section-title"><i class="fa-solid fa-heart-pulse" style="color:var(--teal);"></i> Present Complaints</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Select all that apply.</p>
     <div class="row g-2">
         @foreach($disabilities as $disability)
@@ -122,11 +122,24 @@
     </div>
     @error('disability_ids') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
     <div id="editOtherDisabilityField" class="mt-3" style="display:none;">
-        <label>Please describe the disability</label>
-        <textarea name="other_disability" class="form-control @error('other_disability') is-invalid @enderror" rows="2" placeholder="Describe the disability...">{{ old('other_disability', $child->other_disability) }}</textarea>
+        <label>Please describe the present complaint</label>
+        <textarea name="other_disability" class="form-control @error('other_disability') is-invalid @enderror" rows="2" placeholder="Describe the present complaint...">{{ old('other_disability', $child->other_disability) }}</textarea>
         @error('other_disability') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
     </div>
 </div>
+
+@if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+<div class="form-section">
+    <div class="form-section-title"><i class="fa-solid fa-file-alt" style="color:var(--teal);"></i> Documents</div>
+    <p class="frc-documents__intro">Upload registration or supporting documents. Only visible to administration — not shown to the child.</p>
+
+    @include('partials.child-documents', [
+        'documents' => $child->documents,
+        'editable' => true,
+    ])
+</div>
+@include('partials.child-documents-scripts')
+@endif
 
 <div class="form-section">
     <div class="form-section-title"><i class="fa-solid fa-key" style="color:var(--teal);"></i> Password</div>

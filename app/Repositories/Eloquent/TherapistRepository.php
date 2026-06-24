@@ -87,9 +87,9 @@ class TherapistRepository implements TherapistRepositoryInterface
     {
         return DB::transaction(function () use ($therapist) {
             $therapist->therapistServices()->detach();
-            $therapist->therapistProfile?->delete();
+            $therapist->therapistProfile?->forceDelete();
 
-            return $therapist->delete();
+            return (bool) $therapist->forceDelete();
         });
     }
 }

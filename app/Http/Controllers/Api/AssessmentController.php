@@ -83,7 +83,7 @@ class AssessmentController extends Controller
 
         $this->service->delete($assessment);
 
-        return response()->json(['message' => 'Assessment deleted.']);
+        return response()->json(['message' => 'Assessment permanently deleted.']);
     }
 
     public function complete(CompleteAssessmentRequest $request, Assessment $assessment): JsonResponse

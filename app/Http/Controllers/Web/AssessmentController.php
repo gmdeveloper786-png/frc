@@ -8,6 +8,7 @@ use App\Http\Requests\CompleteAssessmentRequest;
 use App\Http\Requests\StoreAssessmentRequest;
 use App\Http\Requests\UpdateAssessmentRequest;
 use App\Models\Assessment;
+use App\Models\Service;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Support\StaffBranchScope;
 use App\Services\AssessmentNoteVisibilityService;
@@ -40,12 +41,13 @@ class AssessmentController extends Controller
     public function create(Request $request): View
     {
         $branches = StaffBranchScope::publishedBranchesFor($request->user());
+        $services = Service::published()->orderBy('name')->get();
         $initialChildren = $this->userRepository->getApprovedChildrenByIds(
             array_map('intval', (array) old('child_ids', [])),
             $request->user(),
         );
 
-        return view('assessments.create', compact('branches', 'initialChildren'));
+        return view('assessments.create', compact('branches', 'services', 'initialChildren'));
     }
 
     public function store(StoreAssessmentRequest $request): RedirectResponse
@@ -83,13 +85,14 @@ class AssessmentController extends Controller
         StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
 
         $branches = StaffBranchScope::publishedBranchesFor($request->user());
+        $services = Service::published()->orderBy('name')->get();
         $assessment->load(['branch', 'services', 'children', 'therapist']);
         $initialChildren = $this->userRepository->getApprovedChildrenByIds(
             array_map('intval', (array) old('child_ids', $assessment->children->pluck('id')->all())),
             $request->user(),
         );
 
-        return view('assessments.edit', compact('assessment', 'branches', 'initialChildren'));
+        return view('assessments.edit', compact('assessment', 'branches', 'services', 'initialChildren'));
     }
 
     public function update(UpdateAssessmentRequest $request, Assessment $assessment): RedirectResponse
@@ -107,7 +110,7 @@ class AssessmentController extends Controller
         StaffBranchScope::enforceAssessmentBranch($request->user(), $assessment);
         $this->service->delete($assessment);
 
-        return redirect()->route('assessments.index')->with('success', 'Assessment deleted.');
+        return redirect()->route('assessments.index')->with('success', 'Assessment permanently deleted.');
     }
 
     public function complete(CompleteAssessmentRequest $request, Assessment $assessment): RedirectResponse

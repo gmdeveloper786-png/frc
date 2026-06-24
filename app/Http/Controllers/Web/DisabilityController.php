@@ -30,7 +30,7 @@ class DisabilityController extends Controller
     {
         $this->service->create($request->validated(), $request->user()->id);
 
-        return redirect()->route('disabilities.index')->with('success', 'Disability created successfully.');
+        return redirect()->route('disabilities.index')->with('success', 'Present complaint created successfully.');
     }
 
     public function edit(Disability $disability): View
@@ -42,13 +42,17 @@ class DisabilityController extends Controller
     {
         $this->service->update($disability, $request->validated(), $request->user()->id);
 
-        return redirect()->route('disabilities.index')->with('success', 'Disability updated successfully.');
+        return redirect()->route('disabilities.index')->with('success', 'Present complaint updated successfully.');
     }
 
     public function destroy(Disability $disability): RedirectResponse
     {
-        $this->service->delete($disability);
+        if (! $this->service->delete($disability)) {
+            return redirect()
+                ->route('disabilities.index')
+                ->with('error', 'Present complaint could not be deleted. Please try again.');
+        }
 
-        return redirect()->route('disabilities.index')->with('success', 'Disability deleted.');
+        return redirect()->route('disabilities.index')->with('success', 'Present complaint permanently deleted.');
     }
 }

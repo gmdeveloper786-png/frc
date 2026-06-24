@@ -6,6 +6,8 @@ use App\Models\Disability;
 use App\Repositories\Interfaces\DisabilityRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
 class DisabilityService
@@ -28,7 +30,7 @@ class DisabilityService
 
     public function findById(int $id): Disability
     {
-        return $this->repository->findById($id) ?? abort(404, 'Disability not found.');
+        return $this->repository->findById($id) ?? abort(404, 'Present complaint not found.');
     }
 
     public function create(array $data, int $createdBy): Disability
@@ -43,6 +45,16 @@ class DisabilityService
 
     public function delete(Disability $disability): bool
     {
-        return $this->repository->delete($disability);
+        if (strcasecmp($disability->name, 'Other') === 0) {
+            throw ValidationException::withMessages([
+                'disability' => ['The "Other" present complaint cannot be deleted.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($disability) {
+            $disability->children()->detach();
+
+            return $this->repository->delete($disability);
+        });
     }
 }

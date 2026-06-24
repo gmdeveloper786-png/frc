@@ -44,16 +44,19 @@
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
         <h6 class="card-title-frc"><i class="fa-solid fa-file-contract me-2" style="color:var(--teal);"></i>Enrollments ({{ $enrollments->total() }})</h6>
-        @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+        @can('create', \App\Models\Enrollment::class)
             <a href="{{ route('enrollments.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;">
                 <i class="fa-solid fa-plus"></i> New Enrollment
             </a>
-        @endif
+        @endcan
    
     </div>
     <form method="GET" class="p-3 border-bottom list-filters enrollments-filters" style="border-color:var(--border-soft)!important;">
         @if($branches->count() === 1)
             <input type="hidden" name="branch_id" value="{{ $branches->first()->id }}">
+        @endif
+        @if(request()->filled('child_id'))
+            <input type="hidden" name="child_id" value="{{ request('child_id') }}">
         @endif
         <div class="row g-2 align-items-end form-frc">
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
@@ -110,7 +113,7 @@
                 <label class="form-label small text-muted mb-1 filter-actions-label" aria-hidden="true">&nbsp;</label>
                 <div class="filter-actions">
                     <button type="submit" class="btn-teal">Filter</button>
-                    @if(request()->hasAny(['search', 'status', 'payment_status', 'branch_id', 'service_id', 'date_from', 'date_to']))
+                    @if(request()->hasAny(['search', 'status', 'payment_status', 'branch_id', 'service_id', 'date_from', 'date_to', 'child_id']))
                         <a href="{{ route('enrollments.index') }}" class="btn-outline-teal">Clear</a>
                     @endif
                 </div>
@@ -162,15 +165,15 @@
                             <td>
                                 <div style="display:flex;gap:6px;">
                                     <a href="{{ route('enrollments.show', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-eye"></i></a>
-                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                    @can('update', $e)
                                         <a href="{{ route('enrollments.edit', $e->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-pen"></i></a>
-                                    @endif
-                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                    @endcan
+                                    @can('delete', $e)
                                         <form action="{{ route('enrollments.destroy', $e->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Delete this enrollment?"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Permanently delete this enrollment? This cannot be undone."><i class="fa-solid fa-trash"></i></button>
                                     </form>
-                                    @endif
+                                    @endcan
                                     @if($e->status === 'draft' && auth()->user()?->hasPermission('manage_enrollments'))
                                         <form action="{{ route('enrollments.approve', $e->id) }}" method="POST">@csrf
                                             <button type="submit" style="background:var(--success);color:#fff;border:none;border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Approve?"><i class="fa-solid fa-check"></i></button>

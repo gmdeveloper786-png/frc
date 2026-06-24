@@ -48,6 +48,52 @@ if (! function_exists('frc_storage_url')) {
     }
 }
 
+if (! function_exists('frc_storage_extension')) {
+    function frc_storage_extension(?string $relativePath): string
+    {
+        if ($relativePath === null || trim($relativePath) === '') {
+            return '';
+        }
+
+        $path = ltrim(str_replace('\\', '/', $relativePath), '/');
+
+        return strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    }
+}
+
+if (! function_exists('frc_storage_icon')) {
+    function frc_storage_icon(?string $relativePath): string
+    {
+        return match (frc_storage_extension($relativePath)) {
+            'pdf'                       => 'fa-file-pdf',
+            'jpg', 'jpeg', 'png', 'webp' => 'fa-file-image',
+            default                     => 'fa-file-lines',
+        };
+    }
+}
+
+if (! function_exists('frc_storage_label')) {
+    function frc_storage_label(?string $relativePath, ?int $number = null): string
+    {
+        $base = match (frc_storage_extension($relativePath)) {
+            'pdf'                       => 'PDF document',
+            'jpg', 'jpeg', 'png', 'webp' => 'Image document',
+            default                     => 'Document',
+        };
+
+        return $number !== null ? $base . ' ' . $number : $base;
+    }
+}
+
+if (! function_exists('frc_storage_meta')) {
+    function frc_storage_meta(?string $relativePath): string
+    {
+        $ext = frc_storage_extension($relativePath);
+
+        return $ext !== '' ? strtoupper($ext) . ' file' : 'Uploaded file';
+    }
+}
+
 if (! function_exists('frc_like_pattern')) {
     /** Safe partial-match pattern for SQL LIKE (wildcards escaped). */
     function frc_like_pattern(string $term): string

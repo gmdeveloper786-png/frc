@@ -45,6 +45,6 @@ class ServiceRepository implements ServiceRepositoryInterface
 
     public function delete(Service $service): bool
     {
-        return $service->delete();
+        return (bool) $service->forceDelete();
     }
 }

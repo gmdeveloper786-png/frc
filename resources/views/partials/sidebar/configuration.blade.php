@@ -11,7 +11,7 @@
 @endif
 @if($canDisabilities)
     <a href="{{ route('disabilities.index') }}" class="nav-link {{ request()->routeIs('disabilities.*') ? 'active' : '' }}">
-        <i class="fa-solid fa-heart-pulse"></i><span>Disabilities</span>
+        <i class="fa-solid fa-heart-pulse"></i><span>Present Complaints</span>
     </a>
 @endif
 @if($canServices)

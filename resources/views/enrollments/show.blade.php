@@ -38,11 +38,11 @@
         <div class="card-frc mb-3">
             <div class="card-header-frc enrollment-show-summary-header">
                 <h6 class="card-title-frc mb-0">Enrollment Summary</h6>
-                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin'))
+                @can('update', $enrollment)
                     <a href="{{ route('enrollments.edit', $enrollment->id) }}" class="btn-outline-teal btn-view-all enrollment-show-summary-btn">
                         <i class="fa-solid fa-pen"></i> Edit
                     </a>
-                @endif
+                @endcan
            
             </div>
             <table class="enrollment-detail-kv enrollment-detail-kv--summary">

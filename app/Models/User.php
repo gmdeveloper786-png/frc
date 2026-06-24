@@ -32,6 +32,7 @@ class User extends Authenticatable
         'phone_number',
         'whatsapp_number',
         'parent_notes',
+        'documents',
         'other_disability',
         'status',
         'approved_by',
@@ -50,6 +51,7 @@ class User extends Authenticatable
         'approved_at'       => 'datetime',
         'rejected_at'       => 'datetime',
         'date_of_birth'     => 'date',
+        'documents'         => 'array',
         'password'          => 'hashed',
     ];
 
@@ -116,18 +118,18 @@ class User extends Authenticatable
         return (string) $disability->name;
     }
 
-    /** @return array{id: int, full_name: string, gr_number: ?string, age: ?int, phone_number: ?string, disabilities: list<string>} */
+    /** @return array{id: int, full_name: string, gr_number: ?string, age: ?int, phone_number: ?string, present_complaints: list<string>} */
     public function toApprovedPickerArray(): array
     {
         $this->loadMissing('disabilities');
 
         return [
-            'id'           => (int) $this->id,
-            'full_name'    => (string) $this->full_name,
-            'gr_number'    => $this->gr_number,
-            'age'          => $this->age,
-            'phone_number' => $this->phone_number,
-            'disabilities' => $this->disabilities
+            'id'                 => (int) $this->id,
+            'full_name'          => (string) $this->full_name,
+            'gr_number'          => $this->gr_number,
+            'age'                => $this->age,
+            'phone_number'       => $this->phone_number,
+            'present_complaints' => $this->disabilities
                 ->map(fn (Disability $disability): string => $this->disabilityLabel($disability))
                 ->values()
                 ->all(),

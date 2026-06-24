@@ -15,9 +15,9 @@
                     <h5 class="child-show-name">{{ $child->full_name ?? '—' }}</h5>
                     <span class="badge-status badge-{{ $child->status ?? 'pending' }}">{{ ucfirst(str_replace('_',' ',$child->status ?? 'pending')) }}</span>
                 </div>
-                @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                @can('updateChild', $child)
                     <a href="{{ route('children.edit', $child->id) }}" class="btn-outline-teal btn-view-all child-show-edit-btn"><i class="fa-solid fa-pen"></i> Edit</a>
-                @endif
+                @endcan
             </div>
             <hr class="child-show-divider">
             <table class="enrollment-detail-kv child-show-detail-kv">
@@ -34,7 +34,7 @@
             </table>
             @if($child->disabilities->isNotEmpty())
                 <hr class="child-show-divider">
-                <div class="child-show-section-title">Disabilities</div>
+                <div class="child-show-section-title">Present Complaints</div>
                 <div class="child-show-tag-list">
                     @foreach($child->disabilities as $d)
                         <span class="child-show-tag">{{ $child->disabilityLabel($d) }}</span>
@@ -45,6 +45,14 @@
                 <hr class="child-show-divider">
                 <div class="child-show-section-title">Parent Notes</div>
                 <p class="child-show-notes">{{ $child->parent_notes ?? '—' }}</p>
+            @endif
+            @if(auth()->user()->hasAnyRole(['super_admin', 'admin']) && is_array($child->documents) && count(array_filter($child->documents, fn ($doc) => is_string($doc) && $doc !== '')) > 0)
+                <hr class="child-show-divider">
+                <div class="child-show-section-title">Documents</div>
+                @include('partials.child-documents', [
+                    'documents' => $child->documents,
+                    'editable' => false,
+                ])
             @endif
         </div>
 
@@ -72,13 +80,18 @@
         <div class="card-frc mb-3">
             <div class="card-header-frc card-header-frc--stack-sm">
                 <h6 class="card-title-frc mb-0"><i class="fa-solid fa-file-contract me-2" style="color:var(--teal);"></i>Enrollments</h6>
+                @if(($enrollmentsCount ?? 0) > 5)
+                    <a href="{{ route('enrollments.index', ['child_id' => $child->id]) }}" class="btn-outline-teal btn-view-all" style="white-space:nowrap;">
+                        View all
+                    </a>
+                @endif
             </div>
             @if($child->enrollments->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No enrollments yet.</p></div>
             @else
                 <div class="frc-table-wrap frc-table-wrap--wide table-scroll child-show-table">
                     <table class="table-frc mb-0">
-                        <thead><tr><th>Branch</th><th>Therapist</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Enrollment</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Branch</th><th>Therapist</th><th>Service</th><th>Total Fee</th><th>Paid</th><th>Remaining</th><th>Payment</th><th>Enrollment</th><th>Actions</th></tr></thead>
                         <tbody>
                             @foreach($child->enrollments as $en)
                                 <tr>
@@ -88,6 +101,7 @@
                                     @else
                                         <td style="white-space:nowrap;">{{ $en->therapist?->full_name ?? '—' }}</td>
                                     @endif
+                                    <td style="font-size:13px;white-space:nowrap;">{{ $en->service?->name ?? '—' }}</td>
                                     <td style="white-space:nowrap;">{{ frc_pkr($en->final_total ?? 0) }}</td>
                                     <td style="color:var(--success); white-space:nowrap;">{{ frc_pkr($en->paid_amount ?? 0) }}</td>
                                     <td style="color:var(--danger); white-space:nowrap;">{{ frc_pkr($en->remaining_amount ?? 0) }}</td>
@@ -106,13 +120,18 @@
         <div class="card-frc">
             <div class="card-header-frc card-header-frc--stack-sm">
                 <h6 class="card-title-frc mb-0"><i class="fa-solid fa-clipboard-list me-2" style="color:var(--teal);"></i>Assessments</h6>
+                @if(($assessmentsCount ?? 0) > 5)
+                    <a href="{{ route('assessments.index', ['child_id' => $child->id]) }}" class="btn-outline-teal btn-view-all" style="white-space:nowrap;">
+                        View all
+                    </a>
+                @endif
             </div>
             @if($child->assessments->isEmpty())
                 <div class="empty-state" style="padding:24px;"><p>No assessments yet.</p></div>
             @else
                 <div class="frc-table-wrap frc-table-wrap--wide table-scroll child-show-table">
                     <table class="table-frc mb-0">
-                        <thead><tr><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Service</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($child->assessments as $as)
                                 <tr>
@@ -120,7 +139,8 @@
                                     <td style="white-space:nowrap;">{{ $as->day }}</td>
                                     <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($as->time)?->format('h:i A') ?? '—' }}</td>
                                     <td style="white-space:nowrap;">{{ $as->branch?->name ?? '—' }}</td>
-                                    <td style="white-space:nowrap;"><span class="badge-status badge-{{ $as->status ?? 'pending' }}">{{ ucfirst(str_replace('_',' ',$as->status ?? 'pending')) }}</span></td>
+                                    <td style="white-space:nowrap;">{{ $as->services->pluck('name')->join(', ') ?: '—' }}</td>
+                                    <td style="white-space:nowrap;"><span class="badge-status badge-{{ $as->status ?? 'pending' }}">{{ $as->statusLabel() }}</span></td>
                                 </tr>
                             @endforeach
                         </tbody>

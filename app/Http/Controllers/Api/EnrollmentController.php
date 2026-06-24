@@ -61,6 +61,7 @@ class EnrollmentController extends Controller
     public function update(UpdateEnrollmentRequest $request, Enrollment $enrollment): JsonResponse
     {
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $this->authorize('update', $enrollment);
         $updated = $this->service->update($enrollment, $request->validated(), $request->user()->id);
 
         return response()->json(['message' => 'Enrollment updated.', 'data' => new EnrollmentResource($updated)]);

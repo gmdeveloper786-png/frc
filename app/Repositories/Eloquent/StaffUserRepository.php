@@ -66,7 +66,7 @@ class StaffUserRepository
 
     public function delete(User $user): bool
     {
-        return (bool) $user->delete();
+        return (bool) $user->forceDelete();
     }
 
     public function isStaffUser(User $user): bool

@@ -7,7 +7,7 @@
     <div class="empty-state">
         <i class="fa-solid fa-calendar-days empty-icon"></i>
         <h5>No assessments yet</h5>
-        <p class="text-muted">When your assessments are scheduled and published, they will appear here.</p>
+        <p class="text-muted">When your assessments are scheduled, they will appear here.</p>
     </div>
 @else
     <div class="row g-3">
@@ -24,10 +24,11 @@
                                 <div style="font-size:13px;color:var(--text-muted);">{{ $a->day }} · {{ \Carbon\Carbon::parse($a->time)->format('h:i A') }}</div>
                             </div>
                         </div>
-                        <span class="badge-status badge-{{ $a->status === 'cancelled' ? 'cancelled' : $a->status }}" style="flex-shrink:0;">{{ $a->status === 'cancelled' ? 'Cancelled' : ucfirst($a->status) }}</span>
+                        <span class="badge-status badge-{{ $a->status === 'cancelled' ? 'cancelled' : $a->status }}" style="flex-shrink:0;">{{ $a->statusLabel() }}</span>
                     </div>
                     <table class="w-100 mb-3" style="font-size:13px;">
                         <tr><td class="text-muted py-1" style="width:38%;">Branch</td><td class="fw-medium">{{ $a->branch?->name ?? '—' }}</td></tr>
+                        <tr><td class="text-muted py-1">Service</td><td>{{ $a->services->pluck('name')->join(', ') ?: '—' }}</td></tr>
                         <tr><td class="text-muted py-1">Therapist</td><td>{{ $a->therapist?->full_name ?? '—' }}</td></tr>
                     </table>
                     @if($a->status === 'cancelled')

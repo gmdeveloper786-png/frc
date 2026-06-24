@@ -28,6 +28,10 @@ class StorageAccessService
             return $this->canAccessTherapistDocument($user, $path);
         }
 
+        if (str_starts_with($path, 'children/documents/')) {
+            return $this->canAccessChildDocument($user, $path);
+        }
+
         return false;
     }
 
@@ -80,6 +84,32 @@ class StorageAccessService
                 ->where('user_id', $user->id)
                 ->whereJsonContains('documents', $path)
                 ->exists();
+        }
+
+        return false;
+    }
+
+    private function canAccessChildDocument(User $user, string $path): bool
+    {
+        if ($user->isChild()) {
+            return false;
+        }
+
+        $child = User::query()
+            ->children()
+            ->whereJsonContains('documents', $path)
+            ->first();
+
+        if ($child === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin() && $user->branch_id) {
+            return (int) $child->branch_id === (int) $user->branch_id;
         }
 
         return false;

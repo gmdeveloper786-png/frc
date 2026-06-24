@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use App\Repositories\Eloquent\StaffUserRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use InvalidArgumentException;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
@@ -135,7 +136,10 @@ class StaffUserService
             abort(403, 'You cannot delete your own account.');
         }
 
-        $this->repository->delete($user);
+        DB::transaction(function () use ($user): void {
+            $user->tokens()->delete();
+            $this->repository->delete($user);
+        });
     }
 
     public function ensureStaffUser(User $user): void

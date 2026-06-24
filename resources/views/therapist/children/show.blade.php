@@ -86,7 +86,7 @@
 
             @if($child->disabilities->isNotEmpty())
                 <hr class="child-show-divider">
-                <div class="child-show-section-title">Disabilities</div>
+                <div class="child-show-section-title">Present Complaints</div>
                 <div class="child-show-tag-list">
                     @foreach($child->disabilities as $disability)
                         <span class="child-show-tag">{{ $child->disabilityLabel($disability) }}</span>

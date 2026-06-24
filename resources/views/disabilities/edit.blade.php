@@ -1,13 +1,13 @@
 @extends('layouts.app')
-@section('title', 'Edit Disability')
-@section('page-title', 'Edit Disability')
+@section('title', 'Edit Present Complaint')
+@section('page-title', 'Edit Present Complaint')
 
 @section('content')
 <div class="row justify-content-center g-3 min-w-0">
     <div class="col-12 col-md-8 col-lg-6 min-w-0">
         <div class="card-frc card-frc--panel">
             <div class="card-header-frc">
-                <h6 class="card-title-frc"><i class="fa-solid fa-pen me-2" style="color:var(--teal);"></i>Edit Disability</h6>
+                <h6 class="card-title-frc"><i class="fa-solid fa-pen me-2" style="color:var(--teal);"></i>Edit Present Complaint</h6>
             </div>
             <form action="{{ route('disabilities.update', $disability) }}" method="POST" class="form-frc">
                 @csrf @method('PUT')

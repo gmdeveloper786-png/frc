@@ -16,13 +16,17 @@
                         <div style="font-size:14px;color:var(--text-muted);">{{ \Carbon\Carbon::parse($assessment->time)->format('h:i A') }}</div>
                     </div>
                 </div>
-                <span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->status === 'cancelled' ? 'Cancelled' : ucfirst($assessment->status) }}</span>
+                <span class="badge-status badge-{{ $assessment->status === 'cancelled' ? 'cancelled' : $assessment->status }}">{{ $assessment->statusLabel() }}</span>
             </div>
 
             <div class="row g-3 mb-4">
                 <div class="col-sm-6">
                     <div class="text-muted small mb-1">Branch</div>
                     <div style="font-weight:600;color:var(--navy);">{{ $assessment->branch?->displayLabel() ?? '—' }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small mb-1">Service</div>
+                    <div style="font-weight:600;color:var(--navy);">{{ $assessment->services->pluck('name')->join(', ') ?: '—' }}</div>
                 </div>
                 <div class="col-sm-6">
                     <div class="text-muted small mb-1">Therapist</div>

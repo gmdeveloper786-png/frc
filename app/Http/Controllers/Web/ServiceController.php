@@ -51,6 +51,6 @@ class ServiceController extends Controller
     {
         $this->service->delete($service);
 
-        return redirect()->route('services.index')->with('success', 'Service deleted.');
+        return redirect()->route('services.index')->with('success', 'Service permanently deleted.');
     }
 }

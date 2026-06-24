@@ -31,7 +31,7 @@ class UserResource extends JsonResource
             'approved_at'      => $this->approved_at?->toDateTimeString(),
             'rejected_at'      => $this->rejected_at?->toDateTimeString(),
             'rejection_reason' => $this->rejection_reason,
-            'disabilities'     => DisabilityResource::collection($this->whenLoaded('disabilities')),
+            'present_complaints' => DisabilityResource::collection($this->whenLoaded('disabilities')),
             'created_at'       => $this->created_at?->toDateTimeString(),
         ];
     }

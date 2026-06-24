@@ -55,7 +55,7 @@ class StaffUserController extends Controller
         $this->staffUsers->ensureStaffUser($user);
         $this->staffUsers->deleteStaffUser($user, $request->user());
 
-        return response()->json(['message' => 'Staff user deleted.']);
+        return response()->json(['message' => 'Staff user permanently deleted.']);
     }
 
     public function toggleStatus(Request $request, User $user): JsonResponse

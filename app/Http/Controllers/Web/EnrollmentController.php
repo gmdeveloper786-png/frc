@@ -19,6 +19,7 @@ use App\Services\SessionFeedbackService;
 use App\Services\SessionOccurrenceDetailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class EnrollmentController extends Controller
@@ -82,25 +83,62 @@ class EnrollmentController extends Controller
 
     public function store(StoreEnrollmentRequest $request): RedirectResponse
     {
-        $enrollments = $this->service->createEnrollments(
-            $request->validated(),
-            $request->user()->id,
-            $request->file('discount_file'),
-        );
+        $validated = $request->validated();
+        $childIds = $validated['child_ids'];
 
-        if (count($enrollments) === 1) {
-            return redirect()->route('enrollments.show', $enrollments[0])
+        $created = DB::transaction(function () use ($request, $validated, $childIds): array {
+            $created = $this->service->createEnrollments(
+                $this->primaryEnrollmentPayload($validated),
+                $request->user()->id,
+                $request->file('discount_file'),
+            );
+
+            foreach ($validated['extra_enrollments'] ?? [] as $extraKey => $extra) {
+                $created = array_merge(
+                    $created,
+                    $this->service->createEnrollments(
+                        array_merge($extra, ['child_ids' => $childIds]),
+                        $request->user()->id,
+                        $request->file("extra_enrollments.{$extraKey}.discount_file"),
+                    ),
+                );
+            }
+
+            return $created;
+        });
+
+        $blockCount = 1 + count($validated['extra_enrollments'] ?? []);
+
+        if (count($created) === 1) {
+            return redirect()->route('enrollments.show', $created[0])
                 ->with('success', 'Enrollment created successfully.');
         }
 
+        if ($blockCount > 1) {
+            return redirect()->route('enrollments.index')
+                ->with('success', count($created) . ' enrollments created successfully.');
+        }
+
         return redirect()->route('enrollments.index')
-            ->with('success', 'Group enrollment created for ' . count($enrollments) . ' children.');
+            ->with('success', 'Group enrollment created for ' . count($created) . ' children.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function primaryEnrollmentPayload(array $validated): array
+    {
+        unset($validated['extra_enrollments']);
+
+        return $validated;
     }
 
     public function edit(Request $request, int $id): View
     {
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $this->authorize('update', $enrollment);
         $branches   = StaffBranchScope::publishedBranchesFor($request->user());
         $services   = Service::published()->orderBy('name')->get();
 
@@ -113,6 +151,7 @@ class EnrollmentController extends Controller
     {
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $this->authorize('update', $enrollment);
         $this->service->update(
             $enrollment,
             $request->validated(),
@@ -204,9 +243,10 @@ class EnrollmentController extends Controller
     {
         $enrollment = $this->service->findById($id);
         StaffBranchScope::enforceEnrollmentBranch($request->user(), $enrollment);
+        $this->authorize('delete', $enrollment);
         $this->service->delete($enrollment);
 
-        return redirect()->route('enrollments.index')->with('success', 'Enrollment deleted.');
+        return redirect()->route('enrollments.index')->with('success', 'Enrollment permanently deleted.');
     }
 
     /**

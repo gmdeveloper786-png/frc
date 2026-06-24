@@ -10,6 +10,7 @@ class Permission extends Model
     public const MANAGE_USERS           = 'manage_users';
     public const MANAGE_ROLES           = 'manage_roles';
     public const MANAGE_CHILDREN        = 'manage_children';
+    public const REGISTER_CHILDREN      = 'register_children';
     public const VIEW_CHILDREN          = 'view_children';
     public const APPROVE_CHILDREN       = 'approve_children';
     public const MANAGE_DISABILITIES    = 'manage_disabilities';

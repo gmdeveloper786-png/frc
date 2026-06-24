@@ -8,6 +8,7 @@ use App\Repositories\Interfaces\TherapistRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
@@ -205,7 +206,23 @@ class TherapistService
 
     public function delete(User $therapist): bool
     {
-        return $this->repository->delete($therapist);
+        return DB::transaction(function () use ($therapist) {
+            $therapist->loadMissing('therapistProfile');
+
+            $documents = is_array($therapist->therapistProfile?->documents)
+                ? $therapist->therapistProfile->documents
+                : [];
+
+            foreach ($documents as $path) {
+                if (is_string($path) && $path !== '') {
+                    $this->secureFiles->delete($path);
+                }
+            }
+
+            $therapist->tokens()->delete();
+
+            return $this->repository->delete($therapist);
+        });
     }
 
     /**

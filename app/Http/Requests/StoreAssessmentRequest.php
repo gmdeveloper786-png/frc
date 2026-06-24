@@ -33,6 +33,11 @@ class StoreAssessmentRequest extends FormRequest
             $this->merge(['child_ids' => []]);
         }
 
+        if ($this->has('service_id')) {
+            $serviceId = (int) $this->input('service_id', 0);
+            $this->merge(['service_ids' => $serviceId > 0 ? [$serviceId] : []]);
+        }
+
         $user = $this->user();
         if ($user && ($locked = StaffBranchScope::lockedBranchId($user))) {
             $this->merge(['branch_id' => $locked]);
@@ -54,6 +59,12 @@ class StoreAssessmentRequest extends FormRequest
                 'nullable',
                 'integer',
                 'exists:users,id',
+            ],
+            'service_id'    => [
+                Rule::requiredIf(fn () => $this->input('status') === 'publish'),
+                'nullable',
+                'integer',
+                Rule::exists('services', 'id')->where(fn ($q) => $q->where('status', 'publish')),
             ],
             'service_ids'   => ['sometimes', 'nullable', 'array'],
             'service_ids.*' => ['integer', Rule::exists('services', 'id')->where('status', 'publish')],
@@ -132,6 +143,11 @@ class StoreAssessmentRequest extends FormRequest
                 $childIds = array_filter(array_map('intval', (array) $this->input('child_ids', [])));
                 if ($childIds === []) {
                     $validator->errors()->add('child_ids', 'At least one approved child is required when publishing.');
+                }
+
+                $serviceId = (int) $this->input('service_id', 0);
+                if ($serviceId < 1) {
+                    $validator->errors()->add('service_id', 'Service is required when scheduling an assessment.');
                 }
             }
 

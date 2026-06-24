@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Disabilities')
-@section('page-title', 'Disabilities')
+@section('title', 'Present Complaints')
+@section('page-title', 'Present Complaints')
 
 @push('styles')
 <style>
@@ -60,9 +60,9 @@
 @section('content')
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
-        <h6 class="card-title-frc"><i class="fa-solid fa-heart-pulse me-2" style="color:var(--teal);"></i>Disabilities ({{ $disabilities->total() }})</h6>
+        <h6 class="card-title-frc"><i class="fa-solid fa-heart-pulse me-2" style="color:var(--teal);"></i>Present Complaints ({{ $disabilities->total() }})</h6>
         <a href="{{ route('disabilities.create') }}" class="btn-teal btn-view-all" style="white-space:nowrap;">
-            <i class="fa-solid fa-plus"></i> Add Disability
+            <i class="fa-solid fa-plus"></i> Add Present Complaint
         </a>
     </div>
 
@@ -70,7 +70,7 @@
         <div class="row g-2 align-items-end form-frc">
             <div class="col-12 col-md-4">
                 <label class="form-label small text-muted mb-1">Search</label>
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search disabilities...">
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search present complaints...">
             </div>
             <div class="col-12 col-sm-6 col-md-4">
                 <label class="form-label small text-muted mb-1">Status</label>
@@ -92,9 +92,9 @@
     @if($disabilities->isEmpty())
         <div class="empty-state">
             <i class="fa-solid fa-heart-pulse empty-icon"></i>
-            <h5>No Disabilities Found</h5>
-            <p>Add your first disability to get started.</p>
-            <a href="{{ route('disabilities.create') }}" class="btn-teal mt-2">Add Disability</a>
+            <h5>No Present Complaints Found</h5>
+            <p>Add your first present complaint to get started.</p>
+            <a href="{{ route('disabilities.create') }}" class="btn-teal mt-2">Add Present Complaint</a>
         </div>
     @else
         <div class="frc-table-wrap frc-table-wrap--wide table-scroll">
@@ -113,13 +113,15 @@
                                     <a href="{{ route('disabilities.edit', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
+                                    @unless(strcasecmp($item->name, 'Other') === 0)
                                     <form action="{{ route('disabilities.destroy', $item) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
-                                            onclick="return confirm(@json('Delete ' . $item->name . '?'))">
+                                            data-confirm="Permanently delete {{ e($item->name) }}? This cannot be undone.">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
+                                    @endunless
                                 </div>
                             </td>
                         </tr>
@@ -128,7 +130,7 @@
             </table>
         </div>
         @if($disabilities->hasPages())
-            <div class="disabilities-index-pagination" aria-label="Disabilities list pages">
+            <div class="disabilities-index-pagination" aria-label="Present complaints list pages">
                 {{ $disabilities->onEachSide(1)->links() }}
             </div>
         @endif

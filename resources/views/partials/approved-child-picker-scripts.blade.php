@@ -19,8 +19,8 @@
         return (c.gr_number || '').trim();
     }
 
-    function renderDisabilitiesHtml(c) {
-        const list = Array.isArray(c.disabilities) ? c.disabilities.filter(Boolean) : [];
+    function renderPresentComplaintsHtml(c) {
+        const list = Array.isArray(c.present_complaints) ? c.present_complaints.filter(Boolean) : [];
         if (!list.length) {
             return '';
         }
@@ -200,7 +200,7 @@
             const grLine = childMetaLine(c);
             text.innerHTML = '<div style="font-size:13px;font-weight:500;line-height:1.3;">' + escapeHtml(c.full_name) + '</div>'
                 + (grLine ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + escapeHtml(grLine) + '</div>' : '')
-                + renderDisabilitiesHtml(c);
+                + renderPresentComplaintsHtml(c);
             label.appendChild(cb);
             label.appendChild(text);
             return label;

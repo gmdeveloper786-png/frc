@@ -8,6 +8,28 @@ use Illuminate\Validation\Rule;
 
 class UpdateEnrollmentRequest extends StoreEnrollmentRequest
 {
+    public function authorize(): bool
+    {
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        $enrollment = $this->route('enrollment');
+        if ($enrollment instanceof Enrollment) {
+            return $user->can('update', $enrollment);
+        }
+
+        $id = $this->route('id');
+        if ($id !== null) {
+            $enrollment = Enrollment::query()->find($id);
+
+            return $enrollment !== null && $user->can('update', $enrollment);
+        }
+
+        return false;
+    }
+
     protected function prepareForValidation(): void
     {
         parent::prepareForValidation();

@@ -933,7 +933,7 @@ class TherapistPortalService
             'full_name'             => $child->full_name,
             'age'                   => $child->age,
             'gender'                => $child->gender,
-            'disabilities'          => $child->disabilities->map(fn($d) => [
+            'present_complaints'    => $child->disabilities->map(fn($d) => [
                 'id'   => $d->id,
                 'name' => $d->name,
             ])->values()->all(),

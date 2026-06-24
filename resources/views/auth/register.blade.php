@@ -174,12 +174,12 @@
                 </div>
             </div>
 
-            {{-- Step 3: Disability Info --}}
+            {{-- Step 3: Present Complaint Info --}}
             <div class="step-panel" id="panel-3">
                 <h5 class="step-title">
-                    <i class="fa-solid fa-heart-pulse"></i> Disability Information
+                    <i class="fa-solid fa-heart-pulse"></i> Present Complaint Information
                 </h5>
-                <p class="step-hint">Select all disabilities that apply to the child. You can select multiple.</p>
+                <p class="step-hint">Select all present complaints that apply to the child. You can select multiple.</p>
                 <div class="form-grid form-grid--choices">
                     @foreach($disabilities as $disability)
                         <div>
@@ -195,8 +195,8 @@
                 </div>
 
                 <div id="otherDisabilityField" style="display:none;margin-top:20px;">
-                    <label>Please describe the disability</label>
-                    <textarea name="other_disability" class="form-control" rows="2" placeholder="Describe the disability...">{{ old('other_disability') }}</textarea>
+                    <label>Please describe the present complaint</label>
+                    <textarea name="other_disability" class="form-control" rows="2" placeholder="Describe the present complaint...">{{ old('other_disability') }}</textarea>
                 </div>
 
                 <div class="step-actions">
@@ -419,8 +419,8 @@ function validateStep3() {
 
     const otherField = registerForm.querySelector('[name="other_disability"]');
     if (!otherField.value.trim()) {
-        setFieldError(otherField, 'Please describe the disability when "Other" is selected.');
-        showStepErrorSummary(3, 'Please describe the selected "Other" disability.');
+        setFieldError(otherField, 'Please describe the present complaint when "Other" is selected.');
+        showStepErrorSummary(3, 'Please describe the selected "Other" present complaint.');
         otherField.focus();
         return false;
     }

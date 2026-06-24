@@ -167,7 +167,7 @@
                 <select name="status" class="form-control">
                     <option value="">All Statuses</option>
                     @foreach(['draft','publish','completed','cancelled'] as $s)
-                        <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                        <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ \App\Models\Assessment::statusLabelFor($s) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -195,7 +195,7 @@
     @else
         <div class="frc-table-wrap frc-table-wrap--wide table-scroll assessments-index-table">
             <table class="table-frc mb-0">
-                <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Therapist</th><th>Children</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>#</th><th>Date</th><th>Day</th><th>Time</th><th>Branch</th><th>Therapist</th><th>Service</th><th>Children</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                     @foreach($assessments as $item)
                         @php
@@ -219,6 +219,7 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td style="font-size:13px;white-space:nowrap;">{{ $item->services->pluck('name')->join(', ') ?: '—' }}</td>
                             <td class="assessments-children-cell" style="font-size:13px;" @if($childNames !== '') title="{{ $childNames }}" @endif>
                                 @if($firstChild)
                                     <a href="{{ route('children.show', $firstChild->id) }}" style="color:var(--navy);font-weight:500;">{{ $firstChild->full_name }}</a>
@@ -236,7 +237,7 @@
                                 @endif
                             </td>
                        
-                            <td><span class="badge-status badge-{{ $item->status === 'cancelled' ? 'cancelled' : $item->status }}">{{ $item->status === 'cancelled' ? 'Cancelled' : ucfirst($item->status) }}</span></td>
+                            <td><span class="badge-status badge-{{ $item->status === 'cancelled' ? 'cancelled' : $item->status }}">{{ $item->statusLabel() }}</span></td>
                             <td>
                                 <div class="assessments-row-actions">
                                     <a href="{{ route('assessments.show', $item) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;"><i class="fa-solid fa-eye"></i></a>
@@ -254,7 +255,7 @@
                                     @endif
                                     <form action="{{ route('assessments.destroy', $item) }}" method="POST">
                                         @csrf @method('DELETE')
-                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Delete?"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;" data-confirm="Permanently delete this assessment? This cannot be undone."><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
                                 @if(auth()->user()->isSuperAdmin() && ! in_array($item->status, ['completed','cancelled'], true))

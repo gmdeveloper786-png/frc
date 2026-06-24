@@ -53,6 +53,6 @@ class BranchController extends Controller
     {
         $this->service->delete($branch);
 
-        return response()->json(['message' => 'Branch deleted.']);
+        return response()->json(['message' => 'Branch permanently deleted.']);
     }
 }

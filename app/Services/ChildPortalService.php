@@ -55,7 +55,7 @@ class ChildPortalService
         $assessmentQuery = $this->childVisibleAssessmentsQuery($childId);
 
         $recentAssessments = (clone $assessmentQuery)
-            ->with(['branch'])
+            ->with(['branch', 'services'])
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->limit(5)

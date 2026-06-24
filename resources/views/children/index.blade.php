@@ -145,11 +145,18 @@
 <div class="card-frc card-frc--list-page">
     <div class="card-header-frc">
         <h6 class="card-title-frc"><i class="fa-solid fa-children me-2" style="color:var(--teal);"></i>All Children ({{ $children->total() }})</h6>
-        @if(auth()->user()?->hasPermission('approve_children'))
-            <a href="{{ route('children.pending') }}" class="btn-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
-                <i class="fa-solid fa-user-clock"></i> Pending Approvals
-            </a>
-        @endif
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            @if(auth()->user()?->hasPermission('register_children'))
+                <a href="{{ route('children.create') }}" class="btn-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
+                    <i class="fa-solid fa-user-plus"></i> Register Child
+                </a>
+            @endif
+            @if(auth()->user()?->hasPermission('approve_children'))
+                <a href="{{ route('children.pending') }}" class="btn-outline-teal btn-view-all" style="font-size:13px;white-space:nowrap;">
+                    <i class="fa-solid fa-user-clock"></i> Pending Approvals
+                </a>
+            @endif
+        </div>
     </div>
 
     @if($children->isEmpty())
@@ -205,16 +212,16 @@
                             <td style="white-space:nowrap;">
                                 <div style="display:flex;gap:6px;">
                                     <a href="{{ route('children.show', $child->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;" title="View"><i class="fa-solid fa-eye"></i></a>
-                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                    @can('updateChild', $child)
                                         <a href="{{ route('children.edit', $child->id) }}" class="btn-outline-teal" style="font-size:12px;padding:4px 10px;" title="Edit"><i class="fa-solid fa-pen"></i></a>
-                                    @endif
-                                    @if(auth()->user()->hasAnyRole(['super_admin', 'admin']))
+                                    @endcan
+                                    @can('deleteChild', $child)
                                         <form action="{{ route('children.destroy', $child->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Delete" style="background:none;border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--radius-btn);padding:4px 10px;cursor:pointer;font-size:12px;"
-                                            onclick="return confirm(@json('Delete ' . $child->full_name . '? This archives the account.'))"><i class="fa-solid fa-trash"></i></button>
+                                            data-confirm="Permanently delete {{ $child->full_name }}? This cannot be undone."><i class="fa-solid fa-trash"></i></button>
                                     </form>
-                                    @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

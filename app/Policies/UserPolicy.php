@@ -41,6 +41,10 @@ class UserPolicy
             return false;
         }
 
+        if ($staff->isFinance() || $staff->isApprovalDiscount()) {
+            return false;
+        }
+
         return $this->childInStaffScope($staff, $child);
     }
 

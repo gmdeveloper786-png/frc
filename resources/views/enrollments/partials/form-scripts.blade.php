@@ -9,6 +9,9 @@
     $branchCityMap = $enrollmentPricing['branch_city_map'] ?? [];
     $citySessionPrices = $enrollmentPricing['city_session_prices'] ?? [];
 @endphp
+@if($multiBlock ?? false)
+@include('enrollments.partials.enrollment-multi-block-scripts', ['enrollmentPricing' => $enrollmentPricing ?? []])
+@else
 <script nonce="{{ $cspNonce }}">
 window.FRC_HIGH_DISCOUNT_THRESHOLD = {{ (float) ($frc['high_discount_threshold'] ?? 50) }};
 const branchCityMap = @json($branchCityMap);
@@ -761,3 +764,4 @@ recalculate();
 checkHighDiscount();
 if (document.getElementById('repeatWeekly').checked) toggleDuration();
 </script>
+@endif

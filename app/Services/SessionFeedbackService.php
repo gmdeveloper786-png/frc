@@ -386,4 +386,24 @@ class SessionFeedbackService
             ]);
         }
     }
+
+    /** Remove feedback questions and responses before a service is permanently deleted. */
+    public function purgeForServiceDeletion(Service $service): void
+    {
+        $questionIds = ServiceFeedbackQuestion::withTrashed()
+            ->where('service_id', $service->id)
+            ->pluck('id');
+
+        if ($questionIds->isEmpty()) {
+            return;
+        }
+
+        SessionFeedbackResponse::query()
+            ->whereIn('service_feedback_question_id', $questionIds)
+            ->delete();
+
+        ServiceFeedbackQuestion::withTrashed()
+            ->where('service_id', $service->id)
+            ->each(fn (ServiceFeedbackQuestion $question) => $question->forceDelete());
+    }
 }

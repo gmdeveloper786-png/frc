@@ -6,6 +6,7 @@ use App\Models\Service;
 use App\Repositories\Interfaces\ServiceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
 class ServiceManagementService
@@ -56,6 +57,12 @@ class ServiceManagementService
 
     public function delete(Service $service): bool
     {
-        return $this->repository->delete($service);
+        return DB::transaction(function () use ($service) {
+            $this->sessionFeedback->purgeForServiceDeletion($service);
+            $service->therapists()->detach();
+            $service->assessments()->detach();
+
+            return $this->repository->delete($service);
+        });
     }
 }

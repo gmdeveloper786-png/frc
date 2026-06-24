@@ -230,14 +230,20 @@ class PaymentService
 
         $payment->refresh();
 
-        $enrollment = $payment->enrollment;
+        $enrollment = $this->resolveEnrollment($payment);
+
+        $this->notificationService->notifyPaymentApproved($payment);
+
+        if ($enrollment === null) {
+            return $payment;
+        }
+
         $remainingBefore = $enrollment->outstandingAmount();
 
         $this->enrollmentRepository->recalculatePaidAmount($enrollment);
         $enrollment->refresh();
         $remainingAfter = $enrollment->outstandingAmount();
 
-        $this->notificationService->notifyPaymentApproved($payment);
         if ($remainingBefore > 0 && $remainingAfter <= 0) {
             $this->notificationService->notifyFeeFullyPaid($enrollment);
         }
@@ -266,5 +272,21 @@ class PaymentService
         $this->notificationService->notifyPaymentRejected($payment);
 
         return $payment;
+    }
+
+    /**
+     * Resolve the enrollment linked to a payment, including soft-deleted records.
+     */
+    private function resolveEnrollment(Payment $payment): ?Enrollment
+    {
+        if (! $payment->enrollment_id) {
+            return null;
+        }
+
+        if ($payment->relationLoaded('enrollment') && $payment->enrollment !== null) {
+            return $payment->enrollment;
+        }
+
+        return Enrollment::withTrashed()->find($payment->enrollment_id);
     }
 }

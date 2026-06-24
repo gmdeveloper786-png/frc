@@ -5,7 +5,34 @@
 @push('styles')
 <style>
 .schedule-row { background:var(--bg-light); border:1px solid var(--border-soft); border-radius:10px; padding:12px; margin-bottom:8px; display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
-#discountSection { transition: all .3s; }
+[data-discount-section] { transition: all .3s; }
+.enrollment-block-extra {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px dashed var(--border-soft);
+}
+.enrollment-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.enrollment-block-has-error {
+    border: 2px solid var(--danger, #dc3545);
+    border-radius: 14px;
+    padding: 16px;
+    background: rgba(220, 53, 69, 0.04);
+}
+#multiEnrollmentBanner {
+    display: none;
+}
+.enrollment-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
 @media (max-width: 991.98px) {
     .enrollment-form-page .enrollment-form-fee-panel {
         position: static;
@@ -23,6 +50,15 @@
         margin-top: 0;
         width: 100%;
     }
+    .enrollment-block-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .enrollment-form-actions .btn-teal,
+    .enrollment-form-actions .btn-outline-teal {
+        width: 100%;
+        justify-content: center;
+    }
 }
 </style>
 @endpush
@@ -31,201 +67,63 @@
 <form action="{{ route('enrollments.store') }}" method="POST" enctype="multipart/form-data" class="form-frc" id="enrollForm">
 @csrf
 
-<div class="row g-3 enrollment-form-page">
-    {{-- Left Column --}}
-    <div class="col-12 col-lg-8">
-        {{-- Child + Branch + Therapist --}}
-        <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-children" style="color:var(--teal);"></i> Children & Therapist</div>
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="d-block mb-2">Children <span style="color:var(--danger)">*</span></label>
-                    @error('child_ids') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
-                    @error('child_ids.*') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
-                    @include('partials.approved-child-checkboxes-field', [
-                        'pickerId' => 'enrollmentChildPicker',
-                        'label' => false,
-                        'showLabel' => false,
-                        'initialChildren' => $initialChildren,
-                        'selectedIds' => old('child_ids', request()->query('child_id') ? [(int) request()->query('child_id')] : []),
-                    ])
-                    <small class="text-muted d-block mt-1">Select one child for individual therapy, or two or more for group therapy in the same slot.</small>
-                </div>
-                <div class="col-12 col-sm-6">
-                    <label>Branch <span style="color:var(--danger)">*</span></label>
-                    @if($branches->count() === 1)
-                        @php $onlyBranch = $branches->first(); @endphp
-                        <input type="hidden" name="branch_id" id="branchSelect" value="{{ $onlyBranch->id }}">
-                        <input type="text" class="form-control" value="{{ $onlyBranch->displayLabel() }}" readonly>
-                    @else
-                        <select name="branch_id" id="branchSelect" class="form-control @error('branch_id') is-invalid @enderror" required>
-                            <option value="">Select Branch</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>{{ $branch->displayLabel() }}</option>
-                            @endforeach
-                        </select>
-                    @endif
-                    @error('branch_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-                <div class="col-12 col-sm-6">
-                    <label>Service <span style="color:var(--danger)">*</span></label>
-                    <select name="service_id" id="serviceSelect" class="form-control @error('service_id') is-invalid @enderror">
-                        <option value="">Select Service</option>
-                        @foreach($services as $svc)
-                            <option value="{{ $svc->id }}" {{ (int) old('service_id') === $svc->id ? 'selected' : '' }}>{{ $svc->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-                <div class="col-12 col-sm-6">
-                    <label>Therapist <span style="color:var(--danger)">*</span></label>
-                    <select name="therapist_id" id="therapistSelect" class="form-control @error('therapist_id') is-invalid @enderror">
-                        <option value="">Select branch &amp; service first</option>
-                    </select>
-                    @error('therapist_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-                <div class="col-12 col-sm-6">
-                    <label>Status</label>
-                    <select name="status" class="form-control">
-                        <option value="active" @selected(old('status', 'active' )==='active' )>Active</option>                        
-                        <option value="draft" @selected(old('status', 'active') === 'draft')>Draft</option>
-                    </select>
-                </div>
-           
-            </div>
-        </div>
-
-        {{-- Schedule --}}
-        <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-calendar-days" style="color:var(--teal);"></i> Session Schedule</div>
-            <div class="row g-3 mb-3">
-                <div class="col-12">
-                    <label>First session starts on <span style="color:var(--danger)">*</span></label>
-                    <input type="date" name="schedule_start_date" id="scheduleStartDate"
-                        class="form-control @error('schedule_start_date') is-invalid @enderror"
-                        value="{{ old('schedule_start_date', now()->toDateString()) }}"
-                        min="{{ now()->toDateString() }}" required>
-                    @error('schedule_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    <p class="text-muted small mb-0 mt-1" id="firstSessionHint">Pick a start date — the matching weekday is added to the schedule when the therapist works that day; then choose a time slot.</p>
-                </div>
-            </div>
-            <div id="scheduleRows">
-                <div class="schedule-row">
-                    <div>
-                        <label>Day <span style="color:var(--danger)">*</span></label>
-                        <select name="schedules[0][day]" class="form-control" id="daySelect0">
-                            <option value="">Select Day</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Time Slot <span style="color:var(--danger)">*</span></label>
-                        <select name="schedules[0][time_slot]" class="form-control" id="slotSelect0">
-                            <option value="">Select Day First</option>
-                        </select>
-                    </div>
-                    <div style="padding-bottom:2px;">
-                        <button type="button" data-remove-row style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;margin-top:20px;" title="Remove" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </div>
-            </div>
-            <button type="button" class="btn-outline-teal mt-2" id="addScheduleRowBtn">
-                <i class="fa-solid fa-plus"></i> Add Another Day/Slot
-            </button>
-        </div>
-
-        {{-- Duration --}}
-        <div class="form-section">
-            <div class="form-section-title"><i class="fa-solid fa-clock" style="color:var(--teal);"></i> Duration</div>
-            <div class="row g-3">
-                <div class="col-12">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="repeat_weekly" value="1" id="repeatWeekly"
-                            {{ old('repeat_weekly') ? 'checked' : '' }}
-                            style="accent-color:var(--teal);">
-                        Repeat Weekly (auto-generate sessions)
-                    </label>
-                </div>
-                <div id="durationSection" style="display:none;" class="col-12">
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label>Duration Value</label>
-                            <input type="number" name="duration_value" id="durationValue" value="{{ old('duration_value') }}" class="form-control" min="1" placeholder="e.g. 3">
-                        </div>
-                        <div class="col-6">
-                            <label>Duration Unit</label>
-                            <select name="duration_unit" id="durationUnit" class="form-control">
-                                <option value="weekly" {{ old('duration_unit', 'weekly') === 'weekly' ? 'selected' : '' }}>Weekly</option>
-                                <option value="monthly" {{ old('duration_unit') === 'monthly' ? 'selected' : '' }}>Monthly</option>
-                                <option value="yearly" {{ old('duration_unit') === 'yearly' ? 'selected' : '' }}>Yearly</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="enrollment-form-page">
+    <div id="multiEnrollmentBanner" class="alert-frc warning mb-3">
+        <i class="fa-solid fa-layer-group"></i>
+        <div>
+            <strong id="multiEnrollmentBannerTitle">Creating multiple enrollments</strong>
+            <div class="small mt-1" id="multiEnrollmentBannerText">Fill session day and time for each enrollment block below, then submit once.</div>
         </div>
     </div>
+    <div id="enrollmentBlocks">
+        @include('enrollments.partials.enrollment-block', [
+            'blockIndex' => 0,
+            'showChildren' => true,
+            'showRemove' => false,
+            'branches' => $branches,
+            'services' => $services,
+            'initialChildren' => $initialChildren,
+        ])
 
-    {{-- Right Column: Fee Calculation --}}
-    <div class="col-12 col-lg-4">
-        <div class="form-section enrollment-form-fee-panel" style="position:sticky;top:80px;">
-            <div class="form-section-title"><i class="fa-solid fa-calculator" style="color:var(--teal);"></i> Fee Calculation</div>
-            <div class="mb-3">
-                <label>Price Per Session (PKR) <span style="color:var(--danger)">*</span></label>
-                <input type="number" name="price_per_session" id="pricePerSession" value="{{ old('price_per_session', 0) }}"
-                    class="form-control" min="0" step="1" readonly tabindex="-1"
-                    style="background:var(--bg-light);cursor:not-allowed;">
-                <small id="sessionPriceHint" class="text-muted d-block mt-1" style="font-size:12px;"></small>
-            </div>
-            <div class="mb-3">
-                <label>Discount % (0–100)</label>
-                <input type="number" name="discount_percentage" id="discountPct" value="{{ old('discount_percentage', 0) }}"
-                    class="form-control" min="0" max="100" step="1">
-            </div>
-            @include('enrollments.partials.zakat-eligibility-field')
-            <div style="background:var(--bg-light);border-radius:12px;padding:16px;margin-bottom:16px;">
-                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
-                    <span style="color:var(--text-muted);">Sessions (auto):</span>
-                    <strong id="calcSessions">0</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
-                    <span style="color:var(--text-muted);">Subtotal:</span>
-                    <strong>PKR <span id="calcSubtotal">0</span></strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
-                    <span style="color:var(--text-muted);">Discount:</span>
-                    <strong style="color:var(--danger);">- PKR <span id="calcDiscount">0</span></strong>
-                </div>
-                <hr style="border-color:var(--border-soft);">
-                <div style="display:flex;justify-content:space-between;font-size:16px;font-family:'Poppins',sans-serif;font-weight:700;">
-                    <span>Total:</span>
-                    <span style="color:var(--teal);">PKR <span id="calcTotal">0</span></span>
-                </div>
-            </div>
+        @foreach(old('extra_enrollments', []) as $extraIndex => $extraData)
+            @if(is_array($extraData) && (
+                (int) ($extraData['branch_id'] ?? 0) > 0
+                || (int) ($extraData['service_id'] ?? 0) > 0
+                || (int) ($extraData['therapist_id'] ?? 0) > 0
+                || ! empty($extraData['schedules'])
+            ))
+                @include('enrollments.partials.enrollment-block', [
+                    'blockIndex' => (int) $extraIndex,
+                    'showChildren' => false,
+                    'showRemove' => true,
+                    'branches' => $branches,
+                    'services' => $services,
+                    'initialChildren' => $initialChildren,
+                ])
+            @endif
+        @endforeach
+    </div>
 
-            {{-- High Discount Section --}}
-            <div id="discountSection" style="display:none;">
-                <div class="alert-frc warning mb-3">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <div><strong>High Discount (&gt;{{ $frc['high_discount_threshold'] }}%)</strong> requires approval. Provide a reason (supporting document optional).</div>
-                </div>
-                <div class="mb-3">
-                    <label>Discount Reason <span style="color:var(--danger)">*</span></label>
-                    <textarea name="discount_reason" class="form-control @error('discount_reason') is-invalid @enderror" rows="3" placeholder="Why is this discount being given?">{{ old('discount_reason') }}</textarea>
-                    @error('discount_reason') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-                <div>
-                    <label>Support Document <span style="color:var(--text-muted);font-weight:normal;font-size:12px;">(optional)</span></label>
-                    <input type="file" name="discount_file" class="form-control @error('discount_file') is-invalid @enderror" accept=".pdf,.jpg,.jpeg,.png,.webp">
-                    @error('discount_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-            </div>
-
-            <button type="submit" class="btn-teal mt-3" style="width:100%;padding:11px;justify-content:center;">
-                <i class="fa-solid fa-check"></i> Create Enrollment
-            </button>
-        </div>
+    <div class="mt-3 enrollment-form-actions">
+        <button type="button" class="btn-outline-teal" id="addAnotherEnrollmentBtn">
+            <i class="fa-solid fa-plus"></i> Add Another Enrollment
+        </button>
+        <button type="submit" class="btn-teal" data-submit-enrollment>
+            <i class="fa-solid fa-check"></i> <span data-submit-label>Create Enrollment</span>
+        </button>
     </div>
 </div>
+
+<template id="extraEnrollmentBlockTemplate">
+    @include('enrollments.partials.enrollment-block', [
+        'blockIndex' => '__INDEX__',
+        'showChildren' => false,
+        'showRemove' => true,
+        'branches' => $branches,
+        'services' => $services,
+        'initialChildren' => $initialChildren,
+    ])
+</template>
 </form>
 @endsection
 
@@ -237,6 +135,7 @@
     'initialSchedules' => [],
     'initialServiceId' => null,
     'enrollmentPricing' => $enrollmentPricing ?? [],
+    'multiBlock' => true,
 ])
 @include('partials.approved-child-picker-scripts', [
     'pickerMode' => 'checkboxes',

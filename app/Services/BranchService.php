@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Repositories\Interfaces\BranchRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorConcrete;
 
 class BranchService
@@ -43,6 +44,6 @@ class BranchService
 
     public function delete(Branch $branch): bool
     {
-        return $this->repository->delete($branch);
+        return DB::transaction(fn () => $this->repository->delete($branch));
     }
 }

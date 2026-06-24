@@ -249,6 +249,6 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function delete(Assessment $assessment): bool
     {
-        return $assessment->delete();
+        return (bool) $assessment->forceDelete();
     }
 }

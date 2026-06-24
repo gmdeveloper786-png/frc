@@ -14,7 +14,12 @@ class PaymentRepository implements PaymentRepositoryInterface
 {
     public function findById(int $id): ?Payment
     {
-        return Payment::with(['enrollment.child', 'child', 'receivedBy', 'verifiedBy'])->find($id);
+        return Payment::with([
+            'enrollment' => fn ($q) => $q->withTrashed()->with('child'),
+            'child',
+            'receivedBy',
+            'verifiedBy',
+        ])->find($id);
     }
 
     public function getAll(array $filters = [], int $perPage = 15): LengthAwarePaginator
